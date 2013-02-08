@@ -87,7 +87,7 @@ void Controller::init_controller()
 void Controller::set_default(void)
 {
   robot_secondary = NULL;
-  robot_type = CubeN_ServoFeedBack;
+  //robot_type = CubeN_ServoFeedBack; // TODO: To be removed
   controller_type = Neural_Controller;
   servo_max = 90.0;
   servo_min = -90.0;
@@ -239,8 +239,6 @@ bool Controller::run_Controller(const std::string& type, int memberID, int gener
   }
 //--------------Debugger Relater--------------//
 
-
-   //while(stepSize < evaluation_time) // TODO: Implementation of counting the time of evaluation has now changes.
   do
   {
     read_servo_positions_with_time();

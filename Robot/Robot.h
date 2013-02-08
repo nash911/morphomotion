@@ -39,7 +39,7 @@ class Robot
 
 public:
 
-  enum RobotType{CubeN_ServoFeedBack, Tripod, Quadpod, Ybot4_ServoFeedBack, Lizard_ServoFeedBack};
+  enum RobotType{CubeN_ServoFeedBack, Tripod, Quadpod, Ybot4_ServoFeedBack, Lizard_ServoFeedBack, Bunny, Bunny_StiffSpine};
   enum RobotEnvironment{SimulationOpenRave, RealWorld};
   enum EvaluationMethod{Euclidean_Distance_Final, Euclidean_Distance_Cumulative};
 

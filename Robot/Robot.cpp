@@ -92,6 +92,14 @@ void Robot::set_robot_type(const std::string& new_robot_type)
   {
     robot_type = Lizard_ServoFeedBack;
   }
+  else if(new_robot_type == "Bunny")
+  {
+    robot_type = Bunny;
+  }
+  else if(new_robot_type == "Bunny_StiffSpine")
+  {
+    robot_type = Bunny_StiffSpine;
+  }
   else
   {
     std::cerr << "Morphomotion Error: Robot class." << std::endl
@@ -116,6 +124,7 @@ std::string Robot::get_robot_type(void) const
     {
       return("Tripod");
     }
+    break;
     case Quadpod:
     {
       return("Quadpod");
@@ -129,6 +138,16 @@ std::string Robot::get_robot_type(void) const
     case Lizard_ServoFeedBack:
     {
       return("Lizard_ServoFeedBack");
+    }
+    break;
+    case Bunny:
+    {
+      return("Bunny");
+    }
+    break;
+    case Bunny_StiffSpine:
+    {
+      return("Bunny_StiffSpine");
     }
     break;
     default:

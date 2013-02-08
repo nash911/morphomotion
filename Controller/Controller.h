@@ -21,7 +21,6 @@
 #include "MultilayerPerceptron.h"
 #include "ServoFeedback.h"
 #include "GraphFile.h"
-//#include "rs232.h" // TODO: Not needed here.
 #include "OscillationAnalyzer_OutputSignal.h"
 
 #include <unistd.h> // TODO: Not sure if this is needed.
@@ -68,7 +67,7 @@ public:
 
   enum StartAngleType{Zero, Random, RandomEqual, Predefined, RunTime};
 
-  enum RobotType{Cube2_Sym_ServoFeedBack, Star3_ServoFeedBack, Star3_II_ServoFeedBack, CubeN_ServoFeedBack, CubePYP_ServoFeedBack, CubePYPYP_ServoFeedBack, Ybot4_ServoFeedBack, Ybot5_ServoFeedBack, QuadP_ServoFeedBack, DashHound_ServoFeedBack, Lizard_ServoFeedBack};
+  //enum RobotType{Cube2_Sym_ServoFeedBack, Star3_ServoFeedBack, Star3_II_ServoFeedBack, CubeN_ServoFeedBack, CubePYP_ServoFeedBack, CubePYPYP_ServoFeedBack, Ybot4_ServoFeedBack, Ybot5_ServoFeedBack, QuadP_ServoFeedBack, DashHound_ServoFeedBack, Lizard_ServoFeedBack}; // TODO: To be removed
 
   enum ControllerType{Neural_Controller, Naive_Controller, Simple_Controller, Hybrid_Controller};
 
@@ -140,7 +139,7 @@ private:
   Robot *robot_secondary;
   OscillationAnalyzer_OutputSignal *oscAnlz;
 
-  RobotType robot_type;
+  //RobotType robot_type; // TODO: To be removed
   ControllerType controller_type;
   double servo_max;
   double servo_min;
