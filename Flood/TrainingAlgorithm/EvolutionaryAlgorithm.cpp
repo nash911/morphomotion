@@ -3734,7 +3734,7 @@ void EvolutionaryAlgorithm::perform_my_intermediate_recombination_with_elitism_a
                   recombination[new_population_size_count][0] = parent_1_candidate_index;
                   recombination[new_population_size_count][1] = parent_2_candidate_index;
                   recombination[new_population_size_count][2] = rank[parent_1_candidate_index];
-      recombination[new_population_size_count][3] = rank[parent_2_candidate_index];
+                  recombination[new_population_size_count][3] = rank[parent_2_candidate_index];
 
                   parent_2 = get_individual(parent_2_candidate_index);
 
@@ -3995,7 +3995,6 @@ void EvolutionaryAlgorithm::perform_my_normal_mutation(void)
             individual[j] += calculate_random_normal(0.0, mutation_range);
          }
       }
-
       set_individual(i, individual);
    }
 }
@@ -4010,11 +4009,18 @@ void EvolutionaryAlgorithm::perform_my_normal_mutation_with_ES(void)
 
    MultilayerPerceptron* multilayer_perceptron_pointer = objective_functional_pointer->get_multilayer_perceptron_pointer();
 
-   int parameters_number = multilayer_perceptron_pointer->get_parameters_number();
+   //int parameters_number = multilayer_perceptron_pointer->get_parameters_number();
+
+   unsigned int neural_parameters_number = multilayer_perceptron_pointer->get_neural_parameters_number();
+   unsigned int independent_parameters_number = multilayer_perceptron_pointer->get_independent_parameters_number();
+   unsigned int parameters_number = neural_parameters_number + independent_parameters_number;
 
    Vector<double> individual(parameters_number);
+   double gene;
 
    int elite_population_size = population_size * (crossover_percentage * elitism_percentage);
+
+   bool independent_parameter_in_range;
 
    for(int i = elite_population_size; i < elite_population_size*2; i++)
    {
@@ -4023,15 +4029,50 @@ void EvolutionaryAlgorithm::perform_my_normal_mutation_with_ES(void)
       for(int j = 0; j < parameters_number; j++)
       {
          // Random number between 0 and 1
-
          double pointer = calculate_random_uniform(0.0, 1.0);
 
          if(pointer < mutation_rate_for_ES)
          {
-            individual[j] += calculate_random_normal(0.0, mutation_range_for_ES);
+            std::string independent_parameter_name = "No_Name";
+            if(independent_parameters_number > 0 && j >= neural_parameters_number) //Check if the parameter is neural or independent
+            {
+               independent_parameter_name = multilayer_perceptron_pointer->get_independent_parameter_name(j-neural_parameters_number);
+            }
+
+            //-- Omit mutation for indemendent parameter 'Sinusoidal_Frequency', since it ranges between 1.0 and 3.0
+            if(independent_parameter_name != "Sinusoidal_Frequency")
+            {
+               do
+               {
+                  //-- Mutate gene [ES]
+                  //individual[j] += calculate_random_normal(0.0, mutation_range_for_ES);
+                  gene = individual[j];
+                  gene += calculate_random_normal(0.0, mutation_range_for_ES);
+
+                  if(independent_parameters_number > 0 && j >= neural_parameters_number) //Check if the parameter is neural or independent
+                  {
+                     double minimum = multilayer_perceptron_pointer->get_independent_parameter_minimum(j-neural_parameters_number);
+                     double maximum = multilayer_perceptron_pointer->get_independent_parameter_maximum(j-neural_parameters_number);
+
+                     if(individual[j] >= minimum && individual[j] <= maximum) //Check if the independent parameter is within range
+                     {
+                        independent_parameter_in_range = true;
+                     }
+                     else
+                     {
+                        independent_parameter_in_range = false;
+                        std::cout << std::endl << "Mutation_ES: Independent Parameter: " << j << " Out of range: " << individual[j] << ".  Child No: " << i << std::endl;
+                     }
+                  }
+                  else
+                  {
+                     independent_parameter_in_range = true;
+                  }
+               }while(!independent_parameter_in_range);
+               individual[j] = gene;
+            }
          }
       }
-
       set_individual(i, individual);
    }
 
@@ -4047,10 +4088,46 @@ void EvolutionaryAlgorithm::perform_my_normal_mutation_with_ES(void)
 
          if(pointer < mutation_rate)
          {
-            individual[j] += calculate_random_normal(0.0, mutation_range);
+            std::string independent_parameter_name = "No_Name";
+            if(independent_parameters_number > 0 && j >= neural_parameters_number) //Check if the parameter is neural or independent
+            {
+               independent_parameter_name = multilayer_perceptron_pointer->get_independent_parameter_name(j-neural_parameters_number);
+            }
+
+            //-- Omit mutation for indemendent parameter 'Sinusoidal_Frequency', since it ranges between 1.0 and 3.0
+            if(independent_parameter_name != "Sinusoidal_Frequency")
+            {
+               do
+               {
+                  //-- Mutate gene [ES]
+                  //individual[j] += calculate_random_normal(0.0, mutation_range);
+                  gene = individual[j];
+                  gene += calculate_random_normal(0.0, mutation_range);
+
+                  if(independent_parameters_number > 0 && j >= neural_parameters_number) //Check if the parameter is neural or independent
+                  {
+                     double minimum = multilayer_perceptron_pointer->get_independent_parameter_minimum(j-neural_parameters_number);
+                     double maximum = multilayer_perceptron_pointer->get_independent_parameter_maximum(j-neural_parameters_number);
+
+                     if(individual[j] >= minimum && individual[j] <= maximum) //Check if the independent parameter is within range
+                     {
+                        independent_parameter_in_range = true;
+                     }
+                     else
+                     {
+                        independent_parameter_in_range = false;
+                        std::cout << std::endl << "Mutation_Offspring: Independent Parameter: " << j << " Out of range: " << individual[j] << ".  Child No: " << i << std::endl;
+                     }
+                  }
+                  else
+                  {
+                     independent_parameter_in_range = true;
+                  }
+               }while(!independent_parameter_in_range);
+               individual[j] = gene;
+            }
          }
       }
-
       set_individual(i, individual);
    }
 }
