@@ -45,9 +45,10 @@ public:
   virtual ~SimulationOpenRave(void);
 
   // METHODS
-  void init_simu_env();
+  void init_simu_env(std::string);
   void set_default_parameters(void);
   void SetCamera(dReal, dReal, dReal, dReal, dReal, dReal, dReal);
+  void load_controller(std::string);
   void set_scene_file_name(const std::string);
   std::string get_scene_file_name(void);
   void set_simu_resolution_microseconds(double);
@@ -56,6 +57,8 @@ public:
 
   // INHERITED METHODS
   void reset_robot(void);
+  void set_sinusoidal_controller_parameters(const vector<double>&, const vector<double>&, const vector<double>&, const double);
+  void stop_sinusoidal_controller(void);
   void set_moduleServo_position(unsigned int, double);
   double get_moduleServo_position(unsigned int);
   std::vector<double> get_all_moduleServo_position(void); // TODO: This should be removed after implementing get_all_moduleServo_position_with_time().

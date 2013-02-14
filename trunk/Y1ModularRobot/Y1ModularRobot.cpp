@@ -331,6 +331,18 @@ void Y1ModularRobot::reset_robot(void)
 }
 
 
+void Y1ModularRobot::set_sinusoidal_controller_parameters(const vector<double>& sinusoidal_amplitude, const vector<double>& sinusoidal_offset, const vector<double>& sinusoidal_phase, const double sinusoidal_frequency)
+{
+  // TODO: May need to be implemented here as well.
+}
+
+
+void Y1ModularRobot::stop_sinusoidal_controller(void)
+{
+  // TODO: May need to be implemented here as well.
+}
+
+
 void Y1ModularRobot::set_moduleServo_position(unsigned int module, double servo_angle)
 {
   stringstream outSS;

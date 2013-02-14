@@ -29,8 +29,8 @@
 
 #define EVALUATION_SAMPLE_SIZE 3
 
-#define POPULATION_SIZE 50
-#define GENERATIONS 30
+#define POPULATION_SIZE 100
+#define GENERATIONS 50
 
 #define CROSSOVER_RATIO 0.5
 #define ELITISM_RATIO 0.25
@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
 
   // Initialise objects after parameters loaded from the parameter file.
   Robot *robot = &simuOR_robot;
-  simuOR_robot.init_simu_env();
+  simuOR_robot.init_simu_env(controller.get_controller_type());
   controller.init_controller();
 
 #ifdef CUMUALATIVE_DISTANCE

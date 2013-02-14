@@ -79,7 +79,7 @@ SimulationOpenRave::SimulationOpenRave(std::string& scenefilename):Robot()
   cout << "Robot: " << probot->GetName() << endl;
 
   // create the controllers, make sure to lock environment!
-  EnvironmentMutex::scoped_lock lock(penv->GetMutex()); // lock environment
+  EnvironmentMutex::scoped_lock EnvLock(penv->GetMutex()); // lock environment
 
   // Get number of modules in the configuration
   number_of_modules = probot->GetDOF();
@@ -111,7 +111,7 @@ SimulationOpenRave::~SimulationOpenRave(void)
 }
 
 
-void SimulationOpenRave::init_simu_env()
+void SimulationOpenRave::init_simu_env(std::string controller)
 {
   //-------------------------------//
   //-- OPENRAVE INITIZALIZATION -- //
@@ -136,20 +136,27 @@ void SimulationOpenRave::init_simu_env()
   cout << "Robot: " << probot->GetName() << endl;
 
   // create the controllers, make sure to lock environment!
-  EnvironmentMutex::scoped_lock lock(penv->GetMutex()); // lock environment
+  EnvironmentMutex::scoped_lock EvnLock(penv->GetMutex()); // lock environment
 
   // Get number of modules in the configuration
   number_of_modules = probot->GetDOF();
 
   //-- Load the controller.
-  pcontroller=RaveCreateController(penv,"servocontroller");
-  //pcontroller=RaveCreateController(penv,"sinoscontroller");
+  if(controller == "Sinusoidal_Controller")
+  {
+    pcontroller=RaveCreateController(penv,"sinoscontroller");
+  }
+  else
+  {
+    pcontroller=RaveCreateController(penv,"servocontroller");
+  }
   vector<int> dofindices(probot->GetDOF());
   for(int i = 0; i < probot->GetDOF(); ++i)
   {
     dofindices[i] = i;
   }
   probot->SetController(pcontroller,dofindices,1);
+  //load_controller("servocontroller");
 
   //-- Record the initial position of the robot.
   t0=probot->GetTransform();
@@ -177,6 +184,18 @@ void SimulationOpenRave::SetCamera(dReal q0, dReal q1, dReal q2, dReal q3, dReal
   viewer->SetCamera(T);
 }
 
+
+void SimulationOpenRave::load_controller(std::string controller)
+{
+  EnvironmentMutex::scoped_lock EvnLock(penv->GetMutex()); // lock environment
+  pcontroller=RaveCreateController(penv,controller);
+  vector<int> dofindices(probot->GetDOF());
+  for(int i = 0; i < probot->GetDOF(); ++i)
+  {
+    dofindices[i] = i;
+  }
+  probot->SetController(pcontroller,dofindices,1);
+}
 
 void SimulationOpenRave::set_scene_file_name(const std::string new_scene_file_name)
 {
@@ -253,14 +272,93 @@ void SimulationOpenRave::reset_robot(void)
   //-- Set the translation of the robot to the initial position.
   probot->SetTransform(t0);
 
-  // Capture initial position of the robot
+  //-- Capture initial position of the robot
   //robot_pos_initial = get_robot_XY();
   robot_pos_previous = get_robot_XY();
 
-  // Initialize the controller evaluation time counter to 0;
+  //-- Initialize the controller evaluation time counter to 0;
   init_elapsed_evaluation_time();
 
   distance_travelled = 0;
+}
+
+
+/*void SimulationOpenRave::set_sinusoidal_controller_parameters(const vector<double>& sinusoidal_amplitude, const vector<double>& sinusoidal_offset, const vector<double>& sinusoidal_phase, const double sinusoidal_frequency)
+{
+  stringstream os,is;
+  is << "setamplitude 60 60 60 60 ";
+  pcontroller->SendCommand(os,is);
+
+  //is << "setinitialphase 0 120 ";
+  is << "setinitialphase 0 0 120 240 ";
+  pcontroller->SendCommand(os,is);
+
+  is << "setoffset 0 0 0 0 ";
+  pcontroller->SendCommand(os,is);
+
+  is << "setperiod 1.0 ";
+  pcontroller->SendCommand(os,is);
+
+  is << "oscillation on ";
+  pcontroller->SendCommand(os,is);
+}*/
+
+
+void SimulationOpenRave::set_sinusoidal_controller_parameters(const vector<double>& sinusoidal_amplitude, const vector<double>& sinusoidal_offset, const vector<double>& sinusoidal_phase, const double sinusoidal_frequency)
+{
+  stringstream os,is;
+
+  is << "setamplitude ";
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    is << sinusoidal_amplitude[module] << " ";
+  }
+  pcontroller->SendCommand(os,is);
+
+  is << "setinitialphase ";
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    is << sinusoidal_phase[module] << " ";
+  }
+  pcontroller->SendCommand(os,is);
+
+  is << "setoffset ";
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    is << sinusoidal_offset[module] << " ";
+  }
+  pcontroller->SendCommand(os,is);
+
+  is << "setperiod " << sinusoidal_frequency << " ";
+  pcontroller->SendCommand(os,is);
+
+  is << "oscillation on ";
+  pcontroller->SendCommand(os,is);
+}
+
+
+void SimulationOpenRave::stop_sinusoidal_controller(void)
+{
+  stringstream os,is;
+
+  is << "reset_controller ";
+  pcontroller->SendCommand(os,is);
+
+  is << "oscillation off ";
+  pcontroller->SendCommand(os,is);
+
+  //-- Set the servo of each module to zero.
+  /*for(int i=0; i<number_of_modules; i++)
+  {
+    set_moduleServo_position(i, 80);
+  }
+
+  // Wait for two seconds.
+  int two_seconds = (1/simu_resolution_microseconds)*10;
+  for (int ss=0; ss<two_seconds; ss++)
+  {
+    penv->StepSimulation(simu_resolution_microseconds);
+  }*/
 }
 
 

@@ -105,8 +105,11 @@ FileHandler::FileHandler(std::string note,
   myFile << std::endl << "\t<EvaluationPeriod>" << std::endl << "\t   " << controller->get_evaluation_period() << std::endl << "\t</EvaluationPeriod>" << std::endl;
   myFile << std::endl << "\t<ServoMax>" << std::endl << "\t   " << controller->get_servo_max() << std::endl << "\t</ServoMax>" << std::endl;
   myFile << std::endl << "\t<ServoMin>" << std::endl << "\t   " << controller->get_servo_min() << std::endl << "\t</ServoMin>" << std::endl;
-  myFile << std::endl << "\t<StartAngleType>" << std::endl << "\t   " << controller->get_start_angle_type() << std::endl << "\t</StartAngleType>" << std::endl;
-  myFile << std::endl << "\t<ServoDeltaThreshold>" << std::endl << "\t   " << controller->get_servo_delta_threshold() << std::endl << "\t</ServoDeltaThreshold>" << std::endl;
+  if(controller->get_controller_type() != "Sinusoidal_Controller")
+  {
+    myFile << std::endl << "\t<StartAngleType>" << std::endl << "\t   " << controller->get_start_angle_type() << std::endl << "\t</StartAngleType>" << std::endl;
+    myFile << std::endl << "\t<ServoDeltaThreshold>" << std::endl << "\t   " << controller->get_servo_delta_threshold() << std::endl << "\t</ServoDeltaThreshold>" << std::endl;
+  }
   if(controller->get_controller_type() == "Neural_Controller" || controller->get_controller_type() == "Naive_Controller")
   {
     myFile << std::endl << "\t<ServoDerivativeThreshold>" << std::endl << "\t   " << controller->get_servo_derivative_threshold() << std::endl << "\t</ServoDerivativeThreshold>" << std::endl;
@@ -920,7 +923,7 @@ void FileHandler::load_NN_parameters(std::fstream& file, Flood::MultilayerPercep
 void FileHandler::load_independent_parameters(std::fstream& file, Flood::MultilayerPerceptron *mlp)
 {
   std::string word;
-  int independentParametersNumber = 0;
+  unsigned int independentParametersNumber = 0;
   std::vector<std::string> independentParametersName;
   std::vector<double> independentParametersMinimum;
   std::vector<double> independentParametersMaximum;
@@ -931,17 +934,58 @@ void FileHandler::load_independent_parameters(std::fstream& file, Flood::Multila
 
     if(word == "<Parameter>")
     {
+      unsigned int totalParameters=1;
       independentParametersNumber++;
 
       do
       {
         file >> word;
 
-        if(word == "<Name>")
+        if(word == "<TotalParameters>")
+        {
+          file >> word;
+          totalParameters = atoi(word.c_str());
+
+          if(totalParameters > 1)
+          {
+            independentParametersNumber--; //-- Undoing incrementing independentParametersNumber a few lines above.
+            independentParametersNumber = independentParametersNumber + totalParameters;
+          }
+
+          file >> word;
+
+          if(word != "</TotalParameters>")
+          {
+            std::cerr << "Morphomotion Error: FileHandler Class." << std::endl
+                      << "void load_independent_parameters(std::fstream&, Flood::MultilayerPerceptron*) method." << std::endl
+                      << "Unknown Total Parameters end tag: " << word << std::endl;
+
+            exit(1);
+          }
+        }
+
+        else if(word == "<Name>")
         {
           std::string new_independent_parameter_name;
           file >> new_independent_parameter_name;
-          independentParametersName.push_back(new_independent_parameter_name);
+
+          if(totalParameters > 1)
+          {
+            for(unsigned int parameter=0; parameter<totalParameters; parameter++)
+            {
+              std::string par_no;
+              ostringstream intToString;
+              intToString << parameter+1;
+              par_no = intToString.str();
+
+              std::string parameter_name = new_independent_parameter_name + "-module_" + par_no;
+              independentParametersName.push_back(parameter_name);
+            }
+          }
+          else
+          {
+            independentParametersName.push_back(new_independent_parameter_name);
+          }
 
           file >> word;
 
@@ -958,7 +1002,11 @@ void FileHandler::load_independent_parameters(std::fstream& file, Flood::Multila
         else if(word == "<Minimum>")
         {
           file >> word;
-          independentParametersMinimum.push_back(atoi(word.c_str()));
+          for(unsigned int parameter=0; parameter<totalParameters; parameter++)
+          {
+            independentParametersMinimum.push_back(atoi(word.c_str()));
+          }
+          //independentParametersMinimum.push_back(atoi(word.c_str()));
 
           file >> word;
 
@@ -975,7 +1023,11 @@ void FileHandler::load_independent_parameters(std::fstream& file, Flood::Multila
         else if(word == "<Maximum>")
         {
           file >> word;
-          independentParametersMaximum.push_back(atoi(word.c_str()));
+          for(unsigned int parameter=0; parameter<totalParameters; parameter++)
+          {
+            independentParametersMaximum.push_back(atoi(word.c_str()));
+          }
+          //independentParametersMaximum.push_back(atoi(word.c_str()));
 
           file >> word;
 

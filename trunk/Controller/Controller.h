@@ -33,10 +33,10 @@
 //#define CUMULATIVE_DISTANCE
 #define CUMULATIVE_DISTANCE_STEPSIZE 10
 
-#define RECORD_SERVO
-#define RECORD_FREQUENCY
-#define RECORD_PHASE
-#define RECORD_TRAJECTORY
+//#define RECORD_SERVO
+//#define RECORD_FREQUENCY
+//#define RECORD_PHASE
+//#define RECORD_TRAJECTORY
 #define RESOLUTION 100
 
 //#define RECORD_REF_PHI
@@ -69,7 +69,7 @@ public:
 
   //enum RobotType{Cube2_Sym_ServoFeedBack, Star3_ServoFeedBack, Star3_II_ServoFeedBack, CubeN_ServoFeedBack, CubePYP_ServoFeedBack, CubePYPYP_ServoFeedBack, Ybot4_ServoFeedBack, Ybot5_ServoFeedBack, QuadP_ServoFeedBack, DashHound_ServoFeedBack, Lizard_ServoFeedBack}; // TODO: To be removed
 
-  enum ControllerType{Neural_Controller, Naive_Controller, Simple_Controller, Hybrid_Controller};
+  enum ControllerType{Sinusoidal_Controller, Neural_Controller, Naive_Controller, Simple_Controller, Hybrid_Controller};
 
   // DEFAULT CONSTRUCTOR
   Controller(void);
@@ -126,6 +126,12 @@ public:
   void set_oscillator_offset(double);
   double get_oscillator_offset(void);
 
+  void load_sinusoidal_control_parameters(void);
+  void set_sinusoidal_amplitude(const double, const unsigned int, const unsigned int);
+  void set_sinusoidal_offset(const double, const unsigned int, const unsigned int);
+  void set_sinusoidal_phase(const double, const unsigned int, const unsigned int);
+  void set_sinusoidal_frequency(const double, const unsigned int);
+
   double calculate_random_uniform(double, double);
   double calculate_random_normal(double, double);
   double scale_to_range(double, double, double, double, double);
@@ -153,6 +159,11 @@ private:
   unsigned servo_derivative_epsilon;
   double oscillator_amplitude;
   double oscillator_offset;
+
+  vector<double> sinusoidal_amplitude;
+  vector<double> sinusoidal_offset;
+  vector<double> sinusoidal_phase;
+  double sinusoidal_frequency;
 
   // TODO: To be removed
   /*GraphFile *real_servo_position_graph_file;

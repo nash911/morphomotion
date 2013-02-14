@@ -39,7 +39,7 @@ class Robot
 
 public:
 
-  enum RobotType{CubeN_ServoFeedBack, Tripod, Quadpod, Ybot4_ServoFeedBack, Lizard_ServoFeedBack, Bunny, Bunny_StiffSpine};
+  enum RobotType{CubeN_ServoFeedBack, Tripod, Quadpod, Ybot4_ServoFeedBack, Lizard, Bunny, Bunny_StiffSpine, Lizard_3D};
   enum RobotEnvironment{SimulationOpenRave, RealWorld};
   enum EvaluationMethod{Euclidean_Distance_Final, Euclidean_Distance_Cumulative};
 
@@ -66,6 +66,8 @@ public:
 
   // VIRTUAL FUNCTIONS
   virtual void reset_robot(void) = 0;
+  virtual void set_sinusoidal_controller_parameters(const vector<double>&, const vector<double>&, const vector<double>&, const double) = 0;
+  virtual void stop_sinusoidal_controller(void) = 0;
   virtual void set_moduleServo_position(unsigned int, double) = 0;
   virtual double get_moduleServo_position(unsigned int) = 0;
   virtual std::vector<double> get_all_moduleServo_position(void) = 0;  // TODO: This should be removed after implementing get_all_moduleServo_position_with_time().
