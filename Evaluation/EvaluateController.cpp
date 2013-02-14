@@ -58,22 +58,27 @@ int main(int argc, char* argv[])
   FileHandler geneFileHandler(gene_file, &simuOR_robot, &simuOR_robot, &controller, &mlp, &population);
 
   // Cross Evaluation
-  /*simuOR_robot.set_scene_file_name("/home/nash/Dropbox/PhD/modularRobotics/morphoMotion/models/Minicube-I.env.xml");
+  /*simuOR_robot.set_scene_file_name("../models/Minicube-I.env.xml");
   robot_primary->set_number_of_modules(2);*/
 
-  /*simuOR_robot.set_scene_file_name("/home/nash/Dropbox/PhD/modularRobotics/morphoMotion/models/Tripod.env.xml");
+  /*simuOR_robot.set_scene_file_name("../models/Tripod.env.xml");
   robot_primary->set_number_of_modules(3);*/
 
-  /*simuOR_robot.set_scene_file_name("/home/nash/Dropbox/PhD/modularRobotics/morphoMotion/models/Quadpod.env.xml");
+  /*simuOR_robot.set_scene_file_name("../models/Quadpod.env.xml");
   robot_primary->set_number_of_modules(4);*/
 
-  /*simuOR_robot.set_scene_file_name("/home/nash/Dropbox/PhD/modularRobotics/morphoMotion/models/Ybot4.env.xml");
+  /*simuOR_robot.set_scene_file_name("../models/Ybot4.env.xml");
   robot_primary->set_number_of_modules(4);*/
 
-  /*simuOR_robot.set_scene_file_name("/home/nash/Dropbox/PhD/modularRobotics/morphoMotion/models/Lizard.env.xml");
+  /*simuOR_robot.set_scene_file_name("../models/Lizard/Lizard.env.xml");
   robot_primary->set_number_of_modules(6);*/
 
-  simuOR_robot.init_simu_env();
+  /*simuOR_robot.set_scene_file_name("../models/Leggy_3DOF/Leggy_3DOF.env.xml");
+  robot_primary->set_number_of_modules(15);*/
+
+  //controller.set_controller_type("Sinusoidal_Controller");
+
+  simuOR_robot.init_simu_env(controller.get_controller_type());
   controller.init_controller();
   population.subtract_row(0);
 
@@ -93,10 +98,12 @@ int main(int argc, char* argv[])
   // Output Layer Activation Function
   mlp.set_output_layer_activation_function("HyperbolicTangent");
 
-  controller.set_evaluation_period(100);
+  controller.set_evaluation_period(30);
 
   Flood::Vector<double> individual(mlp.get_parameters_number());
   int population_size = population.get_rows_number();
+
+  int x; // Debugger
 
   for(int i=population_size-1; i>=0; i--)
   //for(int i=0; i<=population_size-1; i++)
@@ -140,7 +147,7 @@ int main(int argc, char* argv[])
     }
 
     std::cout << "  Population Size: " << population_size << std::endl << "  Select individual to be evaluated number:  " << std::endl;
-    std::cin >> i;
+    //std::cin >> x;
   }
 
 }

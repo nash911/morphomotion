@@ -48,10 +48,12 @@ public:
   bool set_serial_port(const std::string&, int);
   bool get_message(char*);
   bool decode_message(const char[], vector<double>&);
+  std::vector<double> get_robot_XY();
 
   // INHERITED METHODS
-  std::vector<double> get_robot_XY();
   void reset_robot(void);
+  void set_sinusoidal_controller_parameters(const vector<double>&, const vector<double>&, const vector<double>&, const double);
+  void stop_sinusoidal_controller(void);
   void set_moduleServo_position(unsigned int, double);
   double get_moduleServo_position(unsigned int);
   std::vector<double> get_all_moduleServo_position(void); // TODO: This should be removed after implementing get_all_moduleServo_position_with_time().

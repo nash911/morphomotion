@@ -88,9 +88,9 @@ void Robot::set_robot_type(const std::string& new_robot_type)
   {
     robot_type = Ybot4_ServoFeedBack;
   }
-  else if(new_robot_type == "Lizard_ServoFeedBack")
+  else if(new_robot_type == "Lizard")
   {
-    robot_type = Lizard_ServoFeedBack;
+    robot_type = Lizard;
   }
   else if(new_robot_type == "Bunny")
   {
@@ -99,6 +99,10 @@ void Robot::set_robot_type(const std::string& new_robot_type)
   else if(new_robot_type == "Bunny_StiffSpine")
   {
     robot_type = Bunny_StiffSpine;
+  }
+  else if(new_robot_type == "Lizard_3D")
+  {
+    robot_type = Lizard_3D;
   }
   else
   {
@@ -135,9 +139,9 @@ std::string Robot::get_robot_type(void) const
       return("Ybot4_ServoFeedBack");
     }
     break;
-    case Lizard_ServoFeedBack:
+    case Lizard:
     {
-      return("Lizard_ServoFeedBack");
+      return("Lizard");
     }
     break;
     case Bunny:
@@ -148,6 +152,11 @@ std::string Robot::get_robot_type(void) const
     case Bunny_StiffSpine:
     {
       return("Bunny_StiffSpine");
+    }
+    break;
+    case Lizard_3D:
+    {
+      return("Lizard_3D");
     }
     break;
     default:
