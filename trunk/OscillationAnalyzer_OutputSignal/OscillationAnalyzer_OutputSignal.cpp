@@ -22,11 +22,15 @@ OscillationAnalyzer_OutputSignal::OscillationAnalyzer_OutputSignal(Robot* robot_
 
   oscillation_short_history.set(number_of_modules, 3);
   time_at_previous_cycle.set(number_of_modules);
+  amplitude_degrees.set(number_of_modules);
+  offset_degrees.set(number_of_modules);
   frequency_hertz.set(number_of_modules);
   phase_degrees.set(number_of_modules,number_of_modules);
 
   oscillation_short_history.initialize(0);
   time_at_previous_cycle.initialize(0);
+  amplitude_degrees.initialize(0);
+  offset_degrees.initialize(0);
   frequency_hertz.initialize(0);
   phase_degrees.initialize(0);
 
@@ -36,14 +40,19 @@ OscillationAnalyzer_OutputSignal::OscillationAnalyzer_OutputSignal(Robot* robot_
     phase_graph_size = phase_graph_size + i;
   }
 
+  estimate_amplitude_offset = false;
   estimate_frequency = false;
   estimate_phase = false;
 
   record_servo = false;
+  record_amplitude = false;
+  record_offset = false;
   record_frequency = false;
   record_phase = false;
 
   servo_graph_file = NULL;
+  amplitude_graph_file = NULL;
+  offset_graph_file = NULL;
   frequency_graph_file = NULL;
   phase_180_graph_file = NULL;
   phase_360_graph_file = NULL;
@@ -61,6 +70,11 @@ void OscillationAnalyzer_OutputSignal::update_oscillation_short_history(unsigned
   oscillation_short_history[module][1] = oscillation_short_history[module][2];
   oscillation_short_history[module][2] = new_oscillation_value;
 
+  if(estimate_amplitude_offset)
+  {
+    calculate_amplitude_offset(module);
+  }
+
   if(estimate_phase)
   {
     calculate_phase(module);
@@ -71,6 +85,27 @@ void OscillationAnalyzer_OutputSignal::update_oscillation_short_history(unsigned
     calculate_frequency(module);
   }
 }
+
+
+void OscillationAnalyzer_OutputSignal::calculate_amplitude_offset(unsigned int module)
+{
+  if(oscillation_short_history[module][0] < oscillation_short_history[module][1] && oscillation_short_history[module][1] > oscillation_short_history[module][2])
+  {
+    amplitude_degrees[module] = abs(oscillation_short_history[module][1] - oscillation_short_history[module][2])/2;
+    offset_degrees[module] = oscillation_short_history[module][1] -amplitude_degrees[module];
+
+    if(record_amplitude)
+    {
+      write_amplitude();
+    }
+
+    if(record_offset)
+    {
+      write_offset();
+    }
+  }
+}
+
 
 void OscillationAnalyzer_OutputSignal::calculate_frequency(unsigned int module)
 {
@@ -129,6 +164,12 @@ bool OscillationAnalyzer_OutputSignal::get_record_servo(void)
 }
 
 
+void OscillationAnalyzer_OutputSignal::set_estimate_amplitude_offset(const bool estimate_amplitude_offset_bool_value)
+{
+  estimate_amplitude_offset = estimate_amplitude_offset_bool_value;
+}
+
+
 void OscillationAnalyzer_OutputSignal::set_estimate_frequency(const bool estimate_frequency_bool_value)
 {
   estimate_frequency = estimate_frequency_bool_value;
@@ -149,6 +190,34 @@ void OscillationAnalyzer_OutputSignal::set_record_servo(const bool record_servo_
   {
     remove("../Evaluation_Files/servo.dat");
     servo_graph_file = new GraphFile("../Evaluation_Files/servo.dat");
+  }
+}
+
+
+void OscillationAnalyzer_OutputSignal::set_record_amplitude(const bool record_amplitude_bool_value)
+{
+  record_amplitude = record_amplitude_bool_value;
+
+  if(record_amplitude_bool_value)
+  {
+    remove("../Evaluation_Files/amplitude.dat");
+    amplitude_graph_file = new GraphFile("../Evaluation_Files/amplitude.dat");
+
+    set_estimate_amplitude_offset(true);
+  }
+}
+
+
+void OscillationAnalyzer_OutputSignal::set_record_offset(const bool record_offset_bool_value)
+{
+  record_offset = record_offset_bool_value;
+
+  if(record_offset_bool_value)
+  {
+    remove("../Evaluation_Files/offset.dat");
+    offset_graph_file = new GraphFile("../Evaluation_Files/offset.dat");
+
+    set_estimate_amplitude_offset(true);
   }
 }
 
@@ -203,6 +272,38 @@ void OscillationAnalyzer_OutputSignal::write_servo(std::vector<double>& servo_po
     ss << servo_positions[module] << " ";
   }
   servo_graph_file->write(ss);
+}
+
+
+void OscillationAnalyzer_OutputSignal::write_amplitude(void)
+{
+  std::stringstream ss;
+  unsigned int number_of_modules = robot->get_number_of_modules();
+
+  ss << number_of_modules+1 << " ";
+  ss << robot->get_elapsed_evaluation_time()/1000 << " "; // X-axis in micro seconds.
+
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    ss << amplitude_degrees[module] << " ";
+  }
+  amplitude_graph_file->write(ss);
+}
+
+
+void OscillationAnalyzer_OutputSignal::write_offset(void)
+{
+  std::stringstream ss;
+  unsigned int number_of_modules = robot->get_number_of_modules();
+
+  ss << number_of_modules+1 << " ";
+  ss << robot->get_elapsed_evaluation_time()/1000 << " "; // X-axis in micro seconds.
+
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    ss << offset_degrees[module] << " ";
+  }
+  offset_graph_file->write(ss);
 }
 
 

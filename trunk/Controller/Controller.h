@@ -69,7 +69,7 @@ public:
 
   //enum RobotType{Cube2_Sym_ServoFeedBack, Star3_ServoFeedBack, Star3_II_ServoFeedBack, CubeN_ServoFeedBack, CubePYP_ServoFeedBack, CubePYPYP_ServoFeedBack, Ybot4_ServoFeedBack, Ybot5_ServoFeedBack, QuadP_ServoFeedBack, DashHound_ServoFeedBack, Lizard_ServoFeedBack}; // TODO: To be removed
 
-  enum ControllerType{Sinusoidal_Controller, Neural_Controller, Naive_Controller, Simple_Controller, Hybrid_Controller};
+  enum ControllerType{Sinusoidal_Controller, Neural_Controller, Naive_Controller, Simple_Controller, Hybrid_Controller, Semi_Hybrid_Controller};
 
   // DEFAULT CONSTRUCTOR
   Controller(void);
