@@ -33,17 +33,24 @@ private:
 
   Flood::Matrix<double> oscillation_short_history; // Size(number_of_modules, 3)
   Flood::Vector<unsigned long> time_at_previous_cycle; // Size(number_of_modules);
+  Flood::Vector<double> amplitude_degrees; // Size(number_of_modules);
+  Flood::Vector<double> offset_degrees; // Size(number_of_modules);
   Flood::Vector<double> frequency_hertz; // Size(number_of_modules);
   Flood::Matrix<double> phase_degrees; // Size(number_of_modules, number_of_modules);
 
+  bool estimate_amplitude_offset;
   bool estimate_frequency;
   bool estimate_phase;
 
   bool record_servo;
+  bool record_amplitude;
+  bool record_offset;
   bool record_frequency;
   bool record_phase;
 
   GraphFile *servo_graph_file;
+  GraphFile *amplitude_graph_file;
+  GraphFile *offset_graph_file;
   GraphFile *frequency_graph_file;
   GraphFile *phase_180_graph_file;
   GraphFile *phase_360_graph_file;
@@ -53,12 +60,16 @@ public:
   ~OscillationAnalyzer_OutputSignal(void);
 
   void update_oscillation_short_history(unsigned int, double);
-  void calculate_frequency(unsigned int);
+  void calculate_amplitude_offset(unsigned int);
   void calculate_phase(unsigned int);
+  void calculate_frequency(unsigned int);
 
   bool get_record_servo(void);
 
   void set_record_servo(const bool);
+  void set_estimate_amplitude_offset(const bool);
+  void set_record_amplitude(const bool);
+  void set_record_offset(const bool);
   void set_estimate_frequency(const bool);
   void set_record_frequency(const bool);
   void set_estimate_phase(const bool);
@@ -67,6 +78,8 @@ public:
   unsigned int get_phase_graph_size(void);
 
   void write_servo(std::vector<double>&);
+  void write_amplitude(void);
+  void write_offset(void);
   void write_frequency(void);
   void write_phase(void);
 };

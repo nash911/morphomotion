@@ -113,6 +113,10 @@ FileHandler::FileHandler(std::string note,
   if(controller->get_controller_type() == "Neural_Controller" || controller->get_controller_type() == "Naive_Controller")
   {
     myFile << std::endl << "\t<ServoDerivativeThreshold>" << std::endl << "\t   " << controller->get_servo_derivative_threshold() << std::endl << "\t</ServoDerivativeThreshold>" << std::endl;
+    //myFile << std::endl << "\t<ServoDerivativeEpsilon>" << std::endl << "\t   " << controller->get_servo_derivative_epsilon() << std::endl << "\t</ServoDerivativeEpsilon>" << std::endl; // TODO: To be removed later.
+  }
+  if(controller->get_controller_type() == "Neural_Controller" || controller->get_controller_type() == "Naive_Controller" || controller->get_controller_type() == "Semi_Hybrid_Controller")
+  {
     myFile << std::endl << "\t<ServoDerivativeEpsilon>" << std::endl << "\t   " << controller->get_servo_derivative_epsilon() << std::endl << "\t</ServoDerivativeEpsilon>" << std::endl;
   }
   myFile << "</Controller>" << std::endl;
