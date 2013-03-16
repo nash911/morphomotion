@@ -31,7 +31,10 @@
 
 int main(int argc, char* argv[])
 {
+  bool evaluate_best_individual = false;
+
   char* gene_file;
+  char* fitness_file;
 
   SimulationOpenRave simuOR_robot;
   Robot *robot_primary = &simuOR_robot;
@@ -45,17 +48,86 @@ int main(int argc, char* argv[])
 
   // Elite population gene
   Flood::Matrix<double> population;
+  std::vector<std::string> generation_index;
+
+  std::vector<double> elite_fitness;
 
   if(argc == 1) // TODO: Need to change this to include all commande line parameter possibilities.
   {
     gene_file = "/home/nash/Dropbox/PhD/modularRobotics/morphoMotion/Evolution_Files/Ybot4_ServoFeedBack/Hybrid_Controller/Gene_Files/SimulationOpenRave_11_08_23_03_elite_population.gne";  // TODO: Has to be changed in the future.
   }
-  else
+  else if(argc == 3)
   {
     gene_file = argv[2];
+    FileHandler geneFileHandler(gene_file, &simuOR_robot, &simuOR_robot, &controller, &mlp, &population, &generation_index);
+  }
+  else if(argc == 4)
+  {
+    evaluate_best_individual = true;
+
+    gene_file = argv[2];
+
+    if(argv[3][0] == '-' && argv[3][1] == 'b')
+    {
+      std::string fitness_file_string;
+      fitness_file_string = argv[2];
+      fitness_file_string.erase(fitness_file_string.end()-62, fitness_file_string.end()-32);
+      fitness_file_string.erase(fitness_file_string.end()-20, fitness_file_string.end());
+
+      fitness_file_string.insert(fitness_file_string.end()-12, 'F');
+      fitness_file_string.insert(fitness_file_string.end()-12, 'i');
+      fitness_file_string.insert(fitness_file_string.end()-12, 't');
+      fitness_file_string.insert(fitness_file_string.end()-12, 'n');
+      fitness_file_string.insert(fitness_file_string.end()-12, 'e');
+      fitness_file_string.insert(fitness_file_string.end()-12, 's');
+      fitness_file_string.insert(fitness_file_string.end()-12, 's');
+      fitness_file_string.insert(fitness_file_string.end()-12, 'G');
+      fitness_file_string.insert(fitness_file_string.end()-12, 'r');
+      fitness_file_string.insert(fitness_file_string.end()-12, 'a');
+      fitness_file_string.insert(fitness_file_string.end()-12, 'p');
+      fitness_file_string.insert(fitness_file_string.end()-12, 'h');
+      fitness_file_string.insert(fitness_file_string.end()-12, '_');
+      fitness_file_string.insert(fitness_file_string.end()-12, 'F');
+      fitness_file_string.insert(fitness_file_string.end()-12, 'i');
+      fitness_file_string.insert(fitness_file_string.end()-12, 'l');
+      fitness_file_string.insert(fitness_file_string.end()-12, 'e');
+      fitness_file_string.insert(fitness_file_string.end()-12, 's');
+      fitness_file_string.insert(fitness_file_string.end()-12, '/');
+
+      fitness_file_string.insert(fitness_file_string.end(), 'F');
+      fitness_file_string.insert(fitness_file_string.end(), 'i');
+      fitness_file_string.insert(fitness_file_string.end(), 't');
+      fitness_file_string.insert(fitness_file_string.end(), 'n');
+      fitness_file_string.insert(fitness_file_string.end(), 'e');
+      fitness_file_string.insert(fitness_file_string.end(), 's');
+      fitness_file_string.insert(fitness_file_string.end(), 's');
+      fitness_file_string.insert(fitness_file_string.end(), 'G');
+      fitness_file_string.insert(fitness_file_string.end(), 'r');
+      fitness_file_string.insert(fitness_file_string.end(), 'a');
+      fitness_file_string.insert(fitness_file_string.end(), 'p');
+      fitness_file_string.insert(fitness_file_string.end(), 'h');
+      fitness_file_string.insert(fitness_file_string.end(), '.');
+      fitness_file_string.insert(fitness_file_string.end(), 'd');
+      fitness_file_string.insert(fitness_file_string.end(), 'a');
+      fitness_file_string.insert(fitness_file_string.end(), 't');
+
+      fitness_file = new char[fitness_file_string.size()+1];
+
+      unsigned int i;
+      for(i=0; i<fitness_file_string.size(); i++)
+      {
+          fitness_file[i] = fitness_file_string[i];
+      }
+      fitness_file[i] = '\0';
+    }
+    else
+    {
+      fitness_file = argv[3];
+    }
+    FileHandler gene_fitness_FileHandler(gene_file, fitness_file, &simuOR_robot, &simuOR_robot, &controller, &mlp, &population, &generation_index, &elite_fitness);
   }
 
-  FileHandler geneFileHandler(gene_file, &simuOR_robot, &simuOR_robot, &controller, &mlp, &population);
+
 
   // Cross Evaluation
   /*simuOR_robot.set_scene_file_name("../models/Minicube-I.env.xml");
@@ -75,8 +147,6 @@ int main(int argc, char* argv[])
 
   /*simuOR_robot.set_scene_file_name("../models/Leggy_3DOF/Leggy_3DOF.env.xml");
   robot_primary->set_number_of_modules(15);*/
-
-  //controller.set_controller_type("Sinusoidal_Controller");
 
   simuOR_robot.init_simu_env(controller.get_controller_type());
   controller.init_controller();
@@ -98,56 +168,117 @@ int main(int argc, char* argv[])
   // Output Layer Activation Function
   mlp.set_output_layer_activation_function("HyperbolicTangent");
 
-  controller.set_evaluation_period(30);
+  controller.set_evaluation_period(100);
 
   Flood::Vector<double> individual(mlp.get_parameters_number());
   int population_size = population.get_rows_number();
 
-  int x; // Debugger
-
-  for(int i=population_size-1; i>=0; i--)
-  //for(int i=0; i<=population_size-1; i++)
+  if(evaluate_best_individual)
   {
-    robot_primary->reset_robot();
-
-    if(robot_secondary)
+    unsigned int best_individual_fitness_index = 0;
+    for(unsigned int i=1; i<elite_fitness.size();i++)
     {
-      robot_secondary->reset_robot();
+      if(elite_fitness[i] >= elite_fitness[best_individual_fitness_index])
+      {
+        best_individual_fitness_index = i;
+      }
     }
 
-    // Debugger: To evaluate random solutions
-    /*individual[0] = -1.450586;
-    individual[1] = -1.171314;
-    individual[2] = 1.261777;
-    individual[3] = 0.18068;
-    individual[4] = -1.473637;
-    individual[5] = -1.49753;
-    individual[6] = -1.109373;
-    individual[7] = -1.701846;
-    individual[8] = -1.674622;
-    individual[9] = 0.56627;*/
-
-    individual = population.get_row(i);
-    mlp.set_parameters(individual);
-
-    OscillationAnalyzer_OutputSignal oscAnlz(robot_primary);
-    controller.set_oscillation_analyzer(&oscAnlz);
-
-    oscAnlz.set_record_servo(true);
-    oscAnlz.set_record_frequency(true);
-    oscAnlz.set_record_phase(true);
-
-    controller.run_Controller("evaluation",1,i,1);
-
-    std::cout << "    (" << i+1 << ") " << "Simulated Robot: Distance travelled = " << robot_primary->get_distance_travelled() << std::endl;
-
-    if(robot_secondary)
+    best_individual_fitness_index++;
+    bool best_fitness_gene_found = false;
+    do
     {
-      std::cout << "    (" << i+1 << ") " << "Simulated Robot: Distance travelled = " << robot_secondary->get_distance_travelled() << std::endl;
-    }
+      best_individual_fitness_index--;
+      std::stringstream generation_no;
+      generation_no << "Generation_" << best_individual_fitness_index+1 << ":";
+      for(unsigned int i=0; i<=population_size-1; i++)
+      {
+        if(generation_no.str().compare(generation_index[i]) == 0)
+        {
+          individual = population.get_row(i);
+          std::cout << std::endl << "Best_Fitness: Generation " << best_individual_fitness_index+1 << std::endl << individual << std::endl << std::endl;
+          best_fitness_gene_found = true;
+          break;
+        }
+      }
+    }while(!best_fitness_gene_found);
 
-    std::cout << "  Population Size: " << population_size << std::endl << "  Select individual to be evaluated number:  " << std::endl;
-    //std::cin >> x;
+    unsigned int n = 1;
+    while(n)
+    {
+      robot_primary->reset_robot();
+
+      if(robot_secondary)
+      {
+        robot_secondary->reset_robot();
+      }
+
+      mlp.set_parameters(individual);
+
+      OscillationAnalyzer_OutputSignal oscAnlz(robot_primary);
+      controller.set_oscillation_analyzer(&oscAnlz);
+
+      oscAnlz.set_record_servo(true);
+      oscAnlz.set_record_amplitude(true);
+      oscAnlz.set_record_offset(true);
+      oscAnlz.set_record_frequency(true);
+      oscAnlz.set_record_phase(true);
+
+      controller.run_Controller("evaluation",1,best_individual_fitness_index+1,1);
+
+      std::cout << "    (" << best_individual_fitness_index+1 << ") " << "Simulated Robot: Distance travelled = " << robot_primary->get_distance_travelled() << std::endl;
+
+      if(robot_secondary)
+      {
+        std::cout << "    (" << best_individual_fitness_index+1 << ") " << "Simulated Robot: Distance travelled = " << robot_secondary->get_distance_travelled() << std::endl;
+      }
+
+      std::cout << "  Select individual to be evaluated number:  " << std::endl;
+
+      std::cin >> n;
+    }
   }
+  else
+  {
+    int x; // Debugger
 
+    for(int i=population_size-1; i>=0; i--)
+    //for(unsigned int i=0; i<=population_size-1; i++)
+    {
+      robot_primary->reset_robot();
+
+      if(robot_secondary)
+      {
+        robot_secondary->reset_robot();
+      }
+
+      individual = population.get_row(i);
+      mlp.set_parameters(individual);
+
+      std::cout << std::endl << individual << std::endl << std::endl;
+
+      OscillationAnalyzer_OutputSignal oscAnlz(robot_primary);
+      controller.set_oscillation_analyzer(&oscAnlz);
+
+      oscAnlz.set_record_servo(true);
+      oscAnlz.set_record_amplitude(true);
+      oscAnlz.set_record_offset(true);
+      oscAnlz.set_record_frequency(true);
+      oscAnlz.set_record_phase(true);
+
+      controller.run_Controller("evaluation",1,i,1);
+
+      std::cout << "    (" << i+1 << ") " << "Simulated Robot: Distance travelled = " << robot_primary->get_distance_travelled() << std::endl;
+
+      if(robot_secondary)
+      {
+        std::cout << "    (" << i+1 << ") " << "Simulated Robot: Distance travelled = " << robot_secondary->get_distance_travelled() << std::endl;
+      }
+
+      //std::cout << std::endl << generation_index[i] << " --> Fitness: " << elite_fitness[46] << std::endl;
+
+      std::cout << "  Population Size: " << population_size << std::endl << "  Select individual to be evaluated number:  " << std::endl;
+      std::cin >> x;
+    }
+  }
 }

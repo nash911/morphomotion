@@ -113,7 +113,6 @@ FileHandler::FileHandler(std::string note,
   if(controller->get_controller_type() == "Neural_Controller" || controller->get_controller_type() == "Naive_Controller")
   {
     myFile << std::endl << "\t<ServoDerivativeThreshold>" << std::endl << "\t   " << controller->get_servo_derivative_threshold() << std::endl << "\t</ServoDerivativeThreshold>" << std::endl;
-    //myFile << std::endl << "\t<ServoDerivativeEpsilon>" << std::endl << "\t   " << controller->get_servo_derivative_epsilon() << std::endl << "\t</ServoDerivativeEpsilon>" << std::endl; // TODO: To be removed later.
   }
   if(controller->get_controller_type() == "Neural_Controller" || controller->get_controller_type() == "Naive_Controller" || controller->get_controller_type() == "Semi_Hybrid_Controller")
   {
@@ -436,22 +435,22 @@ FileHandler::FileHandler(char* filename, Robot *robot, SimulationOpenRave *simuE
 }
 
 // CONSTRUCTOR FOR EXTRACTING PARAMETERS FROM GENE FILE
-FileHandler::FileHandler(char* filename, Robot *robot, SimulationOpenRave *simuEnv, Controller *controller, Flood::MultilayerPerceptron *mlp, Flood::Matrix<double>* population)
+FileHandler::FileHandler(char* gene_filename, Robot *robot, SimulationOpenRave *simuEnv, Controller *controller, Flood::MultilayerPerceptron *mlp, Flood::Matrix<double>* population, std::vector<std::string>* generation_index)
 {
-  std::fstream file;
-  file.open(filename, std::ios::in);
-  if(!file.is_open())
+  std::fstream gene_file;
+  gene_file.open(gene_filename, std::ios::in);
+  if(!gene_file.is_open())
   {
     std::cerr << "Morphomotion Error: FileHandler class." << std::endl
-              << "FileHandler(char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*)" << std::endl
-              << "Cannot open Parameter file: "<< filename  << std::endl;
+              << "FileHandler(char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, std::vector<std::string>*)" << std::endl
+              << "Cannot open Parameter file: "<< gene_filename  << std::endl;
     exit(1);
   }
 
   std::string line;
   std::string word;
 
-  getline(file, line);
+  getline(gene_file, line);
 
   if(line != "<Morphomotion: Flood + OpenRave + Y1>")
   {
@@ -463,7 +462,7 @@ FileHandler::FileHandler(char* filename, Robot *robot, SimulationOpenRave *simuE
   }
 
   // File type
-  file >> word;
+  gene_file >> word;
 
   if(word != "<FileType>")
   {
@@ -474,7 +473,7 @@ FileHandler::FileHandler(char* filename, Robot *robot, SimulationOpenRave *simuE
     exit(1);
   }
 
-  file >> word;
+  gene_file >> word;
 
   if(word != "GeneFile")
   {
@@ -485,7 +484,7 @@ FileHandler::FileHandler(char* filename, Robot *robot, SimulationOpenRave *simuE
     exit(1);
   }
 
-  file >> word;
+  gene_file >> word;
 
   if(word != "</FileType>")
   {
@@ -498,39 +497,151 @@ FileHandler::FileHandler(char* filename, Robot *robot, SimulationOpenRave *simuE
 
   do
   {
-    file >> word;
+    gene_file >> word;
 
     if(word == "<Robot>")
     {
-      load_Robot_parameters(file, robot);
+      load_Robot_parameters(gene_file, robot);
     }
 
     if(word == "<SimulationEnvironment>")
     {
-      load_SimEnv_parameters(file, simuEnv);
+      load_SimEnv_parameters(gene_file, simuEnv);
     }
 
     if(word == "<Controller>")
     {
-      load_Controller_parameters(file, controller);
+      load_Controller_parameters(gene_file, controller);
     }
 
     else if(word == "<NeuralNetwork>")
     {
-      load_NN_parameters(file, mlp);
+      load_NN_parameters(gene_file, mlp);
     }
 
     else if(word == "<IndependentParameters>")
     {
-      load_independent_parameters(file, mlp);
+      load_independent_parameters(gene_file, mlp);
     }
 
     else if(word == "<Gene>")
     {
-      load_genes(file, mlp, population);
+      load_genes(gene_file, mlp, population, generation_index);
     }
   }while(word != "</Morphomotion>");
-  file.close();
+  gene_file.close();
+}
+
+
+// CONSTRUCTOR FOR EXTRACTING PARAMETERS FROM GENE FILE AND FITNESS FILE
+FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Robot *robot, SimulationOpenRave *simuEnv, Controller *controller, Flood::MultilayerPerceptron *mlp, Flood::Matrix<double>* population, std::vector<std::string>* generation_index, std::vector<double>* elite_fitness)
+{
+  std::fstream gene_file;
+  std::fstream fitness_file;
+
+  gene_file.open(gene_filename, std::ios::in);
+  if(!gene_file.is_open())
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "FileHandler(char*, char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, Flood::Vector<std::string>*, Flood::Vector<double>*)" << std::endl
+              << "Cannot open Parameter file: "<< gene_filename  << std::endl;
+    exit(1);
+  }
+
+  fitness_file.open(fitness_filename, std::ios::in);
+  if(!fitness_file.is_open())
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "FileHandler(char*, char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, Flood::Vector<std::string>*, Flood::Vector<double>*)" << std::endl
+              << "Cannot open Fitness file: "<< fitness_filename  << std::endl;
+    exit(1);
+  }
+
+  std::string line;
+  std::string word;
+
+  getline(gene_file, line);
+
+  if(line != "<Morphomotion: Flood + OpenRave + Y1>")
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "FileHandler(char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*)" << std::endl
+              << "Unknown file declaration: " << line << std::endl;
+
+    exit(1);
+  }
+
+  // File type
+  gene_file >> word;
+
+  if(word != "<FileType>")
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "FileHandler(char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*)" << std::endl
+              << "Unknown file type begin tag: " << word << std::endl;
+
+    exit(1);
+  }
+
+  gene_file >> word;
+
+  if(word != "GeneFile")
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "FileHandler(char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*)" << std::endl
+              << "Unknown file type: " << word << std::endl;
+
+    exit(1);
+  }
+
+  gene_file >> word;
+
+  if(word != "</FileType>")
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "FileHandler(char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*)" << std::endl
+              << "Unknown file type end tag: " << word << std::endl;
+
+    exit(1);
+  }
+
+  do
+  {
+    gene_file >> word;
+
+    if(word == "<Robot>")
+    {
+      load_Robot_parameters(gene_file, robot);
+    }
+
+    if(word == "<SimulationEnvironment>")
+    {
+      load_SimEnv_parameters(gene_file, simuEnv);
+    }
+
+    if(word == "<Controller>")
+    {
+      load_Controller_parameters(gene_file, controller);
+    }
+
+    else if(word == "<NeuralNetwork>")
+    {
+      load_NN_parameters(gene_file, mlp);
+    }
+
+    else if(word == "<IndependentParameters>")
+    {
+      load_independent_parameters(gene_file, mlp);
+    }
+
+    else if(word == "<Gene>")
+    {
+      load_genes(gene_file, mlp, population, generation_index);
+    }
+  }while(word != "</Morphomotion>");
+  gene_file.close();
+
+  load_elite_fitness(fitness_file, elite_fitness);
 }
 
 
@@ -1075,7 +1186,7 @@ void FileHandler::load_independent_parameters(std::fstream& file, Flood::Multila
 }
 
 
-void FileHandler::load_genes(std::fstream& file, Flood::MultilayerPerceptron *mlp, Flood::Matrix<double>* population)
+void FileHandler::load_genes(std::fstream& gene_file, Flood::MultilayerPerceptron *mlp, Flood::Matrix<double>* population, std::vector<std::string>* generation_index)
 {
    std::string word;
    int parametersNumber = mlp->get_parameters_number();
@@ -1084,7 +1195,7 @@ void FileHandler::load_genes(std::fstream& file, Flood::MultilayerPerceptron *ml
    population->set(1, parametersNumber);
 
 
-   file >> word;
+   gene_file >> word;
    if(word != "Generation_0:" && word != "Generation_1:")
    {
       std::cerr << "Morphomotion Error: FileHandler Class." << std::endl
@@ -1095,13 +1206,33 @@ void FileHandler::load_genes(std::fstream& file, Flood::MultilayerPerceptron *ml
 
    do
    {
+      // Adding generation_index.
+      generation_index->push_back(word);
+
       for(int j = 0; j < parametersNumber; j++)
       {
-         file >> individual[j];
+         gene_file >> individual[j];
       }
       population->add_row(individual);
-      file >> word;
+      gene_file >> word;
    }while(word != "</Gene>");
+}
+
+
+void FileHandler::load_elite_fitness(std::fstream& fitness_file, std::vector<double>* elite_fitness)
+{
+  double fitness;
+
+  do
+  {
+    fitness_file >> fitness; // index number (Discarded)
+
+    fitness_file >> fitness; // Best Fitness
+    elite_fitness->push_back(fitness);
+
+    fitness_file >> fitness; // Average Fitness (Discarded)
+    fitness_file >> fitness; // Worst Fitness (Discarded)
+  }while(!fitness_file.eof());
 }
 
 
