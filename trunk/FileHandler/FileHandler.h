@@ -53,7 +53,10 @@ public:
   FileHandler(char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*);
 
   // CONSTRUCTOR FOR EXTRACTING PARAMETERS FROM GENE FILE
-  FileHandler(char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*);
+  FileHandler(char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, std::vector<std::string>*);
+
+  // CONSTRUCTOR FOR EXTRACTING PARAMETERS FROM GENE FILE AND FITNESS FILE
+  FileHandler(char*, char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, std::vector<std::string>*, std::vector<double>*);
 
   // DESTRUCTOR
   virtual ~FileHandler(void);
@@ -66,7 +69,8 @@ public:
   void load_Controller_parameters(std::fstream&, Controller*);
   void load_NN_parameters(std::fstream&, Flood::MultilayerPerceptron*);
   void load_independent_parameters(std::fstream&, Flood::MultilayerPerceptron*);
-  void load_genes(std::fstream&, Flood::MultilayerPerceptron*, Flood::Matrix<double>*);
+  void load_genes(std::fstream&, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, std::vector<std::string>*);
+  void load_elite_fitness(std::fstream&, std::vector<double>*);
 };
 
 #endif
