@@ -58,6 +58,12 @@ public:
   // CONSTRUCTOR FOR EXTRACTING PARAMETERS FROM GENE FILE AND FITNESS FILE
   FileHandler(char*, char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, std::vector<std::string>*, std::vector<double>*);
 
+  // CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE
+  FileHandler(char*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, std::vector<std::string>*);
+
+  // CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE AND FITNESS FILE
+  FileHandler(char*, char*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, std::vector<std::string>*, std::vector<double>*);
+
   // DESTRUCTOR
   virtual ~FileHandler(void);
 

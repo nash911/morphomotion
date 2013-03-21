@@ -565,7 +565,7 @@ FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Robot *rob
   if(line != "<Morphomotion: Flood + OpenRave + Y1>")
   {
     std::cerr << "Morphomotion Error: FileHandler class." << std::endl
-              << "FileHandler(char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*)" << std::endl
+              << "FileHandler(char*, char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, Flood::Vector<std::string>*, Flood::Vector<double>*)" << std::endl
               << "Unknown file declaration: " << line << std::endl;
 
     exit(1);
@@ -577,7 +577,7 @@ FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Robot *rob
   if(word != "<FileType>")
   {
     std::cerr << "Morphomotion Error: FileHandler class." << std::endl
-              << "FileHandler(char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*)" << std::endl
+              << "FileHandler(char*, char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, Flood::Vector<std::string>*, Flood::Vector<double>*)" << std::endl
               << "Unknown file type begin tag: " << word << std::endl;
 
     exit(1);
@@ -588,7 +588,7 @@ FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Robot *rob
   if(word != "GeneFile")
   {
     std::cerr << "Morphomotion Error: FileHandler class." << std::endl
-              << "FileHandler(char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*)" << std::endl
+              << "FileHandler(char*, char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, Flood::Vector<std::string>*, Flood::Vector<double>*)" << std::endl
               << "Unknown file type: " << word << std::endl;
 
     exit(1);
@@ -599,7 +599,7 @@ FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Robot *rob
   if(word != "</FileType>")
   {
     std::cerr << "Morphomotion Error: FileHandler class." << std::endl
-              << "FileHandler(char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*)" << std::endl
+              << "FileHandler(char*, char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, Flood::Vector<std::string>*, Flood::Vector<double>*)" << std::endl
               << "Unknown file type end tag: " << word << std::endl;
 
     exit(1);
@@ -625,6 +625,187 @@ FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Robot *rob
     }
 
     else if(word == "<NeuralNetwork>")
+    {
+      load_NN_parameters(gene_file, mlp);
+    }
+
+    else if(word == "<IndependentParameters>")
+    {
+      load_independent_parameters(gene_file, mlp);
+    }
+
+    else if(word == "<Gene>")
+    {
+      load_genes(gene_file, mlp, population, generation_index);
+    }
+  }while(word != "</Morphomotion>");
+  gene_file.close();
+
+  load_elite_fitness(fitness_file, elite_fitness);
+}
+
+
+// CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE
+FileHandler::FileHandler(char* gene_filename, Flood::MultilayerPerceptron *mlp, Flood::Matrix<double>* population, std::vector<std::string>* generation_index)
+{
+  std::fstream gene_file;
+  gene_file.open(gene_filename, std::ios::in);
+  if(!gene_file.is_open())
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "FileHandler(char*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, std::vector<std::string>*)" << std::endl
+              << "Cannot open Parameter file: "<< gene_filename  << std::endl;
+    exit(1);
+  }
+
+  std::string line;
+  std::string word;
+
+  getline(gene_file, line);
+
+  if(line != "<Morphomotion: Flood + OpenRave + Y1>")
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "FileHandler(char*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, std::vector<std::string>*)" << std::endl
+              << "Unknown file declaration: " << line << std::endl;
+
+    exit(1);
+  }
+
+  // File type
+  gene_file >> word;
+
+  if(word != "<FileType>")
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "FileHandler(char*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, std::vector<std::string>*)" << std::endl
+              << "Unknown file type begin tag: " << word << std::endl;
+
+    exit(1);
+  }
+
+  gene_file >> word;
+
+  if(word != "GeneFile")
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "FileHandler(char*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, std::vector<std::string>*)" << std::endl
+              << "Unknown file type: " << word << std::endl;
+
+    exit(1);
+  }
+
+  gene_file >> word;
+
+  if(word != "</FileType>")
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "FileHandler(char*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, std::vector<std::string>*)" << std::endl
+              << "Unknown file type end tag: " << word << std::endl;
+
+    exit(1);
+  }
+
+  do
+  {
+    gene_file >> word;
+
+    if(word == "<NeuralNetwork>")
+    {
+      load_NN_parameters(gene_file, mlp);
+    }
+
+    else if(word == "<IndependentParameters>")
+    {
+      load_independent_parameters(gene_file, mlp);
+    } // TODO: This should be removed after confirming that this is not needed.
+
+    else if(word == "<Gene>")
+    {
+      load_genes(gene_file, mlp, population, generation_index);
+    }
+  }while(word != "</Morphomotion>");
+  gene_file.close();
+}
+
+
+// CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE AND FITNESS FILE
+FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Flood::MultilayerPerceptron *mlp, Flood::Matrix<double>* population, std::vector<std::string>* generation_index, std::vector<double>* elite_fitness)
+{
+  std::fstream gene_file;
+  std::fstream fitness_file;
+
+  gene_file.open(gene_filename, std::ios::in);
+  if(!gene_file.is_open())
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "FileHandler(char*, char*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, Flood::Vector<std::string>*, Flood::Vector<double>*)" << std::endl
+              << "Cannot open Parameter file: "<< gene_filename  << std::endl;
+    exit(1);
+  }
+
+  fitness_file.open(fitness_filename, std::ios::in);
+  if(!fitness_file.is_open())
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "FileHandler(char*, char*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, Flood::Vector<std::string>*, Flood::Vector<double>*)" << std::endl
+              << "Cannot open Fitness file: "<< fitness_filename  << std::endl;
+    exit(1);
+  }
+
+  std::string line;
+  std::string word;
+
+  getline(gene_file, line);
+
+  if(line != "<Morphomotion: Flood + OpenRave + Y1>")
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "FileHandler(char*, char*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, Flood::Vector<std::string>*, Flood::Vector<double>*)" << std::endl
+              << "Unknown file declaration: " << line << std::endl;
+
+    exit(1);
+  }
+
+  // File type
+  gene_file >> word;
+
+  if(word != "<FileType>")
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "FileHandler(char*, char*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, Flood::Vector<std::string>*, Flood::Vector<double>*)" << std::endl
+              << "Unknown file type begin tag: " << word << std::endl;
+
+    exit(1);
+  }
+
+  gene_file >> word;
+
+  if(word != "GeneFile")
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "FileHandler(char*, char*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, Flood::Vector<std::string>*, Flood::Vector<double>*)" << std::endl
+              << "Unknown file type: " << word << std::endl;
+
+    exit(1);
+  }
+
+  gene_file >> word;
+
+  if(word != "</FileType>")
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "FileHandler(char*, char*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, Flood::Vector<std::string>*, Flood::Vector<double>*)" << std::endl
+              << "Unknown file type end tag: " << word << std::endl;
+
+    exit(1);
+  }
+
+  do
+  {
+    gene_file >> word;
+
+    if(word == "<NeuralNetwork>")
     {
       load_NN_parameters(gene_file, mlp);
     }
