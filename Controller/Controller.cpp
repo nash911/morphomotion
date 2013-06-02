@@ -270,6 +270,18 @@ bool Controller::run_Controller(const std::string& type, int memberID, int gener
 
         isFirstStep[0] = false;
       }
+
+      read_servo_positions_with_time();
+
+      //-- Without the following cleanup of the servo_feedback_history vector, it grows indefinately, and leads to memory-leak.
+      for(unsigned int module=0; module<number_of_modules; module++)
+      {
+        for(unsigned int n=0; n<servo_feedback_history[module].size(); n++)
+        {
+          delete servo_feedback_history[module][n];
+        }
+        servo_feedback_history[module].resize(0);
+      }
     }
     else
     {
@@ -289,21 +301,23 @@ bool Controller::run_Controller(const std::string& type, int memberID, int gener
         if(servo_delta < servo_delta_threshold || (servo_derivative != NULL && servo_derivative < servo_derivative_threshold))
         {
 
+/***************************************************************** Debugger ***********************************************************/
 #ifdef DEBUGGER
           if(module==0)
           {
             std::cout << "Count: " << evaluation_elapsed_time/1000 << "    Output[" << module << "]: " << output[module] << "    Feedback Self: " << current_servo_angle[module] << "    Feed Back Diff: " << servo_delta << "    Servo Delta: " << servo_derivative;
           }
 #endif
+/***************************************************************** Debugger ***********************************************************/
 
-/******************************************************** Debugger ********************************************************/
+/*************************************************************** Activity Log *********************************************************/
 #ifdef ACTIVITY_LOG
           if(type == "evaluation")
           {
             std::cout << generation << " -->    " << evaluation_elapsed_time/1000 << ":  Previous Output[" << module << "]: " << previous_cycle_output[module] << "   Actual Angle: " << servo_feedback[module]->get_servo_position() << "   Current Output[" << module << "]: " << output[module];
           }
 #endif
-/******************************************************** Debugger ********************************************************/
+/*************************************************************** Activity Log *********************************************************/
 
           //-- Storing the output of the previous cycle.
           previous_cycle_output[module] = output[module];
@@ -339,7 +353,7 @@ bool Controller::run_Controller(const std::string& type, int memberID, int gener
             }
             else
             {
-                std::cout << std::endl << "Did not update oscillation short history" << std::endl; // TODO: Debugger to be removed.
+              std::cout << std::endl << "Did not update oscillation short history" << std::endl; // TODO: Debugger to be removed.
             }
           }
           else
@@ -377,10 +391,23 @@ bool Controller::run_Controller(const std::string& type, int memberID, int gener
       }
     }
 
+#ifdef Y1_CONFIGURATION
+    robot_secondary->step(type);
+#ifdef OPENRAVE_CONFIGURATION
+    robot_primary->step(type);
+#endif
+    evaluation_elapsed_time = robot_secondary->get_elapsed_evaluation_time();
+#else
     robot_primary->step(type);
     evaluation_elapsed_time = robot_primary->get_elapsed_evaluation_time();
+#endif
 
-    //stepSize++; // Not needed any more.
+    //-- Record trajectory
+    if(oscAnlz && oscAnlz->get_record_servo())
+    {
+      oscAnlz->write_trajectory();
+    }
+    //std::cout << "evaluation_window = " << evaluation_window << "    evaluation_elapsed_time = " << evaluation_elapsed_time << std::endl; // TODO: Debugger to be removed.
   }while(evaluation_elapsed_time < evaluation_window);
 
   if(controller_type == Sinusoidal_Controller)
@@ -442,7 +469,11 @@ void Controller::actuate_module(int module, double output)
 
 void Controller::read_servo_positions_with_time() // TODO: This should be implemented as a seperate thread.
 {
+#ifdef Y1_CONFIGURATION
+  robot_secondary->get_all_moduleServo_position_with_time(servo_feedback);
+#else
   robot_primary->get_all_moduleServo_position_with_time(servo_feedback);
+#endif
 
 /**********************************************************TEMP FIX**************************************************************************/
 /*TODO: This is a temprory fix. Need to write servo value along with actual time [X-axis] into graph file.*/

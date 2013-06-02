@@ -47,6 +47,7 @@ private:
   bool record_offset;
   bool record_frequency;
   bool record_phase;
+  bool record_trajectory;
 
   GraphFile *servo_graph_file;
   GraphFile *amplitude_graph_file;
@@ -54,6 +55,7 @@ private:
   GraphFile *frequency_graph_file;
   GraphFile *phase_180_graph_file;
   GraphFile *phase_360_graph_file;
+  GraphFile *trajectory_graph_file;
 
 public:
   OscillationAnalyzer_OutputSignal(Robot*);
@@ -65,6 +67,7 @@ public:
   void calculate_frequency(unsigned int);
 
   bool get_record_servo(void);
+  bool get_record_trajectory(void);
 
   void set_record_servo(const bool);
   void set_estimate_amplitude_offset(const bool);
@@ -74,6 +77,7 @@ public:
   void set_record_frequency(const bool);
   void set_estimate_phase(const bool);
   void set_record_phase(const bool);
+  void set_record_trajectory(const bool);
 
   unsigned int get_phase_graph_size(void);
 
@@ -82,6 +86,7 @@ public:
   void write_offset(void);
   void write_frequency(void);
   void write_phase(void);
+  void write_trajectory(void);
 };
 
 #endif
