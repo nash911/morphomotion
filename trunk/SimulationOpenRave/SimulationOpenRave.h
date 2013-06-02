@@ -51,6 +51,8 @@ public:
   void load_controller(std::string);
   void set_scene_file_name(const std::string);
   std::string get_scene_file_name(void);
+  void init_elapsed_evaluation_time(void);
+  void update_elapsed_evaluation_time(void);
   void set_simu_resolution_microseconds(double);
   double get_simu_resolution_microseconds(void);
   Vector get_robot_XY();
@@ -63,10 +65,12 @@ public:
   double get_moduleServo_position(unsigned int);
   std::vector<double> get_all_moduleServo_position(void); // TODO: This should be removed after implementing get_all_moduleServo_position_with_time().
   void get_all_moduleServo_position_with_time(vector<ServoFeedback*>&);
-  void init_elapsed_evaluation_time(void);
+  //void init_elapsed_evaluation_time(void);
   unsigned long get_elapsed_evaluation_time(void);
   double calculate_distance_travelled_euclidean(void);
   void measure_cumulative_distance(void);
+  double get_robot_X(void);
+  double get_robot_Y(void);
   unsigned long step(const std::string&);
 
 private:

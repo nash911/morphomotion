@@ -133,6 +133,9 @@ int main(int argc, char* argv[])
   /*simuOR_robot.set_scene_file_name("../models/Minicube-I.env.xml");
   robot_primary->set_number_of_modules(2);*/
 
+  /*simuOR_robot.set_scene_file_name("../models/Minicube-I-Sym.env.xml");
+  robot_primary->set_number_of_modules(2);*/
+
   /*simuOR_robot.set_scene_file_name("../models/Tripod.env.xml");
   robot_primary->set_number_of_modules(3);*/
 
@@ -145,6 +148,9 @@ int main(int argc, char* argv[])
   /*simuOR_robot.set_scene_file_name("../models/Lizard/Lizard.env.xml");
   robot_primary->set_number_of_modules(6);*/
 
+  /*simuOR_robot.set_scene_file_name("../models/Lizard.env.xml");
+  robot_primary->set_number_of_modules(6);*/
+
   /*simuOR_robot.set_scene_file_name("../models/Leggy_3DOF/Leggy_3DOF.env.xml");
   robot_primary->set_number_of_modules(15);*/
 
@@ -152,11 +158,11 @@ int main(int argc, char* argv[])
   controller.init_controller();
   population.subtract_row(0);
 
-  //Y1ModularRobot y1_robot;
-  /*Y1ModularRobot y1_robot(robot_primary);
+  //-- To evaluate a controller on a Y1 configuration
+  Y1ModularRobot y1_robot(robot_primary);
   robot_secondary = &y1_robot;
   y1_robot.set_serial_port(argv[1], BAUD_RATE);
-  controller.set_robot_secondary(&y1_robot);*/
+  controller.set_robot_secondary(&y1_robot);
 
   //robot_primary->set_evaluation_method("Euclidean_Distance_Final");  // Debugger;
   robot_primary->set_evaluation_method("Euclidean_Distance_Cumulative");  // Debugger;
@@ -168,10 +174,13 @@ int main(int argc, char* argv[])
   // Output Layer Activation Function
   mlp.set_output_layer_activation_function("HyperbolicTangent");
 
-  controller.set_evaluation_period(100);
+  controller.set_evaluation_period(200);
 
   Flood::Vector<double> individual(mlp.get_parameters_number());
   int population_size = population.get_rows_number();
+  
+  //controller.set_servo_max(70.0); // TODO: This is for test only, and should be removed.
+  //controller.set_servo_min(-70.0); // TODO: This is for test only, and should be removed.
 
   if(evaluate_best_individual)
   {
@@ -215,14 +224,19 @@ int main(int argc, char* argv[])
 
       mlp.set_parameters(individual);
 
+#ifdef Y1_CONFIGURATION
+      OscillationAnalyzer_OutputSignal oscAnlz(robot_secondary);
+#else
       OscillationAnalyzer_OutputSignal oscAnlz(robot_primary);
-      controller.set_oscillation_analyzer(&oscAnlz);
+#endif
 
+      controller.set_oscillation_analyzer(&oscAnlz);
       oscAnlz.set_record_servo(true);
       oscAnlz.set_record_amplitude(true);
       oscAnlz.set_record_offset(true);
       oscAnlz.set_record_frequency(true);
       oscAnlz.set_record_phase(true);
+      oscAnlz.set_record_trajectory(true);
 
       controller.run_Controller("evaluation",1,best_individual_fitness_index+1,1);
 
@@ -257,14 +271,19 @@ int main(int argc, char* argv[])
 
       std::cout << std::endl << individual << std::endl << std::endl;
 
+#ifdef Y1_CONFIGURATION
+      OscillationAnalyzer_OutputSignal oscAnlz(robot_secondary);
+#else
       OscillationAnalyzer_OutputSignal oscAnlz(robot_primary);
-      controller.set_oscillation_analyzer(&oscAnlz);
+#endif
 
+      controller.set_oscillation_analyzer(&oscAnlz);
       oscAnlz.set_record_servo(true);
       oscAnlz.set_record_amplitude(true);
       oscAnlz.set_record_offset(true);
       oscAnlz.set_record_frequency(true);
       oscAnlz.set_record_phase(true);
+      oscAnlz.set_record_trajectory(true);
 
       controller.run_Controller("evaluation",1,i,1);
 

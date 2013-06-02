@@ -24,12 +24,16 @@
 
 #define BAUD_RATE 115200
 
+#define MAX_POLL_TRIALS 10
+
 using namespace std;
 
 class Y1ModularRobot: public Robot
 {
 
 public:
+
+  enum MessageType{Request_ServoTime, Request_Time, None};
 
   // DEFAULT CONSTRUCTOR
   Y1ModularRobot();
@@ -46,8 +50,13 @@ public:
   // METHODS
   void set_default_parameters(void);
   bool set_serial_port(const std::string&, int);
+  void set_elapsed_evaluation_time(unsigned long);
+  void init_elapsed_evaluation_time(unsigned long);
   bool get_message(char*);
+  bool get_message_with_time(char*);
   bool decode_message(const char[], vector<double>&);
+  bool decode_message_with_time(const char[], vector<double>&);
+  void get_current_time(void);
   std::vector<double> get_robot_XY();
 
   // INHERITED METHODS
@@ -58,10 +67,12 @@ public:
   double get_moduleServo_position(unsigned int);
   std::vector<double> get_all_moduleServo_position(void); // TODO: This should be removed after implementing get_all_moduleServo_position_with_time().
   void get_all_moduleServo_position_with_time(vector<ServoFeedback*>&);
-  void init_elapsed_evaluation_time(void);
+  //void init_elapsed_evaluation_time(void);
   unsigned long get_elapsed_evaluation_time(void);
   double calculate_distance_travelled_euclidean(void);
   void measure_cumulative_distance(void);
+  double get_robot_X(void);
+  double get_robot_Y(void);
   unsigned long step(const std::string&);
 
 private:

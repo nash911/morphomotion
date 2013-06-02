@@ -100,4 +100,10 @@ add_executable(NeuralModelEvaluator
 
 TARGET_LINK_LIBRARIES(NeuralModelEvaluator ${OPENRAVE_CORE_LIBRARY})
 
+add_executable(SerialCommunicationEvaluator
+  SerialCommunication/SerialCommunicationEvaluator.cpp
+  SerialCommunication/SerialCommunication.c
+)
 
+### opencv executable
+TARGET_LINK_LIBRARIES(SerialCommunicationEvaluator)

@@ -403,7 +403,7 @@ std::vector<double> SimulationOpenRave::get_all_moduleServo_position() // TODO: 
 void SimulationOpenRave::get_all_moduleServo_position_with_time(vector<ServoFeedback*>& servo_feedback)
 {
   stringstream os,is;
-  double angle;
+  double angle = 21.0; // This value set to 21.0 as a way of detecting when a failuer to read module position occurs.
 
   for(int module=0; module<number_of_modules; module++)
   {
@@ -411,15 +411,21 @@ void SimulationOpenRave::get_all_moduleServo_position_with_time(vector<ServoFeed
     pcontroller->SendCommand(os,is);
     os >> angle;
     servo_feedback[module]->set_new_value(elapsed_evaluation_time, angle);
+    //std::cout << "Inside for(;;) --> Module: " << module << std::endl; // TODO: Debugger to be removed.
   }
 }
 
 
 void SimulationOpenRave::init_elapsed_evaluation_time(void)
 {
- elapsed_evaluation_time = 0;
+  elapsed_evaluation_time = 0;
 }
 
+
+void SimulationOpenRave::update_elapsed_evaluation_time(void)
+{
+  elapsed_evaluation_time = elapsed_evaluation_time + (simu_resolution_microseconds * 1000000);
+}
 
 unsigned long SimulationOpenRave::get_elapsed_evaluation_time(void)
 {
@@ -444,16 +450,35 @@ void SimulationOpenRave::measure_cumulative_distance(void)
 }
 
 
+double SimulationOpenRave::get_robot_X(void)
+{
+  Vector robot_pos_current = probot->GetCenterOfMass();  // TODO: To be changed to get_robot_XY();
+  double robot_X = robot_pos_current.x;
+  return(robot_X);
+}
+
+
+double SimulationOpenRave::get_robot_Y(void)
+{
+  Vector robot_pos_current = probot->GetCenterOfMass();  // TODO: To be changed to get_robot_XY();
+  double robot_Y = robot_pos_current.y;
+  return(robot_Y);
+}
+
+
 unsigned long SimulationOpenRave::step(const std::string& type)
 {
   penv->StepSimulation(simu_resolution_microseconds);
 
+#ifndef Y1_CONFIGURATION
   if(type == "evaluation")
   {
     usleep(get_simu_resolution_microseconds() * 1000000);  // Real-Time
+    //usleep(get_simu_resolution_microseconds() * 500000);  // Real-Time * 1/2
   }
 
-  elapsed_evaluation_time = elapsed_evaluation_time + (simu_resolution_microseconds * 1000000);
+  //elapsed_evaluation_time = elapsed_evaluation_time + (simu_resolution_microseconds * 1000000);
+  update_elapsed_evaluation_time();
 
   if(evaluation_method == Euclidean_Distance_Cumulative)
   {
@@ -462,6 +487,7 @@ unsigned long SimulationOpenRave::step(const std::string& type)
       measure_cumulative_distance();
     }
   }
+#endif
 
   return(elapsed_evaluation_time);  // TODO: A return value of elapsed_evaluation_time may not be needed. Check and change strategy.
 }

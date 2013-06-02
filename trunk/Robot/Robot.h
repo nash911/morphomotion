@@ -32,6 +32,9 @@
 
 #define CUMULATIVE_DISTENCE_MEASUREMENT_RESOLUTION 2
 
+#define OPENRAVE_CONFIGURATION
+#define Y1_CONFIGURATION
+
 using namespace std;
 
 class Robot
@@ -72,10 +75,12 @@ public:
   virtual double get_moduleServo_position(unsigned int) = 0;
   virtual std::vector<double> get_all_moduleServo_position(void) = 0;  // TODO: This should be removed after implementing get_all_moduleServo_position_with_time().
   virtual void get_all_moduleServo_position_with_time(vector<ServoFeedback*>&) = 0;
-  virtual void init_elapsed_evaluation_time(void) = 0;
+  //virtual void init_elapsed_evaluation_time(void) = 0;
   virtual unsigned long get_elapsed_evaluation_time(void) = 0;
   virtual double calculate_distance_travelled_euclidean(void) = 0;
   virtual void measure_cumulative_distance(void) = 0;
+  virtual double get_robot_X(void) = 0;
+  virtual double get_robot_Y(void) = 0;
   virtual unsigned long step(const std::string&) = 0;
 
 protected:
@@ -83,6 +88,7 @@ protected:
   RobotType robot_type;
   EvaluationMethod evaluation_method;
   unsigned int number_of_modules;
+  unsigned long initial_evaluation_time;
   unsigned long elapsed_evaluation_time;
   double distance_travelled;
 };

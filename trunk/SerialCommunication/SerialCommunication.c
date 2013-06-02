@@ -37,7 +37,7 @@
 
 #ifdef __linux__   /* Linux */
 
-#define POLL_TRIALS_MAX 150000
+#define POLL_TRIALS_MAX 15000
 
 int Cport[22],
     error;
@@ -188,7 +188,7 @@ int SendByte(int comport_number, unsigned char byte)
 
 int SendBuf(int comport_number, unsigned char *buf, int size)
 {
-/****************** Debugger ******************/
+/****************** Debugger ******************
   int i;
   printf("\n");
 	for(i=0; i<size; i++)
@@ -237,12 +237,20 @@ void flush_cport(int comport_number, int comm_id)
 {
   //printf("Flushing ComPort. \n");
   unsigned char inBuf[200];
-  int n;
-  n = PollComport(comport_number, inBuf, 200);
-  if(n > 0)
+  int n = 0;
+
+  do
   {
-    printf("Communication ID: %d -- Found data while flushing \n", comm_id);
-  }
+    n = PollComport(comport_number, inBuf, 200);
+    if(n > 0)
+    {
+      printf("Communication ID: %d -- Found data while flushing \n", comm_id);
+    }
+    else
+    {
+      printf("Found NO data while flushing \n", comm_id);
+    }
+  }while(n!=0);
   return;
 }
 

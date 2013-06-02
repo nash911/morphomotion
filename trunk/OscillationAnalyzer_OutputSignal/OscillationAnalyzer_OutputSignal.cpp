@@ -49,6 +49,7 @@ OscillationAnalyzer_OutputSignal::OscillationAnalyzer_OutputSignal(Robot* robot_
   record_offset = false;
   record_frequency = false;
   record_phase = false;
+  record_trajectory = false;
 
   servo_graph_file = NULL;
   amplitude_graph_file = NULL;
@@ -56,6 +57,7 @@ OscillationAnalyzer_OutputSignal::OscillationAnalyzer_OutputSignal(Robot* robot_
   frequency_graph_file = NULL;
   phase_180_graph_file = NULL;
   phase_360_graph_file = NULL;
+  trajectory_graph_file = NULL;
 }
 
 
@@ -164,6 +166,12 @@ bool OscillationAnalyzer_OutputSignal::get_record_servo(void)
 }
 
 
+bool OscillationAnalyzer_OutputSignal::get_record_trajectory(void)
+{
+  return(record_trajectory);
+}
+
+
 void OscillationAnalyzer_OutputSignal::set_estimate_amplitude_offset(const bool estimate_amplitude_offset_bool_value)
 {
   estimate_amplitude_offset = estimate_amplitude_offset_bool_value;
@@ -249,6 +257,18 @@ void OscillationAnalyzer_OutputSignal::set_record_phase(const bool record_phase_
     phase_360_graph_file = new GraphFile("../Evaluation_Files/phase360.dat");
 
     set_estimate_phase(true);
+  }
+}
+
+
+void OscillationAnalyzer_OutputSignal::set_record_trajectory(const bool record_trajectory_bool_value)
+{
+  record_servo = record_trajectory_bool_value;
+
+  if(record_trajectory_bool_value)
+  {
+    remove("../Evaluation_Files/trajectory.dat");
+    trajectory_graph_file = new GraphFile("../Evaluation_Files/trajectory.dat");
   }
 }
 
@@ -359,4 +379,15 @@ void OscillationAnalyzer_OutputSignal::write_phase(void)
     }
   }
   phase_360_graph_file->write(ss);
+}
+
+
+void OscillationAnalyzer_OutputSignal::write_trajectory()
+{
+  std::stringstream ss;
+
+  ss << 2 << " ";
+  ss << robot->get_robot_Y() << " " << robot->get_robot_X() << " "; // X-axis in micro seconds.
+
+  trajectory_graph_file->write(ss);
 }
