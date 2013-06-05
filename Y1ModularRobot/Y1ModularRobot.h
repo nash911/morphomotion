@@ -24,7 +24,8 @@
 
 #define BAUD_RATE 115200
 
-#define MAX_POLL_TRIALS 10
+//#define MAX_POLL_TRIALS 10  // For Wired-Communication between PC and Skymega
+#define MAX_POLL_TRIALS 14  // For XBEE-Communication between PC and Skymega
 
 using namespace std;
 

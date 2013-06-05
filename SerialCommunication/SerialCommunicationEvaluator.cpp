@@ -26,6 +26,8 @@
 
 #include "SerialCommunication.h"
 
+//#define BAUD_RATE 38400
+//#define BAUD_RATE 57600
 #define BAUD_RATE 115200
 
 unsigned int set_serial_port(const std::string& new_serial_port, int baud_rate)
@@ -100,6 +102,7 @@ int main(int argc, char* argv[])
 
   while(i < 1000000)
   {
+    //flush_cport(serial_port, 1);
     unsigned char outBuf[20] = {'#','%','1','%','&','4','&','*','4','5','.','0','*','$'};  // To request current servo position of all modules [PC to Skymega].
     cprintf(serial_port, (char *)outBuf); // Send message requesting currnt servo position of all modules to Skymega.
 
@@ -117,6 +120,7 @@ int main(int argc, char* argv[])
                                  'x','x','x','x','x','x','x','x','x','x',
                                  'x','x','x','x','x','x','x','x','x','x',
                                  'x','x','x','x','x','x','x','x','x','x'};
+
       n = PollComport(serial_port, inBuf, 4095);
       inBuf[n] = '\0'; // always put a "null" at the end of a string!
 
@@ -132,7 +136,8 @@ int main(int argc, char* argv[])
         foundEndBit = true;
       }
       poll_counter++;
-    }while(foundEndBit != true);
+    //}while(foundEndBit != true);
+    }while(foundEndBit != true && poll_counter <= 200);
 
     message[message_size] = '\0'; // always put a "null" at the end of a string!
 

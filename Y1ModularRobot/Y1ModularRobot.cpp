@@ -220,7 +220,7 @@ bool Y1ModularRobot::get_message_with_time(char* inString)
 
   inString[inString_size] = '\0'; // always put a "null" at the end of a string!
 
-  //std::cout << " --> Poll Counter = " << poll_trials << " --> " << inString << std::endl; // TODO: Debuggerto be removed
+  std::cout << " --> Poll Counter = " << poll_trials << " --> " << inString << std::endl; // TODO: Debuggerto be removed
 
   return(string_captured);
 }
@@ -371,7 +371,7 @@ bool Y1ModularRobot::decode_message_with_time(const char inString[], vector<doub
               case '4': { mType = Request_Time; break;}
               default: {  std::cerr << std::endl
                                     << "MorphoMotion Error: Y1ModularRobot class." << std::endl
-                                    << "void decode_message(const char[], vector<double>&) method." << std::endl
+                                    << "bool decode_message_with_time(const char[], vector<double>&) method." << std::endl
                                     << "Unknown Message Type: " << ch << std::endl;
                           return(false);  }
             }
@@ -396,7 +396,7 @@ bool Y1ModularRobot::decode_message_with_time(const char inString[], vector<doub
               case '4': { servo_address = 4; break; }
               default:  { std::cerr << std::endl
                                     << "MorphoMotion Error: Y1ModularRobot class." << std::endl
-                                    << "void decode_message(const char[], vector<double>&) method." << std::endl
+                                    << "bool decode_message_with_time(const char[], vector<double>&) method." << std::endl
                                     << "Invalid Servo Address: " << ch << std::endl;
                           return(false);  }
              }
@@ -427,7 +427,7 @@ bool Y1ModularRobot::decode_message_with_time(const char inString[], vector<doub
               case '9': { time_data.push_back(9); break; }
               default:  { std::cerr << std::endl
                                     << "MorphoMotion Error: Y1ModularRobot class." << std::endl
-                                    << "void decode_message(const char[], vector<double>&) method." << std::endl
+                                    << "bool decode_message_with_time(const char[], vector<double>&) method." << std::endl
                                     << "Invalid Time value: " << ch << std::endl;
                           return(false); }
             }
@@ -481,7 +481,7 @@ bool Y1ModularRobot::decode_message_with_time(const char inString[], vector<doub
   {
     std::cerr << std::endl
               << "MorphoMotion Error: Y1ModularRobot class." << std::endl
-              << "void decode_message(const char[], vector<double>&) method." << std::endl
+              << "bool decode_message_with_time(const char[], vector<double>&) method." << std::endl
               << "Unknown Message Frame Start Tag: " << ch << std::endl;
     return(false);
   }
@@ -714,6 +714,8 @@ void Y1ModularRobot::get_current_time(void)
 {
     std::vector<double> servo_feedback_angle;
 
+    std::cout << std::endl << std::endl << " INSIDE GET_CURRENT_TIME" << std::endl << std::endl;  // TODO: Debugger to be removed
+
     if(serial_port)
     {
       unsigned char outBuf[20] = {'#','%','3','%','&','4','&','$'};  // To request current time [PC to Skymega]. // TODO: 'To' address [&4&] should not be manditory. This should be changed in Arduino code as well.
@@ -750,6 +752,8 @@ void Y1ModularRobot::get_current_time(void)
                 << "Serial port not open." << std::endl;
       exit(1);
     }
+
+    std::cout << std::endl << std::endl << " LEAVING GET_CURRENT_TIME" << std::endl << std::endl;  // TODO: Debugger to be removed
 }
 
 
