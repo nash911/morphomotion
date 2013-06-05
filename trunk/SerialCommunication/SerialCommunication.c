@@ -248,7 +248,7 @@ void flush_cport(int comport_number, int comm_id)
     }
     else
     {
-      printf("Found NO data while flushing \n", comm_id);
+      //printf("Found NO data while flushing \n", comm_id);
     }
   }while(n!=0);
   return;
