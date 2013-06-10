@@ -33,26 +33,6 @@
 //#define CUMULATIVE_DISTANCE
 #define CUMULATIVE_DISTANCE_STEPSIZE 10
 
-#define RECORD_SERVO
-#define RECORD_FREQUENCY
-#define RECORD_PHASE
-#define RECORD_TRAJECTORY
-#define RESOLUTION 100
-
-//#define RECORD_REF_PHI
-//#define RECORD_REF
-//#define RECORD_PHI
-
-/*#define ACTUATE_SIMULATED_MODULES
-#define SIMULATION_REALTIME
-
-#define ACTUATE_REAL_MODULES
-#define READ_SERVO_REAL_MODULES
-
-#ifndef ACTUATE_REAL_MODULES
-  #define SIMULATION_REALTIME
-#endif*/
-
 //#define NOISE
 #define NOISE_MEAN 0
 #define NOISE_SD 5
@@ -66,16 +46,16 @@ class Controller
 public:
 
   enum StartAngleType{Zero, Random, RandomEqual, Predefined, RunTime};
-
-  //enum RobotType{Cube2_Sym_ServoFeedBack, Star3_ServoFeedBack, Star3_II_ServoFeedBack, CubeN_ServoFeedBack, CubePYP_ServoFeedBack, CubePYPYP_ServoFeedBack, Ybot4_ServoFeedBack, Ybot5_ServoFeedBack, QuadP_ServoFeedBack, DashHound_ServoFeedBack, Lizard_ServoFeedBack}; // TODO: To be removed
-
   enum ControllerType{Sinusoidal_Controller, Neural_Controller, Naive_Controller, Simple_Controller, Hybrid_Controller, Semi_Hybrid_Controller};
 
   // DEFAULT CONSTRUCTOR
   Controller(void);
 
-  // CONSTRUCTOR WITH MLP and ROBOT OBJECTS
+  // CONSTRUCTOR WITH MLP and ROBOT OBJECT
   Controller(Flood::MultilayerPerceptron*, Robot*);
+
+  // CONSTRUCTOR WITH MLP and PRIMARY and SECONDARY ROBOT OBJECTS
+  Controller(Flood::MultilayerPerceptron*, Robot*, Robot*);
 
 
   // DESTRUCTOR
@@ -144,8 +124,6 @@ private:
   Robot *robot_primary;
   Robot *robot_secondary;
   OscillationAnalyzer_OutputSignal *oscAnlz;
-
-  //RobotType robot_type; // TODO: To be removed
   ControllerType controller_type;
   double servo_max;
   double servo_min;
@@ -164,13 +142,6 @@ private:
   vector<double> sinusoidal_offset;
   vector<double> sinusoidal_phase;
   double sinusoidal_frequency;
-
-  // TODO: To be removed
-  /*GraphFile *real_servo_position_graph_file;
-  GraphFile *frequency_graph_file;
-  GraphFile *phase_graph_file_180;
-  GraphFile *phase_graph_file_360;
-  GraphFile *trajectory_file;*/
 };
 
 #endif

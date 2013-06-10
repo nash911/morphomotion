@@ -58,6 +58,7 @@ public:
   Vector get_robot_XY();
 
   // INHERITED METHODS
+  void copy(const Robot*);
   void reset_robot(void);
   void set_sinusoidal_controller_parameters(const vector<double>&, const vector<double>&, const vector<double>&, const double);
   void stop_sinusoidal_controller(void);
@@ -65,13 +66,13 @@ public:
   double get_moduleServo_position(unsigned int);
   std::vector<double> get_all_moduleServo_position(void); // TODO: This should be removed after implementing get_all_moduleServo_position_with_time().
   void get_all_moduleServo_position_with_time(vector<ServoFeedback*>&);
-  //void init_elapsed_evaluation_time(void);
   unsigned long get_elapsed_evaluation_time(void);
+  unsigned long get_previous_read_evaluation_time(void);
   double calculate_distance_travelled_euclidean(void);
   void measure_cumulative_distance(void);
   double get_robot_X(void);
   double get_robot_Y(void);
-  unsigned long step(const std::string&);
+  void step(const std::string&);
 
 private:
   EnvironmentBasePtr penv;
@@ -82,7 +83,6 @@ private:
   //Vector robot_pos_initial;
   Vector robot_pos_previous;
   double simu_resolution_microseconds;
-  //int unit_second; // TODO: To be removed.
 };
 
 #endif

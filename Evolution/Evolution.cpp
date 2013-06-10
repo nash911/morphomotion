@@ -32,24 +32,24 @@ Evolution::Evolution(MultilayerPerceptron* mlp)
 {
 }
 
-// GENERAL CONSTRUCTOR WITH SIMULATION ENVIRONMENT OBJECT
-Evolution::Evolution(MultilayerPerceptron* mlp, Robot* rbt, Controller* ctrl)
+//-- GENERAL CONSTRUCTOR WITH SIMULATION ENVIRONMENT OBJECT
+Evolution::Evolution(MultilayerPerceptron* mlp, Robot* robot_pointer, Controller* controller_pointer)
 :ObjectiveFunctional(mlp)
 {
-  robot = rbt;
-  controller = ctrl;
+  robot = robot_pointer;
+  controller = controller_pointer;
 }
 
 
-// DESTRUCTOR
+//-- DESTRUCTOR
 Evolution::~Evolution(void)
 {
 }
 
 
-// METHODS
+//-- METHODS
 
-// Default objective function for debugging purpose.
+//-- Default objective function for debugging purpose.
 double Evolution::calculate_objective(void)
 {
   double evaluation;
@@ -57,7 +57,7 @@ double Evolution::calculate_objective(void)
   return evaluation;
 }
 
-double Evolution::calculate_objective(int generation, int individual)  // TODO: To be removed from here and from ObjectiveFunction.h
+double Evolution::calculate_objective(int generation, int individual)  //-- TODO: To be removed from here and from ObjectiveFunction.h
 {
 }
 
@@ -93,7 +93,7 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
   }
 
   mean_distance = total_distance/evaluation_sample_size;
-  mean_speed = (mean_distance/controller->get_evaluation_period())*100;  // Mean speed calculated as cms/second.
+  mean_speed = (mean_distance/controller->get_evaluation_period())*100;  //-- Mean speed calculated as cms/second.
 
   return(mean_speed);
 }

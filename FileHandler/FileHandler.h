@@ -47,7 +47,6 @@ public:
 
   // CONSTRUCTOR FOR SAVING ELITE GENE POPULATION
   FileHandler(std::string, bool, bool, Flood::EvolutionaryAlgorithm*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*);
-  //FileHandler(std::string, bool, bool, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*); // Without Flood::EvolutionaryAlgorithm*
 
   // CONSTRUCTOR FOR EXTRACTING PARAMETERS FROM PARAMETERS FILE
   FileHandler(char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*);

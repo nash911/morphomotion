@@ -40,6 +40,20 @@ Controller::Controller(Flood::MultilayerPerceptron* mlp_pointer, Robot* pointer_
 }
 
 
+Controller::Controller(Flood::MultilayerPerceptron* mlp_pointer, Robot* pointer_robot_primary, Robot* pointer_robot_secondary)
+{
+  //-- Set default parameters.
+  set_default();
+
+  //-- Multi Layer Perceptron pointer.
+  mlp = mlp_pointer;
+
+  //-- Robot pointer.
+  robot_primary = pointer_robot_primary;
+  robot_secondary= pointer_robot_secondary;
+}
+
+
 // DESTRUCTOR
 Controller::~Controller(void)
 {
@@ -94,8 +108,8 @@ void Controller::init_controller()
 
 void Controller::set_default(void)
 {
+  robot_primary =  NULL;
   robot_secondary = NULL;
-  //robot_type = CubeN_ServoFeedBack; // TODO: To be removed
   controller_type = Neural_Controller;
   servo_max = 90.0;
   servo_min = -90.0;
@@ -109,13 +123,6 @@ void Controller::set_default(void)
   oscillator_offset = 0;
   mlp = NULL;
   oscAnlz = NULL;
-
-  // TODO: To be removed
-  /*real_servo_position_graph_file = NULL;
-  frequency_graph_file = NULL;
-  phase_graph_file_180 = NULL;
-  phase_graph_file_360 = NULL;
-  trajectory_file = NULL;*/
 }
 
 
@@ -247,16 +254,19 @@ bool Controller::run_Controller(const std::string& type, int memberID, int gener
 
   double servo_delta = 0;
   double servo_derivative = NULL;
-  //unsigned int stepSize = 0;  // Not needed any more.
+
+  unsigned long previous_read_elapsed_time = 0;
   unsigned long evaluation_elapsed_time = 0;
   unsigned long evaluation_window = (unsigned long)evaluation_period * 1000000; // Converted to microseconds;
 
 //--------------Debugger Relater--------------//
-  int time_diff_counter[number_of_modules];
+  std::vector<unsigned long> oscillation_time(number_of_modules,0);
+  std::vector<int> time_diff_counter(number_of_modules,0);
+  /*int time_diff_counter[number_of_modules];
   for(int i=0; i<number_of_modules; i++)
   {
     time_diff_counter[i] = 0;
-  }
+  }*/
 //--------------Debugger Relater--------------//
 
   do
@@ -305,7 +315,7 @@ bool Controller::run_Controller(const std::string& type, int memberID, int gener
 #ifdef DEBUGGER
           if(module==0)
           {
-            std::cout << "Count: " << evaluation_elapsed_time/1000 << "    Output[" << module << "]: " << output[module] << "    Feedback Self: " << current_servo_angle[module] << "    Feed Back Diff: " << servo_delta << "    Servo Delta: " << servo_derivative;
+            std::cout << "Count: " << evaluation_elapsed_time/1000 << "  Output[" << module << "]: " << output[module] << "  Feedback Self: " << current_servo_angle[module] << "  Feed Back Diff: " << servo_delta << "  Servo Delta: " << servo_derivative;
           }
 #endif
 /***************************************************************** Debugger ***********************************************************/
@@ -314,7 +324,7 @@ bool Controller::run_Controller(const std::string& type, int memberID, int gener
 #ifdef ACTIVITY_LOG
           if(type == "evaluation")
           {
-            std::cout << generation << " -->    " << evaluation_elapsed_time/1000 << ":  Previous Output[" << module << "]: " << previous_cycle_output[module] << "   Actual Angle: " << servo_feedback[module]->get_servo_position() << "   Current Output[" << module << "]: " << output[module];
+            std::cout << generation << " -->  " << evaluation_elapsed_time/1000 << ": Previous Output[" << module << "]: " << previous_cycle_output[module] << "  Actual Angle: " << servo_feedback[module]->get_servo_position() << "  Current Output[" << module << "]: " << output[module];
           }
 #endif
 /*************************************************************** Activity Log *********************************************************/
@@ -353,7 +363,7 @@ bool Controller::run_Controller(const std::string& type, int memberID, int gener
             }
             else
             {
-              std::cout << std::endl << "Did not update oscillation short history" << std::endl; // TODO: Debugger to be removed.
+              //std::cout << std::endl << "Did not update oscillation short history" << std::endl; // TODO: Debugger to be removed.
             }
           }
           else
@@ -371,43 +381,53 @@ bool Controller::run_Controller(const std::string& type, int memberID, int gener
 #ifdef DEBUGGER
           if(module==0)
           {
-            std::cout << "    Next Output " << output[module] << "    Time Diff: " << time_diff_counter[module] << std::endl;
+            std::cout << "  Next Output " << output[module] << "  Time Diff: " << oscillation_time[module]  << "  Counter: " << time_diff_counter[module] << std::endl;
             time_diff_counter[module] = 0;
+            oscillation_time[module] = 0
           }
 #endif
 #ifdef ACTIVITY_LOG
           if(type == "evaluation")
           {
-            std::cout << "    Next Output[" << module << "]: " << output[module] << "    Time Diff: " << time_diff_counter[module] << std::endl;
+            std::cout << "  Next Output[" << module << "]: " << output[module] << "  Time Diff: " << oscillation_time[module] << "  Counter: " << time_diff_counter[module] << std::endl;
             time_diff_counter[module] = 0;
+            oscillation_time[module] = 0;
           }
 #endif
         }
         else // This is for Debugger only
         {
           time_diff_counter[module]++;
-          //OscDat->increment_frequencyCounter(module);  // TODO
+          oscillation_time[module] = oscillation_time[module] + (evaluation_elapsed_time - previous_read_elapsed_time);
         }
       }
     }
 
-#ifdef Y1_CONFIGURATION
-    robot_secondary->step(type);
-#ifdef OPENRAVE_CONFIGURATION
     robot_primary->step(type);
-#endif
-    evaluation_elapsed_time = robot_secondary->get_elapsed_evaluation_time();
-#else
-    robot_primary->step(type);
+    previous_read_elapsed_time = robot_primary->get_previous_read_evaluation_time();
     evaluation_elapsed_time = robot_primary->get_elapsed_evaluation_time();
-#endif
+
+    if(robot_secondary != NULL)
+    {
+      if(robot_secondary->get_robot_environment() == "SimulationOpenRave")
+      {
+        //-- Stepping through simulation as many time as needed to be in sync with the realtime evaluation of Y1.
+        do
+        {
+          robot_secondary->step(type);
+        }while(robot_secondary->get_elapsed_evaluation_time() <= evaluation_elapsed_time);
+      }
+      else if(robot_secondary->get_robot_type() == "Y1")
+      {
+        robot_secondary->step(type);
+      }
+    }
 
     //-- Record trajectory
     if(oscAnlz && oscAnlz->get_record_servo())
     {
       oscAnlz->write_trajectory();
     }
-    //std::cout << "evaluation_window = " << evaluation_window << "    evaluation_elapsed_time = " << evaluation_elapsed_time << std::endl; // TODO: Debugger to be removed.
   }while(evaluation_elapsed_time < evaluation_window);
 
   if(controller_type == Sinusoidal_Controller)
@@ -469,11 +489,7 @@ void Controller::actuate_module(int module, double output)
 
 void Controller::read_servo_positions_with_time() // TODO: This should be implemented as a seperate thread.
 {
-#ifdef Y1_CONFIGURATION
-  robot_secondary->get_all_moduleServo_position_with_time(servo_feedback);
-#else
   robot_primary->get_all_moduleServo_position_with_time(servo_feedback);
-#endif
 
 /**********************************************************TEMP FIX**************************************************************************/
 /*TODO: This is a temprory fix. Need to write servo value along with actual time [X-axis] into graph file.*/

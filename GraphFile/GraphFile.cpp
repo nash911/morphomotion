@@ -49,7 +49,7 @@ GraphFile::GraphFile(const std::string& filename)
 }
 
 
-GraphFile::GraphFile(const std::string& robotType, const std::string& controllerType)
+GraphFile::GraphFile(const std::string& environmentType, const std::string& robotType, const std::string& controllerType)
 {
   time_t rawtime;
   struct tm * timeinfo;
@@ -60,15 +60,11 @@ GraphFile::GraphFile(const std::string& robotType, const std::string& controller
   time ( &rawtime );
   timeinfo = localtime ( &rawtime );
   strftime (filename, 100, "/FitnessGraph_Files/%m_%d_%H_%M_FitnessGraph.dat", timeinfo);
-  ss << "../Evolution_Files/" << robotType << "/" << controllerType << filename;
-
-  //file_name = ss.str(); // TODO: To be removed
+  ss << "../Evolution_Files/" << environmentType << "/" << robotType << "/" << controllerType << filename;
 
   graphFile_name = ss.str();
   cout <<" Opening GraphFile: " << graphFile_name << endl;
   fp.open(graphFile_name.c_str(), fstream::in | fstream::out | fstream::app);
-
-  //fitness_graph_file = new GraphFile (file_name.c_str()); // TODO: To be removed
 }
 
 

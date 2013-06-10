@@ -27,9 +27,12 @@
 #include "Controller.h"
 #include "FileHandler.h"
 
-#define EVALUATION_SAMPLE_SIZE 3
+//#define ROBOT_OPENRAVE
+#define ROBOT_Y1
 
-#define POPULATION_SIZE 100
+#define EVALUATION_SAMPLE_SIZE 1
+
+#define POPULATION_SIZE 10
 #define GENERATIONS 50
 
 #define CROSSOVER_RATIO 0.5
@@ -37,18 +40,17 @@
 
 //#define CUMUALATIVE_DISTANCE
 
-#define GEN_0_MIN_EVAL_VAL 0.8
 //#define GEN_0_PREEVAL
+#define GEN_0_MIN_EVAL_VAL 0.8
 
-#define GEN_0_POPULATION_SIZE 300
 //#define GEN_0_AUGMENTED_POPULATION
+#define GEN_0_POPULATION_SIZE 300
 
 #define FITNESS_GRAPH_FILE
 #define ELITE_POPULATION_FILE
 
 
-
-//std::string note("Evaluation Period -- 100 Seconds ");
+//std::string note("HIDDEN NEURON <1> ");
 std::string note("No Notes");
 
 int main(int argc, char* argv[])
@@ -58,28 +60,53 @@ int main(int argc, char* argv[])
   bool gen0_preeval=false;
   bool gen0_aug_pop=false;
 
+  Robot *robot = NULL;
+
   SimulationOpenRave simuOR_robot;
+  Y1ModularRobot y1_robot;
+
+#ifdef ROBOT_OPENRAVE
+  robot = &simuOR_robot;
+#elif defined(ROBOT_Y1)
+  y1_robot.set_serial_port(argv[1], BAUD_RATE);
+  robot = &y1_robot;
+#else
+  std::cerr << "MorphoMotion Error: EvolveController." << std::endl
+            << "int main(int, char*) method." << std::endl
+            << "Robot Environment needs to be defined!. " << std::endl;
+  exit(1);
+#endif
+
+  //robot = &simuOR_robot;
 
   // Multilayer perceptron object
   Flood::MultilayerPerceptron mlp(0,0,0);
   mlp.set_independent_parameters_number(0);
 
-  Controller controller(&mlp, &simuOR_robot);
+  Controller controller(&mlp, robot);
 
-   if(argc == 1) // TODO: Need to change this to include all commande line parameter possibilities.
+   if(argc < 3)
    {
-      parameter_file = "/home/nash/Dropbox/PhD/modularRobotics/morphoMotion/Evolution_Files/Ybot4_ServoFeedBack/Hybrid_Controller/ybot4_ServoFeedBack.dat";
+     std::cerr << "MorphoMotion Error: EvolveController." << std::endl
+               << "int main(int, char*) method." << std::endl
+               << "Insufficient parameters. " << std::endl;
+     exit(1);
    }
-   else
+   else if(argc == 3)
    {
-      parameter_file = argv[1];
+      parameter_file = argv[2];
    }
 
-  FileHandler parametersFileHandler(parameter_file, &simuOR_robot, &simuOR_robot, &controller, &mlp);
-
-  // Initialise objects after parameters loaded from the parameter file.
-  Robot *robot = &simuOR_robot;
+#ifdef ROBOT_OPENRAVE
+  FileHandler parametersFileHandler(parameter_file, robot, &simuOR_robot, &controller, &mlp);
   simuOR_robot.init_simu_env(controller.get_controller_type());
+#elif defined(ROBOT_Y1)
+  FileHandler parametersFileHandler(parameter_file, robot, NULL, &controller, &mlp);
+#endif
+
+  //-- Initialise objects after parameters loaded from the parameter file.
+  //Robot *robot = &simuOR_robot;
+  //simuOR_robot.init_simu_env(controller.get_controller_type());
   controller.init_controller();
 
 #ifdef CUMUALATIVE_DISTANCE
@@ -88,17 +115,18 @@ int main(int argc, char* argv[])
   robot->set_evaluation_method("Euclidean_Distance_Final");
 #endif
 
-  // Hidden Layer Activation Function
+  //-- Hidden Layer Activation Function
   Flood::Vector<std::string> hiddenLayerActivation(mlp.get_hidden_layers_number());
   hiddenLayerActivation[0] = "HyperbolicTangent";
 
-  // Output Layer Activation Function
+  //-- Output Layer Activation Function
   mlp.set_output_layer_activation_function("HyperbolicTangent");
 
-  // Cube Revolution object
-  Flood::Evolution evolve(&mlp, &simuOR_robot, &controller);
+  //-- Evolution object
+  //Flood::Evolution evolve(&mlp, &simuOR_robot, &controller);
+  Flood::Evolution evolve(&mlp, robot, &controller);
 
-  // Evolutionary algorithm object
+  //-- Evolutionary algorithm object
   Flood::EvolutionaryAlgorithm ea(&evolve);
 
   ea.set_population_size(POPULATION_SIZE);
@@ -127,7 +155,7 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef FITNESS_GRAPH_FILE
-  GraphFile fitness_graph_file(robot->get_robot_type(), controller.get_controller_type());
+  GraphFile fitness_graph_file(robot->get_robot_environment(), robot->get_robot_type(), controller.get_controller_type());
   ea.set_fitness_graph_history(true);
   ea.set_fitness_graph_file(&fitness_graph_file);
 #endif
@@ -135,15 +163,27 @@ int main(int argc, char* argv[])
 #ifdef ELITE_POPULATION_FILE
   ea.set_elite_population_history(true);
 
-  // With Flood::EvolutionaryAlgorithm*
+#ifdef ROBOT_OPENRAVE
+  //-- With Flood::EvolutionaryAlgorithm*
   FileHandler elite_population_file(note,
                                gen0_preeval,
                                gen0_aug_pop,
                                &ea,
-                               &simuOR_robot,
+                               robot,
                                &simuOR_robot,
                                &controller,
                                &mlp);
+#else
+  //-- With Flood::EvolutionaryAlgorithm*
+  FileHandler elite_population_file(note,
+                               gen0_preeval,
+                               gen0_aug_pop,
+                               &ea,
+                               robot,
+                               NULL,
+                               &controller,
+                               &mlp);
+#endif
 
   ea.set_elite_population_file(&elite_population_file);
 #endif
