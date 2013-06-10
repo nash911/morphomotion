@@ -19,10 +19,6 @@
 #include <sstream>
 #include <fstream>
 
-/*#include "Robot.h"
-#include "MultilayerPerceptron.h"
-#include "FileHandler.h"*/
-
 #include "Robot.h"
 #include "SimulationOpenRave.h"
 #include "Y1ModularRobot.h"

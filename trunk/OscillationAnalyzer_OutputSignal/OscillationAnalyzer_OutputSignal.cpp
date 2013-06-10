@@ -368,7 +368,7 @@ void OscillationAnalyzer_OutputSignal::write_phase(void)
 
   ss.flush();
   ss << get_phase_graph_size()+1 << " ";
-  ss << robot->get_elapsed_evaluation_time()/1000 << " "; // X-axis in micro seconds.
+  ss << robot->get_elapsed_evaluation_time()/1000 << " "; //-- X-axis in micro seconds.
 
   for(unsigned int i=0; i<number_of_modules; i++)
   {

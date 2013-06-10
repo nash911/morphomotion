@@ -28,6 +28,10 @@
 
 #define BAUD_RATE 115200
 
+#define ROBOT_PRIMARY_OPENRAVE
+//#define ROBOT_PRIMARY_Y1
+
+//#define ROBOT_SECONDARY
 
 int main(int argc, char* argv[])
 {
@@ -36,15 +40,42 @@ int main(int argc, char* argv[])
   char* gene_file;
   char* fitness_file;
 
-  SimulationOpenRave simuOR_robot;
-  Robot *robot_primary = &simuOR_robot;
+  Robot *robot_primary = NULL;
   Robot *robot_secondary = NULL;
+
+  SimulationOpenRave simuOR_robot;
+  Y1ModularRobot y1_robot;
+
+#ifdef ROBOT_PRIMARY_OPENRAVE
+  robot_primary = &simuOR_robot;
+#elif defined(ROBOT_PRIMARY_Y1)
+  y1_robot.set_serial_port(argv[1], BAUD_RATE);
+  robot_primary = &y1_robot;
+#else
+  std::cerr << "MorphoMotion Error: EvaluateController." << std::endl
+            << "int main(int, char*) method." << std::endl
+            << "Robot Environment needs to be defined!. " << std::endl;
+  exit(1);
+#endif
+
+#ifdef ROBOT_SECONDARY
+  if(robot_primary->get_robot_environment() == "SimulationOpenRave")
+  {
+    y1_robot.set_serial_port(argv[1], BAUD_RATE);
+    robot_secondary = &y1_robot;
+  }
+  else if(robot_primary->get_robot_environment() == "Y1")
+  {
+    robot_secondary = &simuOR_robot;
+  }
+#endif
 
   // Multilayer perceptron object
   Flood::MultilayerPerceptron mlp(0,0,0);
   mlp.set_independent_parameters_number(0);
 
-  Controller controller(&mlp, &simuOR_robot);
+  //Controller controller(&mlp, &simuOR_robot);
+  Controller controller(&mlp, robot_primary);
 
   // Elite population gene
   Flood::Matrix<double> population;
@@ -52,14 +83,25 @@ int main(int argc, char* argv[])
 
   std::vector<double> elite_fitness;
 
-  if(argc == 1) // TODO: Need to change this to include all commande line parameter possibilities.
+  if(argc < 3)
   {
-    gene_file = "/home/nash/Dropbox/PhD/modularRobotics/morphoMotion/Evolution_Files/Ybot4_ServoFeedBack/Hybrid_Controller/Gene_Files/SimulationOpenRave_11_08_23_03_elite_population.gne";  // TODO: Has to be changed in the future.
+      std::cerr << "MorphoMotion Error: EvaluateController." << std::endl
+                << "int main(int, char*) method." << std::endl
+                << "Insufficient parameters. " << std::endl;
+      exit(1);
   }
   else if(argc == 3)
   {
     gene_file = argv[2];
-    FileHandler geneFileHandler(gene_file, &simuOR_robot, &simuOR_robot, &controller, &mlp, &population, &generation_index);
+
+    if(robot_primary->get_robot_environment() == "SimulationOpenRave" || robot_secondary)
+    {
+      FileHandler geneFileHandler(gene_file, robot_primary, &simuOR_robot, &controller, &mlp, &population, &generation_index);
+    }
+    else
+    {
+      FileHandler geneFileHandler(gene_file, robot_primary, NULL, &controller, &mlp, &population, &generation_index);
+    }
   }
   else if(argc == 4)
   {
@@ -124,10 +166,16 @@ int main(int argc, char* argv[])
     {
       fitness_file = argv[3];
     }
-    FileHandler gene_fitness_FileHandler(gene_file, fitness_file, &simuOR_robot, &simuOR_robot, &controller, &mlp, &population, &generation_index, &elite_fitness);
+
+    if(robot_primary->get_robot_environment() == "SimulationOpenRave" || robot_secondary)
+    {
+      FileHandler gene_fitness_FileHandler(gene_file, fitness_file, robot_primary, &simuOR_robot, &controller, &mlp, &population, &generation_index, &elite_fitness);
+    }
+    else
+    {
+      FileHandler gene_fitness_FileHandler(gene_file, fitness_file, robot_primary, NULL, &controller, &mlp, &population, &generation_index, &elite_fitness);
+    }
   }
-
-
 
   // Cross Evaluation
   /*simuOR_robot.set_scene_file_name("../models/Minicube-I.env.xml");
@@ -154,18 +202,29 @@ int main(int argc, char* argv[])
   /*simuOR_robot.set_scene_file_name("../models/Leggy_3DOF/Leggy_3DOF.env.xml");
   robot_primary->set_number_of_modules(15);*/
 
-  simuOR_robot.init_simu_env(controller.get_controller_type());
+  if(robot_primary->get_robot_environment() == "SimulationOpenRave" || robot_secondary)
+  {
+    simuOR_robot.init_simu_env(controller.get_controller_type());
+  }
+
   controller.init_controller();
   population.subtract_row(0);
 
-  //-- To evaluate a controller on a Y1 configuration
-  Y1ModularRobot y1_robot(robot_primary);
-  robot_secondary = &y1_robot;
-  y1_robot.set_serial_port(argv[1], BAUD_RATE);
-  controller.set_robot_secondary(&y1_robot);
-
   //robot_primary->set_evaluation_method("Euclidean_Distance_Final");  // Debugger;
   robot_primary->set_evaluation_method("Euclidean_Distance_Cumulative");  // Debugger;
+
+#ifdef ROBOT_SECONDARY
+  if(robot_primary->get_robot_environment() == "SimulationOpenRave")
+  {
+    robot_secondary->copy(robot_primary);
+    controller.set_robot_secondary(robot_secondary);
+  }
+  else if(robot_primary->get_robot_environment() == "Y1")
+  {
+    robot_secondary->copy(robot_primary);
+    controller.set_robot_secondary(robot_secondary);
+  }
+#endif
 
   // Hidden Layer Activation Function
   Flood::Vector<std::string> hiddenLayerActivation(mlp.get_hidden_layers_number());
@@ -174,13 +233,10 @@ int main(int argc, char* argv[])
   // Output Layer Activation Function
   mlp.set_output_layer_activation_function("HyperbolicTangent");
 
-  controller.set_evaluation_period(200);
+  controller.set_evaluation_period(600);
 
   Flood::Vector<double> individual(mlp.get_parameters_number());
   int population_size = population.get_rows_number();
-  
-  //controller.set_servo_max(70.0); // TODO: This is for test only, and should be removed.
-  //controller.set_servo_min(-70.0); // TODO: This is for test only, and should be removed.
 
   if(evaluate_best_individual)
   {
@@ -224,11 +280,7 @@ int main(int argc, char* argv[])
 
       mlp.set_parameters(individual);
 
-#ifdef Y1_CONFIGURATION
-      OscillationAnalyzer_OutputSignal oscAnlz(robot_secondary);
-#else
       OscillationAnalyzer_OutputSignal oscAnlz(robot_primary);
-#endif
 
       controller.set_oscillation_analyzer(&oscAnlz);
       oscAnlz.set_record_servo(true);
@@ -271,11 +323,7 @@ int main(int argc, char* argv[])
 
       std::cout << std::endl << individual << std::endl << std::endl;
 
-#ifdef Y1_CONFIGURATION
-      OscillationAnalyzer_OutputSignal oscAnlz(robot_secondary);
-#else
       OscillationAnalyzer_OutputSignal oscAnlz(robot_primary);
-#endif
 
       controller.set_oscillation_analyzer(&oscAnlz);
       oscAnlz.set_record_servo(true);
@@ -287,17 +335,17 @@ int main(int argc, char* argv[])
 
       controller.run_Controller("evaluation",1,i,1);
 
-      std::cout << "    (" << i+1 << ") " << "Simulated Robot: Distance travelled = " << robot_primary->get_distance_travelled() << std::endl;
+      std::cout << "    (" << i+1 << ") " << robot_primary->get_robot_environment() << ": Distance travelled = " << robot_primary->get_distance_travelled() << std::endl;
 
       if(robot_secondary)
       {
-        std::cout << "    (" << i+1 << ") " << "Simulated Robot: Distance travelled = " << robot_secondary->get_distance_travelled() << std::endl;
+        std::cout << "    (" << i+1 << ") " << robot_secondary->get_robot_environment() << ": Distance travelled = " << robot_secondary->get_distance_travelled() << std::endl;
       }
 
       //std::cout << std::endl << generation_index[i] << " --> Fitness: " << elite_fitness[46] << std::endl;
 
       std::cout << "  Population Size: " << population_size << std::endl << "  Select individual to be evaluated number:  " << std::endl;
-      std::cin >> x;
+      //std::cin >> x;
     }
   }
 }

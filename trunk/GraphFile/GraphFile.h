@@ -34,7 +34,7 @@ class GraphFile
   public:
     GraphFile();
     GraphFile(const std::string&);
-    GraphFile(const std::string&, const std::string&);
+    GraphFile(const std::string&, const std::string&, const std::string&);
    ~GraphFile();
 
     void write(int x, double y);

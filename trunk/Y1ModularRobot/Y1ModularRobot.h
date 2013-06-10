@@ -24,8 +24,8 @@
 
 #define BAUD_RATE 115200
 
-//#define MAX_POLL_TRIALS 10  // For Wired-Communication between PC and Skymega
-#define MAX_POLL_TRIALS 14  // For XBEE-Communication between PC and Skymega
+//#define MAX_POLL_TRIALS 10  //-- For Wired-Communication between PC and Skymega
+#define MAX_POLL_TRIALS 14  //-- For XBEE-Communication between PC and Skymega
 
 using namespace std;
 
@@ -36,19 +36,19 @@ public:
 
   enum MessageType{Request_ServoTime, Request_Time, None};
 
-  // DEFAULT CONSTRUCTOR
+  //-- DEFAULT CONSTRUCTOR
   Y1ModularRobot();
   
-  // COPY CONSTRUCTOR
+  //-- COPY CONSTRUCTOR
   Y1ModularRobot(const Robot*);
 
-  // CONSTRUCTOR WITH SERIAL PORT
+  //-- CONSTRUCTOR WITH SERIAL PORT
   Y1ModularRobot(const std::string&);
 
-  // DESTRUCTOR
+  //-- DESTRUCTOR
   virtual ~Y1ModularRobot(void);
 
-  // METHODS
+  //-- METHODS
   void set_default_parameters(void);
   bool set_serial_port(const std::string&, int);
   void set_elapsed_evaluation_time(unsigned long);
@@ -60,21 +60,22 @@ public:
   void get_current_time(void);
   std::vector<double> get_robot_XY();
 
-  // INHERITED METHODS
+  //-- INHERITED METHODS
+  void copy(const Robot*);
   void reset_robot(void);
   void set_sinusoidal_controller_parameters(const vector<double>&, const vector<double>&, const vector<double>&, const double);
   void stop_sinusoidal_controller(void);
   void set_moduleServo_position(unsigned int, double);
   double get_moduleServo_position(unsigned int);
-  std::vector<double> get_all_moduleServo_position(void); // TODO: This should be removed after implementing get_all_moduleServo_position_with_time().
+  std::vector<double> get_all_moduleServo_position(void); //-- TODO: This should be removed after implementing get_all_moduleServo_position_with_time().
   void get_all_moduleServo_position_with_time(vector<ServoFeedback*>&);
-  //void init_elapsed_evaluation_time(void);
   unsigned long get_elapsed_evaluation_time(void);
+  unsigned long get_previous_read_evaluation_time(void);
   double calculate_distance_travelled_euclidean(void);
   void measure_cumulative_distance(void);
   double get_robot_X(void);
   double get_robot_Y(void);
-  unsigned long step(const std::string&);
+  void step(const std::string&);
 
 private:
   std::vector<double> robot_pos_initial;

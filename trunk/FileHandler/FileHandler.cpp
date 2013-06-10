@@ -34,8 +34,7 @@ FileHandler::FileHandler(std::string note,
   time ( &rawtime );
   timeinfo = localtime ( &rawtime );
   strftime (filename, 100, "_%m_%d_%H_%M_elite_population.gne", timeinfo);
-  //ss << robot->get_robot_type() << "/" << controller->get_controller_type() << "/gene_data/" << robot->get_robot_environment() << filename;
-  ss << "../Evolution_Files/" << robot->get_robot_type() << "/" << controller->get_controller_type() << "/Gene_Files/" << robot->get_robot_environment() << filename;
+  ss << "../Evolution_Files/" << robot->get_robot_environment() << "/" << robot->get_robot_type() << "/" << controller->get_controller_type() << "/Gene_Files/" << robot->get_robot_environment() << filename;
 
   myFile_name = ss.str();
   cout <<" Opening elite_population data file: " << myFile_name << endl;
@@ -94,10 +93,20 @@ FileHandler::FileHandler(std::string note,
 
   if(robot->get_robot_environment() == "SimulationOpenRave")
   {
-    myFile << std::endl << "<SimulationEnvironment>" << std::endl;
-    myFile << "\t<SceneFileName>" << std::endl << "\t   " << simuOR->get_scene_file_name() << std::endl << "\t</SceneFileName>" << std::endl;
-    myFile << std::endl << "\t<SimResolution>" << std::endl << "\t   " << simuOR->get_simu_resolution_microseconds() << std::endl << "\t</SimResolution>" << std::endl;
-    myFile << "</SimulationEnvironment>" << std::endl;
+    if(simuOR)
+    {
+      myFile << std::endl << "<SimulationEnvironment>" << std::endl;
+      myFile << "\t<SceneFileName>" << std::endl << "\t   " << simuOR->get_scene_file_name() << std::endl << "\t</SceneFileName>" << std::endl;
+      myFile << std::endl << "\t<SimResolution>" << std::endl << "\t   " << simuOR->get_simu_resolution_microseconds() << std::endl << "\t</SimResolution>" << std::endl;
+      myFile << "</SimulationEnvironment>" << std::endl;
+    }
+    else
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "FileHandler(std::string, bool, bool, Flood::EvolutionaryAlgorithm*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*)" << std::endl
+                << "robot_pointer = NULL " << std::endl;
+      exit(1);
+    }
   }
 
   myFile << std::endl << "<Controller>" << std::endl;
@@ -152,153 +161,12 @@ FileHandler::FileHandler(std::string note,
     myFile << "</IndependentParameters>" << std::endl;
   }
 
-
   myFile << std::endl << "<Gene>" << std::endl;
   myFile << std::endl << "</Gene>" << std::endl;
   myFile << std::endl << "</Morphomotion>";
 
   myFile.close();
 }
-
-
-// Without Flood::EvolutionaryAlgorithm*
-// CONSTRUCTOR FOR SAVING ELITE GENE POPULATION
-/*FileHandler::FileHandler(std::string note,
-               bool gen0_preeval,
-               bool gen0_aug_pop,
-               Flood::EvolutionaryAlgorithm *ea,
-               Robot *robot,
-               SimulationOpenRave *simuOR,
-               Controller *controller,
-               Flood::MultilayerPerceptron *mlp)
-{
-  time_t rawtime;
-  struct tm * timeinfo;
-  char filename[100];
-  stringstream ss;
-
-  time ( &rawtime );
-  timeinfo = localtime ( &rawtime );
-  strftime (filename, 100, "_%m_%d_%H_%M_elite_population.gne", timeinfo);
-  ss << "../Evolution_Files/" << robot->get_robot_type() << "/" << controller->get_controller_type() << "/Gene_Files/" << robot->get_robot_environment() << filename;
-
-  myFile_name = ss.str();
-  cout <<" Opening elite_population data file: " << myFile_name << endl;
-  myFile.open(myFile_name.c_str(), fstream::in | fstream::out | fstream::app);
-
-  myFile << "<Morphomotion: Flood + OpenRave + Y1>" << std::endl;
-  myFile << std::endl << "<FileType>" << std::endl << "   GeneFile" << std::endl << "</FileType>" << std::endl;
-
-  if(note != "No Notes")
-  {
-    myFile << std::endl << "<Note>" << std::endl << note << std::endl << "</Note>" << std::endl;
-  }
-
-  myFile << std::endl << "<Evolution>" << std::endl;
-  myFile << "\t<FitnessAssignmentMethod>" << std::endl << "\t   " << ea->get_fitness_assignment_method_name() << std::endl << "\t</FitnessAssignmentMethod>" << std::endl;
-  myFile << std::endl << "\t<SelectionMethod>" << std::endl << "\t   " << ea->get_selection_method_name() << std::endl << "\t</SelectionMethod>" << std::endl;
-  myFile << std::endl << "\t<RecombinationMethod>" << std::endl << "\t   " << ea->get_recombination_method_name() << std::endl << "\t</RecombinationMethod>" << std::endl;
-  myFile << std::endl << "\t<MutationMethod>" << std::endl << "\t   " << ea->get_mutation_method_name() << std::endl << "\t</MutationMethod>" << std::endl;
-  myFile << std::endl << "\t<EvaluationMethod>" << std::endl << "\t   " << robot->get_evaluation_method() << std::endl << "\t</EvaluationMethod>" << std::endl;
-  myFile << std::endl << "\t<PopulationSize>" << std::endl << "\t   " << ea->get_population_size() << std::endl << "\t</PopulationSize>" << std::endl;
-  myFile << std::endl << "\t<CrossoverPercentage>" << std::endl << "\t   " << ea->get_crossover_percentage() << std::endl << "\t</CrossoverPercentage>" << std::endl;
-  myFile << std::endl << "\t<Elitism>" << std::endl << "\t   " << ea->get_elitism() << std::endl << "\t</Elitism>" << std::endl;
-  myFile << std::endl << "\t<ElitismPercentage>" << std::endl << "\t   " << ea->get_elitism_percentage() << std::endl << "\t</ElitismPercentage>" << std::endl;
-  myFile << std::endl << "\t<SelectivePressure>" << std::endl << "\t   " << ea->get_selective_pressure() << std::endl << "\t</SelectivePressure>" << std::endl;
-  myFile << std::endl << "\t<RecombinationSize>" << std::endl << "\t   " << ea->get_recombination_size() << std::endl << "\t</RecombinationSize>" << std::endl;
-  myFile << std::endl << "\t<MutationRate>" << std::endl << "\t   " << ea->get_mutation_rate() << std::endl << "\t</MutationRate>" << std::endl;
-  myFile << std::endl << "\t<MutationRateForES>" << std::endl << "\t   " << ea->get_mutation_rate_for_ES() << std::endl << "\t</MutationRateForES>" << std::endl;
-  myFile << std::endl << "\t<MutationRange>" << std::endl << "\t   " << ea->get_mutation_range() << std::endl << "\t</MutationRange>" << std::endl;
-  myFile << std::endl << "\t<MutationRangeForES>" << std::endl << "\t   " << ea->get_mutation_range_for_ES() << std::endl << "\t</MutationRangeForES>" << std::endl;
-  myFile << std::endl << "\t<EvaluationSampleSize>" << std::endl << "\t   " << ea->get_evaluation_sample_size() << std::endl << "\t</EvaluationSampleSize>" << std::endl;
-  if(gen0_preeval)
-  {
-    myFile << std::endl << "\t<Gen0_Pre-Evaluation>" << std::endl << "\t   " << "True" << std::endl << "\t</Gen0_Pre-Evaluation>" << std::endl;
-  }
-  else
-  {
-    myFile << std::endl << "\t<Gen0_Pre-Evaluation>" << std::endl << "\t   " << "False" << std::endl << "\t</Gen0_Pre-Evaluation>" << std::endl;
-  }
-  if(gen0_aug_pop)
-  {
-    myFile << std::endl << "\t<Gen0_AugmentedPopulation>" << std::endl << "\t   " << "True" << std::endl << "\t</Gen0_AugmentedPopulation>" << std::endl;
-  }
-  else
-  {
-    myFile << std::endl << "\t<Gen0_AugmentedPopulation>" << std::endl << "\t   " << "False" << std::endl << "\t</Gen0_AugmentedPopulation>" << std::endl;
-  }
-  myFile << std::endl << "\t<Gen0_MinimumEvaluationValue>" << std::endl << "\t   " << ea->get_gen_0_min_evaluation_value() << std::endl << "\t</Gen0_MinimumEvaluationValue>" << std::endl;
-  myFile << std::endl << "\t<Gen0_PopulationSize>" << std::endl << "\t   " << ea->get_gen_0_population_size() << std::endl << "\t</Gen0_PopulationSize>" << std::endl;
-  myFile << "</Evolution>" << std::endl;
-
-  myFile << std::endl << "<Robot>" << std::endl;
-  myFile << "\t<RobotEnvironment>" << std::endl << "\t   " << robot->get_robot_environment() << std::endl << "\t</RobotEnvironment>" << std::endl;
-  myFile << std::endl << "\t<RobotType>" << std::endl << "\t   " << robot->get_robot_type() << std::endl << "\t</RobotType>" << std::endl;
-  myFile << std::endl << "\t<NumberOfModules>" << std::endl << "\t   " << robot->get_number_of_modules() << std::endl << "\t</NumberOfModules>" << std::endl;
-  myFile << "</Robot>" << std::endl;
-
-  if(robot->get_robot_environment() == "SimulationOpenRave")
-  {
-    myFile << std::endl << "<SimulationEnvironment>" << std::endl;
-    myFile << "\t<SceneFileName>" << std::endl << "\t   " << simuOR->get_scene_file_name() << std::endl << "\t</SceneFileName>" << std::endl;
-    myFile << std::endl << "\t<SimResolution>" << std::endl << "\t   " << simuOR->get_simu_resolution_microseconds() << std::endl << "\t</SimResolution>" << std::endl;
-    myFile << "</SimulationEnvironment>" << std::endl;
-  }
-
-  myFile << std::endl << "<Controller>" << std::endl;
-  myFile << "\t<ControllerType>" << std::endl << "\t   " << controller->get_controller_type() << std::endl << "\t</ControllerType>" << std::endl;
-  myFile << std::endl << "\t<EvaluationPeriod>" << std::endl << "\t   " << controller->get_evaluation_period() << std::endl << "\t</EvaluationPeriod>" << std::endl;
-  myFile << std::endl << "\t<ServoMax>" << std::endl << "\t   " << controller->get_servo_max() << std::endl << "\t</ServoMax>" << std::endl;
-  myFile << std::endl << "\t<ServoMin>" << std::endl << "\t   " << controller->get_servo_min() << std::endl << "\t</ServoMin>" << std::endl;
-  myFile << std::endl << "\t<StartAngleType>" << std::endl << "\t   " << controller->get_start_angle_type() << std::endl << "\t</StartAngleType>" << std::endl;
-  myFile << std::endl << "\t<ServoDeltaThreshold>" << std::endl << "\t   " << controller->get_servo_delta_threshold() << std::endl << "\t</ServoDeltaThreshold>" << std::endl;
-  if(controller->get_controller_type() == "Neural_Controller")
-  {
-    myFile << std::endl << "\t<ServoDerivativeThreshold>" << std::endl << "\t   " << controller->get_servo_derivative_threshold() << std::endl << "\t</ServoDerivativeThreshold>" << std::endl;
-    //myFile << std::endl << "\t<ServoDerivativeResolution>" << std::endl << "\t   " << controller->get_servo_derivative_epsilon() << std::endl << "\t</ServoDerivativeResolution>" << std::endl;  // TODO: Remove this.
-    myFile << std::endl << "\t<ServoDerivativeEpsilon>" << std::endl << "\t   " << controller->get_servo_derivative_epsilon() << std::endl << "\t</ServoDerivativeEpsilon>" << std::endl;
-  }
-  myFile << "</Controller>" << std::endl;
-
-  if(mlp->get_inputs_number() > 0)
-  {
-    myFile << std::endl << "<NeuralNetwork>" << std::endl;
-    myFile << "\t<NumberOfNNInputs>" << std::endl << "\t   " << mlp->get_inputs_number() << std::endl << "\t</NumberOfNNInputs>" << std::endl;
-    if(mlp->get_hidden_layers_number() > 0)
-    {
-      myFile << std::endl << "\t<HiddenLayers>";
-      for(int i=0; i<mlp->get_hidden_layers_number(); i++)
-      {
-        myFile << std::endl << "\t   <Layer>" << std::endl << "\t      " << mlp->get_hidden_layer_size(i) << std::endl << "\t   </Layer>" << std::endl;
-      }
-      myFile << "\t</HiddenLayers>" << std::endl;
-    }
-    myFile << std::endl << "\t<NumberOfNNOutputs>" << std::endl << "\t   " << mlp->get_outputs_number() << std::endl << "\t</NumberOfNNOutputs>" << std::endl;
-    myFile << "</NeuralNetwork>" << std::endl;
-  }
-
-  if(mlp->get_independent_parameters_number() > 0)
-  {
-    myFile << std::endl << "<IndependentParameters>";
-    for(int i=0; i<mlp->get_independent_parameters_number(); i++)
-    {
-      myFile << std::endl << "\t<Parameter>";
-      myFile << std::endl << "\t   <Name>" << std::endl << "\t      " << mlp->get_independent_parameter_name(i) << std::endl << "\t   </Name>" << std::endl;
-      myFile << std::endl << "\t   <Minimum>" << std::endl << "\t      " << mlp->get_independent_parameter_minimum(i) << std::endl << "\t   </Minimum>" << std::endl;
-      myFile << std::endl << "\t   <Maximum>" << std::endl << "\t      " << mlp->get_independent_parameter_maximum(i) << std::endl << "\t   </Maximum>" << std::endl;
-      myFile << "\t</Parameter>" << std::endl;
-    }
-
-    myFile << "</IndependentParameters>" << std::endl;
-  }
-
-
-  myFile << std::endl << "<Gene>" << std::endl;
-  myFile << std::endl << "</Gene>" << std::endl;
-  myFile << std::endl << "</Morphomotion>";
-
-  myFile.close();
-}*/
 
 
 void FileHandler::save_gene(int generation, Flood::Vector<double> elite_gene)
@@ -506,7 +374,10 @@ FileHandler::FileHandler(char* gene_filename, Robot *robot, SimulationOpenRave *
 
     if(word == "<SimulationEnvironment>")
     {
-      load_SimEnv_parameters(gene_file, simuEnv);
+      if(simuEnv)
+      {
+        load_SimEnv_parameters(gene_file, simuEnv);
+      }
     }
 
     if(word == "<Controller>")
@@ -533,7 +404,7 @@ FileHandler::FileHandler(char* gene_filename, Robot *robot, SimulationOpenRave *
 }
 
 
-// CONSTRUCTOR FOR EXTRACTING PARAMETERS FROM GENE FILE AND FITNESS FILE
+//-- CONSTRUCTOR FOR EXTRACTING PARAMETERS FROM GENE FILE AND FITNESS FILE
 FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Robot *robot, SimulationOpenRave *simuEnv, Controller *controller, Flood::MultilayerPerceptron *mlp, Flood::Matrix<double>* population, std::vector<std::string>* generation_index, std::vector<double>* elite_fitness)
 {
   std::fstream gene_file;
@@ -571,7 +442,7 @@ FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Robot *rob
     exit(1);
   }
 
-  // File type
+  //-- File type
   gene_file >> word;
 
   if(word != "<FileType>")
@@ -616,7 +487,10 @@ FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Robot *rob
 
     if(word == "<SimulationEnvironment>")
     {
-      load_SimEnv_parameters(gene_file, simuEnv);
+      if(simuEnv)
+      {
+        load_SimEnv_parameters(gene_file, simuEnv);
+      }
     }
 
     if(word == "<Controller>")
@@ -645,7 +519,7 @@ FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Robot *rob
 }
 
 
-// CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE
+//-- CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE
 FileHandler::FileHandler(char* gene_filename, Flood::MultilayerPerceptron *mlp, Flood::Matrix<double>* population, std::vector<std::string>* generation_index)
 {
   std::fstream gene_file;
@@ -672,7 +546,7 @@ FileHandler::FileHandler(char* gene_filename, Flood::MultilayerPerceptron *mlp, 
     exit(1);
   }
 
-  // File type
+  //-- File type
   gene_file >> word;
 
   if(word != "<FileType>")
@@ -729,7 +603,7 @@ FileHandler::FileHandler(char* gene_filename, Flood::MultilayerPerceptron *mlp, 
 }
 
 
-// CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE AND FITNESS FILE
+//-- CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE AND FITNESS FILE
 FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Flood::MultilayerPerceptron *mlp, Flood::Matrix<double>* population, std::vector<std::string>* generation_index, std::vector<double>* elite_fitness)
 {
   std::fstream gene_file;
@@ -767,7 +641,7 @@ FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Flood::Mul
     exit(1);
   }
 
-  // File type
+  //-- File type
   gene_file >> word;
 
   if(word != "<FileType>")
@@ -826,13 +700,13 @@ FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Flood::Mul
 }
 
 
-// DESTRUCTOR
+//-- DESTRUCTOR
 FileHandler::~FileHandler(void)
 {
 }
 
 
-// METHODS
+//-- METHODS
 
 void FileHandler::load_Robot_parameters(std::fstream& file, Robot *robot)
 {
@@ -842,7 +716,8 @@ void FileHandler::load_Robot_parameters(std::fstream& file, Robot *robot)
   {
     file >> word;
 
-    if(word == "<RobotEnvironment>")
+    //-- TODO: This was previouslt uncommented. Need to be looked at
+    /*if(word == "<RobotEnvironment>")
     {
       std::string new_robot_environment;
       file >> new_robot_environment;
@@ -858,7 +733,7 @@ void FileHandler::load_Robot_parameters(std::fstream& file, Robot *robot)
 
         exit(1);
       }
-    }
+    }*/
 
     if(word == "<RobotType>")
     {
@@ -926,7 +801,6 @@ void FileHandler::load_SimEnv_parameters(std::fstream& file, SimulationOpenRave 
         exit(1);
       }
     }
-
 
     else if(word == "<SimResolution>")
     {
@@ -1075,7 +949,6 @@ void FileHandler::load_Controller_parameters(std::fstream& file, Controller *con
       }
     }
 
-
     else if(word == "<ServoDeltaThreshold>")
     {
       double new_servo_delta_threshold;
@@ -1094,7 +967,6 @@ void FileHandler::load_Controller_parameters(std::fstream& file, Controller *con
       }
     }
 
-
     else if(word == "<ServoDerivativeThreshold>")
     {
       double new_servo_derivative_threshold;
@@ -1112,7 +984,6 @@ void FileHandler::load_Controller_parameters(std::fstream& file, Controller *con
         exit(1);
       }
     }
-
 
     else if(word == "<ServoDerivativeEpsilon>")
     {
@@ -1244,7 +1115,8 @@ void FileHandler::load_independent_parameters(std::fstream& file, Flood::Multila
 
           if(totalParameters > 1)
           {
-            independentParametersNumber--; //-- Undoing incrementing independentParametersNumber a few lines above.
+            //-- Undoing incrementing independentParametersNumber a few lines above.
+            independentParametersNumber--;
             independentParametersNumber = independentParametersNumber + totalParameters;
           }
 
@@ -1302,7 +1174,6 @@ void FileHandler::load_independent_parameters(std::fstream& file, Flood::Multila
           {
             independentParametersMinimum.push_back(atoi(word.c_str()));
           }
-          //independentParametersMinimum.push_back(atoi(word.c_str()));
 
           file >> word;
 
@@ -1323,7 +1194,6 @@ void FileHandler::load_independent_parameters(std::fstream& file, Flood::Multila
           {
             independentParametersMaximum.push_back(atoi(word.c_str()));
           }
-          //independentParametersMaximum.push_back(atoi(word.c_str()));
 
           file >> word;
 
@@ -1387,7 +1257,7 @@ void FileHandler::load_genes(std::fstream& gene_file, Flood::MultilayerPerceptro
 
    do
    {
-      // Adding generation_index.
+      //-- Adding generation_index.
       generation_index->push_back(word);
 
       for(int j = 0; j < parametersNumber; j++)
@@ -1406,13 +1276,17 @@ void FileHandler::load_elite_fitness(std::fstream& fitness_file, std::vector<dou
 
   do
   {
-    fitness_file >> fitness; // index number (Discarded)
+    //-- index number (Discarded)
+    fitness_file >> fitness;
 
-    fitness_file >> fitness; // Best Fitness
+    //-- Best Fitness
+    fitness_file >> fitness;
     elite_fitness->push_back(fitness);
 
-    fitness_file >> fitness; // Average Fitness (Discarded)
-    fitness_file >> fitness; // Worst Fitness (Discarded)
+    //-- Average Fitness (Discarded)
+    fitness_file >> fitness;
+    //-- Worst Fitness (Discarded)
+    fitness_file >> fitness;
   }while(!fitness_file.eof());
 }
 

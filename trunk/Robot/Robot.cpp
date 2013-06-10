@@ -18,9 +18,11 @@
 
 Robot::Robot()
 {
+  set_robot_priority("Robot_Primary");
+  elapsed_evaluation_time = 0;
   distance_travelled = 0;
-
   evaluation_method = Euclidean_Distance_Final;
+  number_of_modules = 2;
 }
 
 
@@ -30,9 +32,9 @@ void Robot::set_robot_environment(const std::string& new_robot_environment)
   {
     robot_environment = SimulationOpenRave;
   }
-  else if(new_robot_environment == "RealWorld")
+  else if(new_robot_environment == "Y1")
   {
-    robot_environment = RealWorld;
+    robot_environment = Y1;
   }
   else
   {
@@ -54,16 +56,62 @@ std::string Robot::get_robot_environment(void) const
       return("SimulationOpenRave");
     }
     break;
-    case RealWorld:
+    case Y1:
     {
-      return("RealWorld");
+      return("Y1");
     }
     break;
     default:
     {
       std::cerr << "Morphomotion Error: Robot class." << std::endl
                 << "std::string get_robot_environment(void) method." << std::endl
-                << "robot_environment: " << std::endl;
+                << "Robot_Environment: " << std::endl;
+      exit(1);
+    }
+  }
+}
+
+
+void Robot::set_robot_priority(const std::string& new_robot_priority)
+{
+  if(new_robot_priority == "Robot_Primary")
+  {
+    robot_priority = Robot_Primary;
+  }
+  else if(new_robot_priority == "Robot_Secondary")
+  {
+    robot_priority = Robot_Secondary;
+  }
+  else
+  {
+    std::cerr << "Morphomotion Error: Robot class." << std::endl
+              << "void set_robot_priority(const std::string&) method." << std::endl
+              << "Unknown Robot_Priority: " << new_robot_priority << "." <<std::endl;
+
+    exit(1);
+  }
+}
+
+
+std::string Robot::get_robot_priority(void) const
+{
+  switch(robot_priority)
+  {
+    case Robot_Primary:
+    {
+      return("Robot_Primary");
+    }
+    break;
+    case Robot_Secondary:
+    {
+      return("Robot_Secondary");
+    }
+    break;
+    default:
+    {
+      std::cerr << "Morphomotion Error: Robot class." << std::endl
+                << "std::string get_robot_priority(void) method." << std::endl
+                << "robot_priority: " << std::endl;
       exit(1);
     }
   }
@@ -209,7 +257,7 @@ std::string Robot::get_evaluation_method(void) const
     {
       std::cerr << "Morphomotion Error: Robot class." << std::endl
                 << "std::string get_evaluation_method(void) method." << std::endl
-                << "robot_environment: " << std::endl;
+                << "Evaluation Method: " << std::endl;
       exit(1);
     }
   }
@@ -256,13 +304,3 @@ double Robot::get_distance_travelled(void)
     exit(1);
   }
 }
-
-
- /*Robot& Robot::operator=(Robot &rhs) 
-{
-  this->set_robot_type(rhs.get_robot_type());
-  this->set_evaluation_method(rhs.get_evaluation_method());
-  this->set_number_of_modules(rhs.get_number_of_modules());
-
-  return *this;  // Return a reference to myself.
-}*/

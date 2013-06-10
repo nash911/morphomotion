@@ -15,29 +15,41 @@
 
 #include "Y1ModularRobot.h"
 
-
+// DEFAULT CONSTRUCTOR
 Y1ModularRobot::Y1ModularRobot():Robot()
 {
   //-- Set default parameters.
   set_default_parameters();
   
   //-- Create Visual Tracker
-  vis_track = new VisualTracker;
+  //vis_track = new VisualTracker; //-- TODO: This needs to be uncommented.
 }
 
 
-// DEFAULT CONSTRUCTOR
+// COPY CONSTRUCTOR
 Y1ModularRobot::Y1ModularRobot(const Robot* source_object):Robot()
 {
+  if(source_object == NULL)
+  {
+    std::cerr << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+              << "Y1ModularRobot(const Robot*) method." << std::endl
+              << "Source object pointer = NULL" <<std::endl;
+
+    exit(1);
+  }
+
   //-- Set default parameters.
   set_default_parameters();
   
   //-- Create Visual Tracker
-  //vis_track = new VisualTracker;
+  //vis_track = new VisualTracker; //-- TODO: This needs to be uncommented.
   
   this->set_robot_type(source_object->get_robot_type());
   this->set_evaluation_method(source_object->get_evaluation_method());
   this->set_number_of_modules(source_object->get_number_of_modules());
+
+  //-- Set robot priority
+  this->set_robot_priority("Robot_Secondary");
 }
 
 
@@ -46,7 +58,8 @@ Y1ModularRobot::Y1ModularRobot(const std::string& new_serial_port):Robot()
   //-- Set default parameters.
   set_default_parameters();
 
-  vis_track = new VisualTracker;
+  //-- Create Visual Tracker
+  //vis_track = new VisualTracker; //-- TODO: This needs to be uncommented.
 
   set_serial_port(new_serial_port, BAUD_RATE);
 }
@@ -59,10 +72,30 @@ Y1ModularRobot::~Y1ModularRobot(void)
 }
 
 
+void Y1ModularRobot::copy(const Robot* source_object)
+{
+  if(source_object == NULL)
+  {
+    std::cerr << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+              << "void copy(const Robot*) method." << std::endl
+              << "Source object pointer = NULL" <<std::endl;
+
+    exit(1);
+  }
+
+  this->set_robot_type(source_object->get_robot_type());
+  this->set_evaluation_method(source_object->get_evaluation_method());
+  this->set_number_of_modules(source_object->get_number_of_modules());
+
+  //-- Set robot priority
+  this->set_robot_priority("Robot_Secondary");
+}
+
 void Y1ModularRobot::set_default_parameters(void)
 {
   vis_track = NULL;
   serial_port = 0;
+  this->set_robot_environment("Y1");
 }
 
 
@@ -220,7 +253,7 @@ bool Y1ModularRobot::get_message_with_time(char* inString)
 
   inString[inString_size] = '\0'; // always put a "null" at the end of a string!
 
-  std::cout << " --> Poll Counter = " << poll_trials << " --> " << inString << std::endl; // TODO: Debuggerto be removed
+  //std::cout << " --> Poll Counter = " << poll_trials << " --> " << inString << std::endl; // TODO: Debuggerto be removed
 
   return(string_captured);
 }
@@ -520,8 +553,6 @@ std::vector<double> Y1ModularRobot::get_robot_XY()
   robot_XY[0] = XY[0];
   robot_XY[1] = XY[1];
   
-  std::cout << std::endl << "X= " << XY[0] << "    Y= " << XY[1] << std::endl; // Debugger: To be removed.
-  
   return(robot_XY);
 }
 
@@ -532,21 +563,18 @@ void Y1ModularRobot::reset_robot(void)
   //TODO: Reset the robot to (0,0) according to image coordinate.
 
   //-- Set the servo of each module to zero.
-  std::cout << "Number of modules: " << number_of_modules << std::endl;  // Debugger
   for(unsigned int module=0; module<number_of_modules; module++)
   {
     set_moduleServo_position(module, 0);
-    std::cout << "Set module: " << module << " position to 0. " << std::endl;  // Debugger
   }
 
   // Capture initial position of the robot
   robot_pos_initial = get_robot_XY();
 
-  // Initialize the controller evaluation time counter to the current time of Skymega;
-#ifdef Y1_CONFIGURATION
-  get_current_time();
-#endif
-
+  if(this->robot_priority == Robot_Primary)
+  {
+    get_current_time();
+  }
 
   distance_travelled = 0;
 }
@@ -570,8 +598,6 @@ void Y1ModularRobot::set_moduleServo_position(unsigned int module, double servo_
   unsigned char outBuf[100];
   unsigned int outBufSize = 0;
 
-  //outSS << "#%0%&" << module << "&*<" << servo_angle << ">*$";
-  
 /***********************************************Temp Solution *******************************************************/
   // TODO: This format is a pain in the ass, and needs to be fixed to the line above, both here and in Ardino code.
   outSS << "#%0%&" << module << "&*<";
@@ -714,11 +740,9 @@ void Y1ModularRobot::get_current_time(void)
 {
     std::vector<double> servo_feedback_angle;
 
-    std::cout << std::endl << std::endl << " INSIDE GET_CURRENT_TIME" << std::endl << std::endl;  // TODO: Debugger to be removed
-
     if(serial_port)
     {
-      unsigned char outBuf[20] = {'#','%','3','%','&','4','&','$'};  // To request current time [PC to Skymega]. // TODO: 'To' address [&4&] should not be manditory. This should be changed in Arduino code as well.
+      unsigned char outBuf[20] = {'#','%','3','%','&','4','&','$'};  //-- To request current time [PC to Skymega]. // TODO: 'To' address [&4&] should not be manditory. This should be changed in Arduino code as well.
       bool message_got = false;
       bool message_decoded = false;
 
@@ -727,7 +751,7 @@ void Y1ModularRobot::get_current_time(void)
         char recvString[40];
         do
         {
-          cprintf(serial_port, (char *)outBuf); // Send message requesting currnt servo position of all modules to Skymega.
+          cprintf(serial_port, (char *)outBuf); //-- Send message requesting currnt servo position of all modules to Skymega.
 
           char inString[40];
           message_got = get_message_with_time(inString);
@@ -752,24 +776,21 @@ void Y1ModularRobot::get_current_time(void)
                 << "Serial port not open." << std::endl;
       exit(1);
     }
-
-    std::cout << std::endl << std::endl << " LEAVING GET_CURRENT_TIME" << std::endl << std::endl;  // TODO: Debugger to be removed
 }
 
 
 void Y1ModularRobot::init_elapsed_evaluation_time(unsigned long new_initial_evaluation_time)
 {
+  previous_read_evaluation_time = 0;
+  elapsed_evaluation_time = 0;
   initial_evaluation_time = new_initial_evaluation_time;
 }
 
 
 void Y1ModularRobot::set_elapsed_evaluation_time(unsigned long new_elapsed_evaluation_time)
 {
+  previous_read_evaluation_time = elapsed_evaluation_time;
   elapsed_evaluation_time = new_elapsed_evaluation_time - initial_evaluation_time;
-  //elapsed_evaluation_time = new_elapsed_evaluation_time;
-
-  //std::cout << "new_elapsed_evaluation_time: -->                 " << new_elapsed_evaluation_time << std::endl; // TODO: Debugger to be removed.
-  //std::cout << "initial_evaluation_time: -->                 " << initial_evaluation_time << std::endl; // TODO: Debugger to be removed.
 }
 
 
@@ -779,15 +800,24 @@ unsigned long Y1ModularRobot::get_elapsed_evaluation_time(void)
 }
 
 
+unsigned long Y1ModularRobot::get_previous_read_evaluation_time(void)
+{
+  return(previous_read_evaluation_time);
+}
+
+
 double Y1ModularRobot::calculate_distance_travelled_euclidean(void)
 {
-  double distanceTravelled;
+  //-- TODO
+  double distanceTravelled = (double)rand()/(RAND_MAX+1.0);
   return(distanceTravelled);
 }
 
 
 void Y1ModularRobot::measure_cumulative_distance(void)
 {
+  //-- TODO
+  distance_travelled = distance_travelled + 1;
 }
 
 
@@ -804,8 +834,7 @@ double Y1ModularRobot::get_robot_Y(void)
     return(0.0);
 }
 
-unsigned long Y1ModularRobot::step(const std::string& type)
+void Y1ModularRobot::step(const std::string& type)
 {
-  //TODO:
-  return(0);
+  //-- TODO
 }

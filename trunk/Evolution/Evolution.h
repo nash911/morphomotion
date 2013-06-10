@@ -38,21 +38,21 @@ private:
 
 public:
 
-  // GENERAL CONSTRUCTOR WITH MULTILAYER PERCEPTRON OBJECT
+  //-- GENERAL CONSTRUCTOR WITH MULTILAYER PERCEPTRON OBJECT
   Evolution(MultilayerPerceptron*);
 
-  // GENERAL CONSTRUCTOR WITH SIMULATION ENVIRONMENT OBJECT
+  //-- GENERAL CONSTRUCTOR WITH SIMULATION ENVIRONMENT OBJECT
   Evolution(MultilayerPerceptron*, Robot*, Controller*);
 
-  // DEFAULT CONSTRUCTOR
+  //-- DEFAULT CONSTRUCTOR
   Evolution(void);
 
 
-  // DESTRUCTOR
+  //-- DESTRUCTOR
   virtual ~Evolution(void);
 
 
-  // Objective methods
+  //-- Objective methods
   double calculate_objective(); // Default objective function for debugging purpose.
   double calculate_objective(int,int); // TODO: To be removed from here nand ObjectiveFunction.h
   double calculate_objective(int,int,int);

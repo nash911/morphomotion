@@ -32,9 +32,6 @@
 
 #define CUMULATIVE_DISTENCE_MEASUREMENT_RESOLUTION 2
 
-#define OPENRAVE_CONFIGURATION
-#define Y1_CONFIGURATION
-
 using namespace std;
 
 class Robot
@@ -43,19 +40,22 @@ class Robot
 public:
 
   enum RobotType{CubeN_ServoFeedBack, Tripod, Quadpod, Ybot4_ServoFeedBack, Lizard, Bunny, Bunny_StiffSpine, Lizard_3D};
-  enum RobotEnvironment{SimulationOpenRave, RealWorld};
+  enum RobotPriority{Robot_Primary, Robot_Secondary};
+  enum RobotEnvironment{SimulationOpenRave, Y1};
   enum EvaluationMethod{Euclidean_Distance_Final, Euclidean_Distance_Cumulative};
 
-  // DEFAULT CONSTRUCTOR
+  //-- DEFAULT CONSTRUCTOR
   Robot(void);
 
 
-  // DESTRUCTOR
+  //-- DESTRUCTOR
   virtual ~Robot(void){ }
 
-  // METHODS
+  //-- METHODS
   void set_robot_environment(const std::string&);
   std::string get_robot_environment(void) const;
+  void set_robot_priority(const std::string&);
+  std::string get_robot_priority(void) const;
   void set_robot_type(const std::string&);
   std::string get_robot_type(void) const;
   void set_evaluation_method(const std::string&);
@@ -64,10 +64,8 @@ public:
   unsigned int get_number_of_modules(void) const;
   double get_distance_travelled(void);
   
-  // OVERLOADED METHODS
-  //Robot & operator=(Robot &rhs);
-
-  // VIRTUAL FUNCTIONS
+  //-- VIRTUAL FUNCTIONS
+  virtual void copy(const Robot*) = 0;
   virtual void reset_robot(void) = 0;
   virtual void set_sinusoidal_controller_parameters(const vector<double>&, const vector<double>&, const vector<double>&, const double) = 0;
   virtual void stop_sinusoidal_controller(void) = 0;
@@ -75,20 +73,23 @@ public:
   virtual double get_moduleServo_position(unsigned int) = 0;
   virtual std::vector<double> get_all_moduleServo_position(void) = 0;  // TODO: This should be removed after implementing get_all_moduleServo_position_with_time().
   virtual void get_all_moduleServo_position_with_time(vector<ServoFeedback*>&) = 0;
-  //virtual void init_elapsed_evaluation_time(void) = 0;
   virtual unsigned long get_elapsed_evaluation_time(void) = 0;
+  virtual unsigned long get_previous_read_evaluation_time(void) = 0;
   virtual double calculate_distance_travelled_euclidean(void) = 0;
   virtual void measure_cumulative_distance(void) = 0;
   virtual double get_robot_X(void) = 0;
   virtual double get_robot_Y(void) = 0;
-  virtual unsigned long step(const std::string&) = 0;
+  virtual void step(const std::string&) = 0;
 
 protected:
   RobotEnvironment robot_environment;
+  RobotPriority robot_priority;
   RobotType robot_type;
   EvaluationMethod evaluation_method;
+
   unsigned int number_of_modules;
   unsigned long initial_evaluation_time;
+  unsigned long previous_read_evaluation_time;
   unsigned long elapsed_evaluation_time;
   double distance_travelled;
 };

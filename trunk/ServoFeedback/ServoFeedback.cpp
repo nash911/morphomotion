@@ -24,7 +24,6 @@ ServoFeedback::ServoFeedback()
 
 ServoFeedback::~ServoFeedback(void)
 {
-  //std::cout << std::endl << "Destroying ServoFeedback object" << std::endl;
 }
 
 
