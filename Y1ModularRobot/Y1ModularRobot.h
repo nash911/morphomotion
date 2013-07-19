@@ -53,10 +53,13 @@ public:
   bool set_serial_port(const std::string&, int);
   void set_elapsed_evaluation_time(unsigned long);
   void init_elapsed_evaluation_time(unsigned long);
+  void get_all_moduleServo_position_with_time(vector<ServoFeedback*>&); //-- Compatible with Arduino code --> servo_controller_charArray_V6.pde
+  void get_all_moduleServo_position_with_individual_time(vector<ServoFeedback*>&); //-- Compatible with Arduino code --> servo_controller_charArray_V7.pde
   bool get_message(char*);
-  bool get_message_with_time(char*);
+  bool get_message_with_time(char*); //-- Compatible with Arduino code --> servo_controller_charArray_V6.pde
   bool decode_message(const char[], vector<double>&);
-  bool decode_message_with_time(const char[], vector<double>&);
+  bool decode_message_with_time(const char[], vector<double>&); //-- Compatible with Arduino code --> servo_controller_charArray_V6.pde
+  bool decode_message_with_individual_time(const char[], vector<double>&, vector<long>&); //-- Compatible with Arduino code --> servo_controller_charArray_V7.pde
   void get_current_time(void);
   std::vector<double> get_robot_XY();
 
@@ -67,8 +70,7 @@ public:
   void stop_sinusoidal_controller(void);
   void set_moduleServo_position(unsigned int, double);
   double get_moduleServo_position(unsigned int);
-  std::vector<double> get_all_moduleServo_position(void); //-- TODO: This should be removed after implementing get_all_moduleServo_position_with_time().
-  void get_all_moduleServo_position_with_time(vector<ServoFeedback*>&);
+  void get_all_moduleServo_position(vector<ServoFeedback*>&);
   unsigned long get_elapsed_evaluation_time(void);
   unsigned long get_previous_read_evaluation_time(void);
   double calculate_distance_travelled_euclidean(void);

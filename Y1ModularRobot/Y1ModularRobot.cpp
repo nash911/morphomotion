@@ -211,6 +211,7 @@ bool Y1ModularRobot::get_message(char* inString)
 }
 
 
+//-- Compatible with Arduino code --> servo_controller_charArray_V6.pde
 bool Y1ModularRobot::get_message_with_time(char* inString)
 {
   //unsigned char inBuf[4096];
@@ -221,7 +222,9 @@ bool Y1ModularRobot::get_message_with_time(char* inString)
 
   do
   {
-    unsigned char inBuf[70] = {'x','x','x','x','x','x','x','x','x','x',
+    unsigned char inBuf[90] = {'x','x','x','x','x','x','x','x','x','x',
+                               'x','x','x','x','x','x','x','x','x','x',
+                               'x','x','x','x','x','x','x','x','x','x',
                                'x','x','x','x','x','x','x','x','x','x',
                                'x','x','x','x','x','x','x','x','x','x',
                                'x','x','x','x','x','x','x','x','x','x',
@@ -370,6 +373,7 @@ bool Y1ModularRobot::decode_message(const char inString[], vector<double>& servo
 }
 
 
+//-- Compatible with Arduino code --> servo_controller_charArray_V6.pde
 bool Y1ModularRobot::decode_message_with_time(const char inString[], vector<double>& servo_feedback_angle)
 {
   char ch = 'X';
@@ -537,6 +541,176 @@ bool Y1ModularRobot::decode_message_with_time(const char inString[], vector<doub
 }
 
 
+//-- Compatible with Arduino code --> servo_controller_charArray_V6.pde
+bool Y1ModularRobot::decode_message_with_individual_time(const char inString[], vector<double>& servo_feedback_angle, vector<long>& servo_read_time)
+{
+  char ch = 'X';
+  unsigned int n = 0;
+  unsigned int module = 0;
+
+  Y1ModularRobot::MessageType mType = None;
+  int servo_address = 0;
+  double data[4][2];
+  int base10Exp = 2; //-- This parameter has to be the same both here and in Arduino code [int OutputStringStream_All(int, unsigned char*)].
+  unsigned long time_value=0;
+
+  ch = inString[n++];
+
+  // Message frame begin byte
+  if(ch == '#')
+  {
+    do
+    {
+      ch = inString[n++];
+
+      // Message-Type
+      if(ch == '%')
+      {
+        do
+        {
+          ch = inString[n++];
+          if(ch != '%')
+          {
+            switch(ch)
+            {
+              case '2': { mType = Request_ServoTime; break;}
+              case '4': { mType = Request_Time; break;}
+              default: {  std::cerr << std::endl
+                                    << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                                    << "bool decode_message_with_time(const char[], vector<double>&) method." << std::endl
+                                    << "Unknown Message Type: " << ch << std::endl;
+                          return(false);  }
+            }
+          }
+        }while(ch != '%'); // Message-Type end byte
+      }
+
+      // Servo address
+      else if(ch == '&')
+      {
+        do
+        {
+          ch = inString[n++];
+          if(ch != '&')
+          {
+            switch(ch)
+            {
+              case '0': { servo_address = 0; break; }
+              case '1': { servo_address = 1; break; }
+              case '2': { servo_address = 2; break; }
+              case '3': { servo_address = 3; break; }
+              case '4': { servo_address = 4; break; }
+              default:  { std::cerr << std::endl
+                                    << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                                    << "bool decode_message_with_time(const char[], vector<double>&) method." << std::endl
+                                    << "Invalid Servo Address: " << ch << std::endl;
+                          return(false);  }
+             }
+          }
+        }while(ch != '&'); //Servo address end byte
+      }
+
+      // Time
+      else if(ch == '[')
+      {
+        std::vector<unsigned int> time_data;
+        do
+        {
+          ch = inString[n++];
+          if(ch != ']')
+          {
+            switch(ch)
+            {
+              case '0': { time_data.push_back(0); break; }
+              case '1': { time_data.push_back(1); break; }
+              case '2': { time_data.push_back(2); break; }
+              case '3': { time_data.push_back(3); break; }
+              case '4': { time_data.push_back(4); break; }
+              case '5': { time_data.push_back(5); break; }
+              case '6': { time_data.push_back(6); break; }
+              case '7': { time_data.push_back(7); break; }
+              case '8': { time_data.push_back(8); break; }
+              case '9': { time_data.push_back(9); break; }
+              default:  { std::cerr << std::endl
+                                    << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                                    << "bool decode_message_with_time(const char[], vector<double>&) method." << std::endl
+                                    << "Invalid Time value: " << ch << std::endl;
+                          return(false); }
+            }
+          }
+        }while(ch != ']'); // Time end byte
+
+        for(int i=0; i<time_data.size(); i++)
+        {
+            time_value = time_value + (time_data[i]*pow(10,(time_data.size()-(i+1))));
+            //std::cout << "time_data[" << i << "] = " << time_data[i] << "   time_value = " << time_value << std::endl; // TODO: Debugger to be removed.
+        }
+      }
+
+      // Actual data begin byte
+      else if(ch == '*')
+      {
+        do
+        {
+          ch = inString[n++];
+          if(ch == '<')
+          {
+            if(ch != '*')
+            {
+              stringstream SS;
+              do
+              {
+                ch = inString[n++];
+                if(ch == '/')
+                {
+                  SS << " ";
+                }
+                else if(ch == '>');
+                else
+                {
+                  SS << ch;
+                }
+              }while(ch != '>');
+
+              SS >> data[module][0];
+              SS >> data[module][1];
+              //std::cout << "Data Stream: " << SS.str() << std::endl;
+              module++;
+            }
+          }
+        }while(ch != '*'); // Actual data end byte
+      }
+
+    }while(ch != '$'); // End of message frame byte
+  }
+  else
+  {
+    std::cerr << std::endl
+              << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+              << "bool decode_message_with_time(const char[], vector<double>&) method." << std::endl
+              << "Unknown Message Frame Start Tag: " << ch << std::endl;
+    return(false);
+  }
+
+  if(mType == Request_Time)
+  {
+    init_elapsed_evaluation_time(time_value);
+  }
+  else if(mType == Request_ServoTime)
+  {
+    set_elapsed_evaluation_time(time_value);
+
+    for(module = 0; module < number_of_modules; module++)
+    {
+      servo_feedback_angle[module] = data[module][0]/pow(10, base10Exp);
+      servo_read_time[module] = data[module][1];
+    }
+  }
+
+  return(true);
+}
+
+
 std::vector<double> Y1ModularRobot::get_robot_XY()
 {
   // TODO: Dirty implementation. Clean it.
@@ -634,56 +808,14 @@ double Y1ModularRobot::get_moduleServo_position(unsigned int module)
 }
 
 
-std::vector<double> Y1ModularRobot::get_all_moduleServo_position() // TODO: This should be removed after implementing get_all_moduleServo_position_with_time().
+void Y1ModularRobot::get_all_moduleServo_position(vector<ServoFeedback*>& servo_feedback)
 {
-  std::vector<double> servo_feedback_angle;
-
-  if(serial_port)
-  {
-    unsigned char outBuf[20] = {'#','%','1','%','&','4','&','*','4','5','.','0','*','$'};  // To request current servo position of all modules [PC to Skymega].
-    bool message_got = false;
-    bool message_decoded = false;
-
-    do
-    {
-      char recvString[70];
-      do
-      {
-        cprintf(serial_port, (char *)outBuf); // Send message requesting currnt servo position of all modules to Skymega.
-
-        char inString[70]; // Bug?: char inString[20]; Is this a bug? The message frame seems to be a size of approx. 42 characters long.
-        message_got = get_message(inString);
-        //message_got = get_message_with_time(inString);
-        if(message_got)
-        {
-          //std::cout << "inString: " << inString << std::endl; // Debugger
-          strcpy(recvString,inString);
-          //std::cout << "recvString: " << recvString << std::endl << std::endl; // Debugger
-        }
-        else
-        {
-          flush_cport(serial_port, 1);
-        }
-      }while(!message_got);
-
-      message_decoded = decode_message(recvString, servo_feedback_angle);
-    }while(!message_decoded);
-
-    //std::cout << "received bytes: " << inString << std::endl; // Debugger
-  }
-  else
-  {
-    std::cerr << std::endl
-              << "Flood Error: SimEnv application." << std::endl
-              << "void read_servo_position_real(void) method." << std::endl
-              << "Serial port not open." << std::endl;
-    exit(1);
-  }
-
-  return servo_feedback_angle;
+  get_all_moduleServo_position_with_individual_time(servo_feedback);
 }
 
 
+//-- To get servo position via serial communication with the controller board [Skymega], along with a single time value at which all servo position were read.
+//-- Compatible with Arduino code --> servo_controller_charArray_V6.pde
 void Y1ModularRobot::get_all_moduleServo_position_with_time(vector<ServoFeedback*>& servo_feedback)
 {
     std::vector<double> servo_feedback_angle;
@@ -697,12 +829,12 @@ void Y1ModularRobot::get_all_moduleServo_position_with_time(vector<ServoFeedback
 
       do
       {
-        char recvString[70];
+        char recvString[90];
         do
         {
           cprintf(serial_port, (char *)outBuf); // Send message requesting currnt servo position of all modules to Skymega.
 
-          char inString[70]; // Bug?: char inString[20]; Is this a bug? The message frame seems to be a size of approx. 42 characters long.
+          char inString[90]; // Bug?: char inString[20]; Is this a bug? The message frame seems to be a size of approx. 42 characters long.
           message_got = get_message_with_time(inString);
           if(message_got)
           {
@@ -717,13 +849,10 @@ void Y1ModularRobot::get_all_moduleServo_position_with_time(vector<ServoFeedback
         message_decoded = decode_message_with_time(recvString, servo_feedback_angle);
       }while(!message_decoded);
 
-      //std::cout << "                                             "; // TODO: Debugger to be removed
       for(int module=0; module<number_of_modules; module++)
       {
         servo_feedback[module]->set_new_value(elapsed_evaluation_time, servo_feedback_angle[module]);
-        //std::cout << servo_feedback_angle[module] << "   "; // TODO: Debugger to be removed
       }
-      //std::cout << std::endl; // TODO: Debugger to be removed
     }
     else
     {
@@ -735,6 +864,59 @@ void Y1ModularRobot::get_all_moduleServo_position_with_time(vector<ServoFeedback
     }
 }
 
+
+//-- To get servo position via serial communication with the controller board [Skymega], along with individual time value at which each servo position was read.
+//-- Compatible with Arduino code --> servo_controller_charArray_V7.pde
+void Y1ModularRobot::get_all_moduleServo_position_with_individual_time(vector<ServoFeedback*>& servo_feedback)
+{
+    std::vector<double> servo_feedback_angle;
+    servo_feedback_angle.resize(number_of_modules);
+    
+    std::vector<long> servo_read_time;
+    servo_read_time.resize(number_of_modules);
+
+    if(serial_port)
+    {
+      unsigned char outBuf[20] = {'#','%','1','%','&','4','&','*','4','5','.','0','*','$'};  // To request current servo position of all modules [PC to Skymega].
+      bool message_got = false;
+      bool message_decoded = false;
+
+      do
+      {
+        char recvString[90];
+        do
+        {
+          cprintf(serial_port, (char *)outBuf); // Send message requesting currnt servo position of all modules to Skymega.
+
+          char inString[90]; // Bug?: char inString[20]; Is this a bug? The message frame seems to be a size of approx. 63 characters long.
+          message_got = get_message_with_time(inString);
+          if(message_got)
+          {
+            strcpy(recvString,inString);
+          }
+          else
+          {
+            flush_cport(serial_port, 1);
+          }
+        }while(!message_got);
+
+        message_decoded = decode_message_with_individual_time(recvString, servo_feedback_angle, servo_read_time);
+      }while(!message_decoded);
+
+      for(unsigned int module=0; module<number_of_modules; module++)
+      {
+        servo_feedback[module]->set_new_value(elapsed_evaluation_time + servo_read_time[module], servo_feedback_angle[module]);
+      }
+    }
+    else
+    {
+      std::cerr << std::endl
+                << "Flood Error: SimEnv application." << std::endl
+                << "void read_servo_position_real(void) method." << std::endl
+                << "Serial port not open." << std::endl;
+      exit(1);
+    }
+}
 
 void Y1ModularRobot::get_current_time(void)
 {
