@@ -26,9 +26,10 @@
 
 #include "SerialCommunication.h"
 
-//#define BAUD_RATE 38400
-//#define BAUD_RATE 57600
 #define BAUD_RATE 115200
+
+//#define MAX_POLL_TRIALS 10  //-- For Wired-Communication between PC and Skymega
+#define MAX_POLL_TRIALS 20  //-- For XBEE-Communication between PC and Skymega
 
 unsigned int set_serial_port(const std::string& new_serial_port, int baud_rate)
 {
@@ -137,7 +138,7 @@ int main(int argc, char* argv[])
       }
       poll_counter++;
     //}while(foundEndBit != true);
-    }while(foundEndBit != true && poll_counter <= 200);
+    }while(foundEndBit != true && poll_counter <= MAX_POLL_TRIALS);
 
     message[message_size] = '\0'; // always put a "null" at the end of a string!
 

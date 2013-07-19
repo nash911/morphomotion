@@ -71,8 +71,7 @@ public:
   virtual void stop_sinusoidal_controller(void) = 0;
   virtual void set_moduleServo_position(unsigned int, double) = 0;
   virtual double get_moduleServo_position(unsigned int) = 0;
-  virtual std::vector<double> get_all_moduleServo_position(void) = 0;  // TODO: This should be removed after implementing get_all_moduleServo_position_with_time().
-  virtual void get_all_moduleServo_position_with_time(vector<ServoFeedback*>&) = 0;
+  virtual void get_all_moduleServo_position(vector<ServoFeedback*>&) = 0;
   virtual unsigned long get_elapsed_evaluation_time(void) = 0;
   virtual unsigned long get_previous_read_evaluation_time(void) = 0;
   virtual double calculate_distance_travelled_euclidean(void) = 0;

@@ -354,20 +354,9 @@ double SimulationOpenRave::get_moduleServo_position(unsigned int module)
 }
 
 
-std::vector<double> SimulationOpenRave::get_all_moduleServo_position() //-- TODO: This should be removed after implementing get_all_moduleServo_position_with_time().
+void SimulationOpenRave::get_all_moduleServo_position(vector<ServoFeedback*>& servo_feedback)
 {
-  stringstream os,is;
-  std::vector<double> servo_angle;
-  double angle;
-
-  for(int module=0; module<number_of_modules; module++)
-  {
-    is << "getpos1" << " " << module << " ";
-    pcontroller->SendCommand(os,is);
-    os >> angle;
-    servo_angle.push_back(angle);
-  }
-  return servo_angle;
+  get_all_moduleServo_position_with_time(servo_feedback);
 }
 
 
