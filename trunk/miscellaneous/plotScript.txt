@@ -1,0 +1,60 @@
+plot "servo_raw.dat" using 1:2 with lines title 'Servo-1', \
+     "servo_raw.dat" using 1:3 with lines title 'Servo-2', \
+     "servo_raw.dat" using 1:4 with lines title 'Servo-5'
+
+plot "servo_raw-parallel.dat" using 1:2 with lines title 'Servo-1', \
+     "servo_raw-parallel.dat" using 1:3 with lines title 'Servo-2', \
+     "servo_raw-parallel.dat" using 1:4 with lines title 'Servo-5'
+
+plot "servo_raw-cube2.dat" using 1:2 with lines title 'Servo-1', \
+     "servo_raw-cube2.dat" using 1:3 with lines title 'Servo-2'
+
+plot "servo_raw-cube3.dat" using 1:2 with lines title 'Servo-1', \
+     "servo_raw-cube3.dat" using 1:3 with lines title 'Servo-2', \
+     "servo_raw-cube3.dat" using 1:4 with lines title 'Servo-5'
+
+plot "servo_raw-cube3-phase.dat" using 1:2 with lines title 'Servo-1', \
+     "servo_raw-cube3-phase.dat" using 3:4 with lines title 'Servo-2', \
+     "servo_raw-cube3-phase.dat" using 5:6 with lines title 'Servo-5'
+
+plot "servo-1_raw.dat" using 1:2 with lines title 'Servo-3', \
+     "servo-2_raw.dat" using 1:2 with lines title 'Servo-2', \
+     "servo-5_raw.dat" using 1:2 with lines title 'Servo-5'
+
+plot "servo_raw.dat" using 1:2 with lines title 'Servo-1', \
+     "servo_raw.dat" using 1:3 with lines title 'Servo-2', \
+     "servo_raw.dat" using 1:4 with lines title 'Servo-5', \
+     "servo-1_raw.dat" using 1:2 with lines title 'Servo-1_A', \
+     "servo-2_raw.dat" using 1:2 with lines title 'Servo-2_A', \
+     "servo-5_raw.dat" using 1:2 with lines title 'Servo-5_A'
+
+plot "servo_raw.dat" using 1:2 with lines title 'Servo-1', \
+     "servo_raw.dat" using 1:3 with lines title 'Servo-2', \
+     "servo_raw.dat" using 1:4 with lines title 'Servo-5', \
+     "servo_raw-parallel.dat" using 1:2 with lines title 'Servo-1', \
+     "servo_raw-parallel.dat" using 1:3 with lines title 'Servo-2', \
+     "servo_raw-parallel.dat" using 1:4 with lines title 'Servo-5'
+
+plot "servo_raw.dat" using 1:2 with lines title 'Servo-1', \
+     "servo_raw.dat" using 1:3 with lines title 'Servo-2', \
+     "servo_raw-cube2.dat" using 1:2 with lines title 'Servo-1', \
+     "servo_raw-cube2.dat" using 1:3 with lines title 'Servo-2'
+
+plot "servo_raw.dat" using 1:2 with lines title 'Servo-1', \
+     "servo_raw.dat" using 1:3 with lines title 'Servo-2', \
+     "servo_raw.dat" using 1:4 with lines title 'Servo-5', \
+     "servo_raw-cube3-phase.dat" using 1:2 with lines title 'Servo-1', \
+     "servo_raw-cube3-phase.dat" using 3:4 with lines title 'Servo-2', \
+     "servo_raw-cube3-phase.dat" using 5:6 with lines title 'Servo-5'
+
+plot "servo_raw.dat" using 1:2 with lines title 'Servo-1', \
+     "servo_raw.dat" using 1:3 with lines title 'Servo-2', \
+     "servo_raw.dat" using 1:4 with lines title 'Servo-4', \
+     "servo_raw.dat" using 1:5 with lines title 'Servo-5', \
+     "servo_raw.dat" using 1:6 with lines title 'Servo-6', \
+     "servo_raw.dat" using 1:7 with lines title 'Servo-7'
+
+plot "servo_data.csv" using 1:2 with lines title 'Servo'
+
+plot "servo_raw.dat" using 1:3 with lines title 'Angle', \
+     "servo_raw.dat" using 1:2 with lines title 'Raw'
