@@ -471,7 +471,7 @@ bool Y1ModularRobot::decode_message_with_time(const char inString[], vector<doub
           }
         }while(ch != ']'); // Time end byte
 
-        for(int i=0; i<time_data.size(); i++)
+        for(unsigned int i=0; i<time_data.size(); i++)
         {
             time_value = time_value + (time_data[i]*pow(10,(time_data.size()-(i+1))));
             //std::cout << "time_data[" << i << "] = " << time_data[i] << "   time_value = " << time_value << std::endl; // TODO: Debugger to be removed.
@@ -640,7 +640,7 @@ bool Y1ModularRobot::decode_message_with_individual_time(const char inString[], 
           }
         }while(ch != ']'); // Time end byte
 
-        for(int i=0; i<time_data.size(); i++)
+        for(unsigned int i=0; i<time_data.size(); i++)
         {
             time_value = time_value + (time_data[i]*pow(10,(time_data.size()-(i+1))));
             //std::cout << "time_data[" << i << "] = " << time_data[i] << "   time_value = " << time_value << std::endl; // TODO: Debugger to be removed.
@@ -782,7 +782,7 @@ void Y1ModularRobot::set_moduleServo_position(unsigned int module, double servo_
 	outSS << servo_angle << ">*$";
 /***********************************************Temp Solution *******************************************************/
 
-  for(int i=0;i<outSS.str().size();i++)
+  for(unsigned int i=0;i<outSS.str().size();i++)
   {
     outBuf[i] = outSS.str()[i];
   }
@@ -849,7 +849,7 @@ void Y1ModularRobot::get_all_moduleServo_position_with_time(vector<ServoFeedback
         message_decoded = decode_message_with_time(recvString, servo_feedback_angle);
       }while(!message_decoded);
 
-      for(int module=0; module<number_of_modules; module++)
+      for(unsigned int module=0; module<number_of_modules; module++)
       {
         servo_feedback[module]->set_new_value(elapsed_evaluation_time, servo_feedback_angle[module]);
       }

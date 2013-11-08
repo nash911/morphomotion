@@ -1009,8 +1009,8 @@ void FileHandler::load_Controller_parameters(std::fstream& file, Controller *con
 void FileHandler::load_NN_parameters(std::fstream& file, Flood::MultilayerPerceptron *mlp)
 {
   std::string word;
-  int nnInput;
-  int nnOutput;
+  int nnInput = 0;
+  int nnOutput = 0;
   std::vector<int> hiddenLayers;
 
   do
@@ -1078,7 +1078,7 @@ void FileHandler::load_NN_parameters(std::fstream& file, Flood::MultilayerPercep
   }while(word != "</NeuralNetwork>");
 
   Flood::Vector<int> nnHiddenNeurons(hiddenLayers.size());
-  for(int i=0; i<hiddenLayers.size(); i++)
+  for(unsigned int i=0; i<hiddenLayers.size(); i++)
   {
     nnHiddenNeurons[i] = hiddenLayers[i];
   }
@@ -1222,7 +1222,7 @@ void FileHandler::load_independent_parameters(std::fstream& file, Flood::Multila
   Flood::Vector<double> Independent_Parameters_Minimum(independentParametersNumber);
   Flood::Vector<double> Independent_Parameters_Maximum(independentParametersNumber);
 
-  for(int i=0; i<independentParametersNumber; i++)
+  for(unsigned int i=0; i<independentParametersNumber; i++)
   {
     Independent_Parameters_Name[i] = independentParametersName[i];
     Independent_Parameters_Minimum[i] = independentParametersMinimum[i];

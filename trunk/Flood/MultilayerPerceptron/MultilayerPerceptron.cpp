@@ -78,7 +78,7 @@ MultilayerPerceptron::MultilayerPerceptron
 MultilayerPerceptron::MultilayerPerceptron(int new_inputs_number, int new_hidden_layer_size, int new_outputs_number)
 {
    // Set network architecture
-  
+
    Vector<int> new_hidden_layers_size(1, new_hidden_layer_size);
 
    set_network_architecture(new_inputs_number, new_hidden_layers_size, new_outputs_number);
