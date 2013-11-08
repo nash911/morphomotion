@@ -35,7 +35,7 @@ OscillationAnalyzer_OutputSignal::OscillationAnalyzer_OutputSignal(Robot* robot_
   phase_degrees.initialize(0);
 
   phase_graph_size = 0;
-  for(int i=0; i<number_of_modules; i++)
+  for(unsigned int i=0; i<number_of_modules; i++)
   {
     phase_graph_size = phase_graph_size + i;
   }

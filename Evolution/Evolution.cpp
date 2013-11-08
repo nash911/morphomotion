@@ -59,6 +59,7 @@ double Evolution::calculate_objective(void)
 
 double Evolution::calculate_objective(int generation, int individual)  //-- TODO: To be removed from here and from ObjectiveFunction.h
 {
+    return 0;
 }
 
 double Evolution::calculate_objective(int generation, int individual, int evaluation_sample_size)
@@ -68,8 +69,8 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
   double mean_distance = 0;
   double mean_speed = 0;
 
-  double gen = generation;
-  double ind = individual;
+  //double gen = generation;
+  //double ind = individual;
 
   std::cout << std::endl << generation << " -- " << individual << ":";
   for(int i=0; i<evaluation_sample_size; i++)
@@ -94,6 +95,21 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
 
   mean_distance = total_distance/evaluation_sample_size;
   mean_speed = (mean_distance/controller->get_evaluation_period())*100;  //-- Mean speed calculated as cms/second.
+  
+  //--------------------TODO: Debugger to be removed--------------------//
+  /*std::cout << std::endl;
+  double user_fitness;
+  std::cin >> user_fitness;
+  
+  if(user_fitness)
+  {
+		mean_speed = user_fitness;
+	}
+	else
+	{
+		mean_speed = mean_speed/10;
+	}*/
+  //--------------------TODO: Debugger to be removed--------------------//
 
   return(mean_speed);
 }

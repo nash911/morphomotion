@@ -236,7 +236,7 @@ int main(int argc, char* argv[])
   controller.set_evaluation_period(600);
 
   Flood::Vector<double> individual(mlp.get_parameters_number());
-  int population_size = population.get_rows_number();
+  unsigned int population_size = population.get_rows_number();
 
   if(evaluate_best_individual)
   {
@@ -306,8 +306,6 @@ int main(int argc, char* argv[])
   }
   else
   {
-    int x; // Debugger
-
     for(int i=population_size-1; i>=0; i--)
     //for(unsigned int i=0; i<=population_size-1; i++)
     {

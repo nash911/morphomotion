@@ -1,10 +1,7 @@
-//#include "cv.h"
-//#include "highgui.h"
-
 #include <vector>
 
-#include "/usr/local/include/opencv/cv.h"
-#include "/usr/local/include/opencv/highgui.h"
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 #include "layer_utils.h"
 #include "disjoint_sets2.h"

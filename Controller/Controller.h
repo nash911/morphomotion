@@ -127,14 +127,14 @@ private:
   ControllerType controller_type;
   double servo_max;
   double servo_min;
-  int number_of_modules;
+  unsigned int number_of_modules;
   unsigned int evaluation_period;
   vector<ServoFeedback*> servo_feedback;
   StartAngleType start_angle_type;
   Flood::Vector <double> predef_start_angle;
   double servo_delta_threshold;
   double servo_derivative_threshold;
-  unsigned servo_derivative_epsilon;
+  unsigned long servo_derivative_epsilon;  // BUG FIX: Was previously --> unsigned servo_derivative_epsilon;
   double oscillator_amplitude;
   double oscillator_offset;
 

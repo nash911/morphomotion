@@ -157,9 +157,9 @@ void VisualTracker::process_image(const cv::Mat & input_image_rgb, std::vector<i
    cv::Rect tempBoundingBox;
 
    // Sort the components based on the bounding box size.
-   for(int i = 0; i < boundingBoxes.size()-1; i++)
+   for(unsigned int i = 0; i < boundingBoxes.size()-1; i++)
    {
-      for(int j = i+1; j < boundingBoxes.size(); j++)
+      for(unsigned int j = i+1; j < boundingBoxes.size(); j++)
       {
          if((boundingBoxes[j].width * boundingBoxes[j].height) > (boundingBoxes[i].width * boundingBoxes[i].height))
          {

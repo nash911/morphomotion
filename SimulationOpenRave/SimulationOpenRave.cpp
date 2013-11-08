@@ -263,7 +263,7 @@ void SimulationOpenRave::reset_robot(void)
   penv->StopSimulation();
 
   //-- Set the servo of each module to zero.
-  for(int i=0; i<number_of_modules; i++)
+  for(unsigned int i=0; i<number_of_modules; i++)
   {
     set_moduleServo_position(i, 0);
   }
@@ -363,9 +363,9 @@ void SimulationOpenRave::get_all_moduleServo_position(vector<ServoFeedback*>& se
 void SimulationOpenRave::get_all_moduleServo_position_with_time(vector<ServoFeedback*>& servo_feedback)
 {
   stringstream os,is;
-  double angle = 21.0; //-- This value set to 21.0 as a way of detecting when a failuer to read module position occurs.
+  double angle = 12.3456; //-- This value set to 12.3456 as a way of detecting when a failuer to read module position occurs.
 
-  for(int module=0; module<number_of_modules; module++)
+  for(unsigned int module=0; module<number_of_modules; module++)
   {
     is << "getpos1" << " " << module << " ";
     pcontroller->SendCommand(os,is);

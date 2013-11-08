@@ -59,7 +59,7 @@ Controller::~Controller(void)
 {
   //-- BUG: This is a problem with the below implementation. Getting a "Invalid pointer" error when freeing ServoFeeback object.
   //-- BUG FIX: Changed 'delete[]' to 'delete'
-  for(int module=0; module<number_of_modules; module++)
+  for(unsigned int module=0; module<number_of_modules; module++)
   {
     delete servo_feedback[module];
   }
@@ -68,7 +68,7 @@ Controller::~Controller(void)
 
 void Controller::reset_controller()
 {
-  for(int module=0; module<number_of_modules; module++) // Note: this has been moved to void init_local_variables(....)
+  for(unsigned int module=0; module<number_of_modules; module++) // Note: this has been moved to void init_local_variables(....)
   {
     servo_feedback[module]->reset_value();
   }
@@ -87,7 +87,7 @@ void Controller::init_controller()
 
   //-- Set the size of the current_servo_angle array based on the number of modules in the configuration
   servo_feedback.resize(number_of_modules);
-  for(int module=0; module<number_of_modules; module++)
+  for(unsigned int module=0; module<number_of_modules; module++)
   {
     servo_feedback[module] = new ServoFeedback;
   }
@@ -132,14 +132,14 @@ void Controller::init_local_variables(Flood::Vector<double> &output,
 {
   if(start_angle_type == Zero)
   {
-    for(int module=0; module<number_of_modules; module++)
+    for(unsigned int module=0; module<number_of_modules; module++)
     {
       output[module] = 0;
     }
   }
   else if(start_angle_type == Random)
   {
-    for(int module=0; module<number_of_modules; module++)
+    for(unsigned int module=0; module<number_of_modules; module++)
     {
       output[module] = calculate_random_uniform(servo_min,servo_max);
     }
@@ -147,21 +147,21 @@ void Controller::init_local_variables(Flood::Vector<double> &output,
   else if(start_angle_type == RandomEqual)
   {
     double random_value = calculate_random_uniform(servo_min,servo_max);
-    for(int module=0; module<number_of_modules; module++)
+    for(unsigned int module=0; module<number_of_modules; module++)
     {
       output[module] = random_value;
     }
   }
   else if(start_angle_type == Predefined)
   {
-    for(int module=0; module<number_of_modules; module++)
+    for(unsigned int module=0; module<number_of_modules; module++)
     {
       output[module] = predef_start_angle[module];
     }
   }
   else if(start_angle_type == RunTime)
   {
-    for(int module=0; module<number_of_modules; module++)
+    for(unsigned int module=0; module<number_of_modules; module++)
     {
        std::cout << std::endl << std::endl << "Enter start angle for module number " << module << ": " << std::endl;
        std::cin >> output[module];
@@ -177,14 +177,14 @@ void Controller::init_local_variables(Flood::Vector<double> &output,
 
   if(controller_type == Simple_Controller || controller_type == Naive_Controller)
   {
-    for(int module=0; module<number_of_modules; module++)
+    for(unsigned int module=0; module<number_of_modules; module++)
     {
       //-- Setting the motors to a the amplitude value.
       output[module] = oscillator_amplitude + oscillator_offset;
     }
   }
 
-  for(int module=0; module<number_of_modules; module++)
+  for(unsigned int module=0; module<number_of_modules; module++)
   {
     previous_cycle_output[module] = 0;
     isFirstStep[module] = true;
@@ -253,7 +253,7 @@ bool Controller::run_Controller(const std::string& type, int memberID, int gener
                        isFirstStep);
 
   double servo_delta = 0;
-  double servo_derivative = NULL;
+  double servo_derivative;
 
   unsigned long previous_read_elapsed_time = 0;
   unsigned long evaluation_elapsed_time = 0;
@@ -308,7 +308,7 @@ bool Controller::run_Controller(const std::string& type, int memberID, int gener
         servo_delta = calculate_servo_delta(module, output[module]);
         servo_derivative = calculate_servo_derivative_time(module, servo_feedback_history);
 
-        if(servo_delta < servo_delta_threshold || (servo_derivative != NULL && servo_derivative < servo_derivative_threshold))
+        if(servo_delta < servo_delta_threshold || servo_derivative < servo_derivative_threshold)
         {
 
 /***************************************************************** Debugger ***********************************************************/
@@ -489,13 +489,14 @@ void Controller::actuate_module(int module, double output)
 
 void Controller::read_servo_positions_with_time() // TODO: This should be implemented as a seperate thread.
 {
-  robot_primary->get_all_moduleServo_position_with_time(servo_feedback);
+  robot_primary->get_all_moduleServo_position(servo_feedback);
+  //robot_primary->get_all_moduleServo_position_with_individual_time(servo_feedback);
 
 /**********************************************************TEMP FIX**************************************************************************/
 /*TODO: This is a temprory fix. Need to write servo value along with actual time [X-axis] into graph file.*/
 
   std::vector<double> servo_positions;
-  for(int module=0; module<number_of_modules; module++)
+  for(unsigned int module=0; module<number_of_modules; module++)
   {
     servo_positions.push_back(servo_feedback[module]->get_servo_position());
   }
@@ -704,6 +705,10 @@ std::string Controller::get_start_angle_type(void)
   {
     return("RunTime");
   }
+  else
+  {
+      return("Error");
+  }
 }
 
 
@@ -717,7 +722,7 @@ void Controller::set_predef_start_angle_values(Flood::Vector<double> new_predef_
     exit(1);
   }
 
-  for(int i=0; i<number_of_modules; i++)
+  for(unsigned int i=0; i<number_of_modules; i++)
   {
     predef_start_angle[i] = new_predef_start_angle[i];
   }
