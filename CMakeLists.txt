@@ -121,3 +121,10 @@ set_target_properties(NeuralModelEvaluator PROPERTIES COMPILE_FLAGS "${OPENRAVE_
 set_target_properties(NeuralModelEvaluator PROPERTIES LINK_FLAGS "${OPENRAVE_LINK_FLAGS}")
 target_link_libraries(NeuralModelEvaluator ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY})
 
+add_executable(SerialCommunicationEvaluator
+  SerialCommunication/SerialCommunicationEvaluator.cpp
+  SerialCommunication/SerialCommunication.c
+)
+
+### opencv executable
+TARGET_LINK_LIBRARIES(SerialCommunicationEvaluator)
