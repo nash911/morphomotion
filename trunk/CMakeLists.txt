@@ -1,20 +1,38 @@
-PROJECT( morphoMotion )
-cmake_minimum_required(VERSION 2.8)
-SET(CMAKE_BUILD_TYPE RelWithDebInfo)
-# A variable which controls the type of build when using a single-configuration generator like the Makefile generator. CMake will create by default the following variables when using a single-configuration generator:
-# None (CMAKE_C_FLAGS or CMAKE_CXX_FLAGS used)
-# Debug (CMAKE_C_FLAGS_DEBUG or CMAKE_CXX_FLAGS_DEBUG)
-# Release (CMAKE_C_FLAGS_RELEASE or CMAKE_CXX_FLAGS_RELEASE)
-# RelWithDebInfo (CMAKE_C_FLAGS_RELWITHDEBINFO or CMAKE_CXX_FLAGS_RELWITHDEBINFO
-# MinSizeRel (CMAKE_C_FLAGS_MINSIZEREL or CMAKE_CXX_FLAGS_MINSIZEREL)
+#-------CMakeList for Ubuntu 12.04 with OpenRAVE 0.8-----------#
 
-### dependencies
-include(FindOpenRAVE.cmake)
-if( NOT OPENRAVE_FOUND )
-  message(FATAL_ERROR "could not find openrave, check for openrave-config in path")
-endif( NOT OPENRAVE_FOUND )
-MESSAGE("OPENRAVE_LIBRARY : ${OPENRAVE_LIBRARY}")
-MESSAGE("OPENRAVE_CORE_LIBRARY : ${OPENRAVE_CORE_LIBRARY}")
+cmake_minimum_required (VERSION 2.6.0)
+PROJECT( morphoMotion )
+find_package(OpenRAVE 0.8 REQUIRED)
+
+if( CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX )
+  add_definitions("-fno-strict-aliasing -Wall")
+endif( CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX )
+
+find_package(Boost ${OpenRAVE_Boost_VERSION} EXACT COMPONENTS iostreams python thread)
+
+
+
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
+
+# Make sure the openmr plugin is installed!
+# Get the openrave share directory
+EXEC_PROGRAM("openrave-config --share-dir" OUTPUT_VARIABLE OpenRAVE_SHARE_DIR)
+
+find_library(OPENMR openmr ${OpenRAVE_SHARE_DIR}/plugins)
+message(STATUS "Looking for OpenMR... ${OPENMR}")
+
+if (NOT OPENMR)
+  message(SEND_ERROR "OPENMR not found")
+endif()
+
+
+# Include and link directories
+include_directories(${OpenRAVE_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR} )
+if( Boost_INCLUDE_DIRS )
+  include_directories(${Boost_INCLUDE_DIRS})
+endif()
+
+link_directories(${OpenRAVE_LIBRARY_DIRS} ${Boost_LIBRARY_DIRS})
 
 FIND_PACKAGE( OpenCV REQUIRED )
 MESSAGE("OpenCV_LIBS : ${OpenCV_LIBS}")
@@ -26,7 +44,7 @@ Flood/Utilities Flood/MultilayerPerceptron Flood/ObjectiveFunctional Flood/Train
 GraphFile FileHandler OscillationAnalyzer_OutputSignal VisualTracker SerialCommunication
 )
 
-### objects
+
 add_executable(Evolve
   Evolution/EvolveController.cpp
   Flood/Perceptron/Perceptron.cpp
@@ -49,7 +67,11 @@ add_executable(Evolve
   SerialCommunication/SerialCommunication.c
 )
 
-TARGET_LINK_LIBRARIES(Evolve ${OPENRAVE_CORE_LIBRARY} ${OpenCV_LIBS})
+### executable
+set_target_properties(Evolve PROPERTIES COMPILE_FLAGS "${OPENRAVE_CXXFLAGS}")
+set_target_properties(Evolve PROPERTIES LINK_FLAGS "${OPENRAVE_LINK_FLAGS}")
+target_link_libraries(Evolve ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} ${OpenCV_LIBS})
+
 
 add_executable(Evaluate
   Evaluation/EvaluateController.cpp
@@ -73,7 +95,9 @@ add_executable(Evaluate
 )
 
 ### opencv executable
-TARGET_LINK_LIBRARIES(Evaluate ${OPENRAVE_CORE_LIBRARY} ${OpenCV_LIBS})
+set_target_properties(Evaluate PROPERTIES COMPILE_FLAGS "${OPENRAVE_CXXFLAGS}")
+set_target_properties(Evaluate PROPERTIES LINK_FLAGS "${OPENRAVE_LINK_FLAGS}")
+target_link_libraries(Evaluate ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} ${OpenCV_LIBS})
 
 
 ### Neural Model Evaluator
@@ -86,24 +110,14 @@ add_executable(NeuralModelEvaluator
   Flood/TrainingAlgorithm/EvolutionaryAlgorithm.cpp  # Only for resolving dependency of FileHandler.cpp
   Robot/Robot.cpp
   SimulationOpenRave/SimulationOpenRave.cpp
-  #Y1ModularRobot/Y1ModularRobot.cpp
   Controller/Controller.cpp
   ServoFeedback/ServoFeedback.cpp
   FileHandler/FileHandler.cpp
   GraphFile/GraphFile.cpp
   OscillationAnalyzer_OutputSignal/OscillationAnalyzer_OutputSignal.cpp
-  #VisualTracker/VisualTracker.cpp
-  #VisualTracker/disjoint_sets2.cpp
-  #VisualTracker/comp_labeller_interface.cpp
-  #SerialCommunication/SerialCommunication.c
 )
 
-TARGET_LINK_LIBRARIES(NeuralModelEvaluator ${OPENRAVE_CORE_LIBRARY})
+set_target_properties(NeuralModelEvaluator PROPERTIES COMPILE_FLAGS "${OPENRAVE_CXXFLAGS}")
+set_target_properties(NeuralModelEvaluator PROPERTIES LINK_FLAGS "${OPENRAVE_LINK_FLAGS}")
+target_link_libraries(NeuralModelEvaluator ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY})
 
-add_executable(SerialCommunicationEvaluator
-  SerialCommunication/SerialCommunicationEvaluator.cpp
-  SerialCommunication/SerialCommunication.c
-)
-
-### opencv executable
-TARGET_LINK_LIBRARIES(SerialCommunicationEvaluator)
