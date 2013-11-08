@@ -29,8 +29,8 @@ double S1_theta_1 = 0.623388;
 double S2_theta_0 = -46.322743;
 double S2_theta_1 = 0.631292;*/
 
-double theta_0 = -46.391799;
-double theta_1 = 0.627642;
+double theta_0 = -45.731538;
+double theta_1 = 0.661175;
 
 
 void setup() 
@@ -409,7 +409,7 @@ int OutputStringStream_All(int from, unsigned char* charBuf)
 {
   String fromString;
   String timeString;
-  int base10Exp = 2;
+  int base10Exp = 2;  // TODO: This parameter can be fixed both here and the PC code, and the message frame can be reduced by 8 bytes.
   unsigned int charBufLength = 0;
   unsigned long time=0;
   double rawData[NO_OF_SERVOS];
