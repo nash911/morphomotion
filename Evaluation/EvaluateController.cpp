@@ -31,7 +31,7 @@
 #define ROBOT_PRIMARY_OPENRAVE
 //#define ROBOT_PRIMARY_Y1
 
-//#define ROBOT_SECONDARY
+#define ROBOT_SECONDARY
 
 int main(int argc, char* argv[])
 {

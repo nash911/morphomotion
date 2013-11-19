@@ -1,6 +1,9 @@
 #include "VisualTracker.h"
+#include "camera_utils/camera_utils.h"
+
 
 #define BOX_SIZE 30
+#define MARKER_ECU_DIST_RATIO 2
 
 using namespace cv;
 
@@ -14,47 +17,118 @@ VisualTracker::VisualTracker(void)
 
     // Initialize to camera #0
     //camera.open(0);
-
+  camera.open(0);
+  assert(camera.isOpened());
 }
 
-//std::vector<int> VisualTracker::get_realRobot_XY(void)
-void VisualTracker::get_realRobot_XY(std::vector<int>& XY)
-{
-	/*std::vector<int> XY(2);
-	XY[0]=0;
-	XY[1]=0;*/
-	
-   namedWindow("video", 1);
+////////////////////////////////////////////////////////////////////////////////
 
-   camera.open(0);
+//std::vector<int> VisualTracker::get_robot_3D_position(void)
+void VisualTracker::get_robot_3D_position(double & x, double & y, double &z)
+{
+   namedWindow("video", 1);
    //cv::Mat input_image_rgb; // Image matrix
 
    // Capture a single image from camera
+   cv::Mat3b input_image_rgb; // Image matrix
    camera >> input_image_rgb;
 
-   if(!input_image_rgb.data)
-   {
+   if(!input_image_rgb.data) {
      std::cout << "No input file from camera to process." << std::endl;
      //return -1;
    }
    //imshow("input_image_rgb", input_image_rgb);
 
    // Process the captured camera image
-   process_image(input_image_rgb, XY);
+   int robot_x_pixels, robot_y_pixels;
+   process_image(input_image_rgb, robot_x_pixels, robot_y_pixels);
 
    waitKey(0);
-   camera.release();
-   
-   std::cout << "Ready to return from VisualTracker::get_realRobot_XY(std::vector<int>&)" << std::endl;
-   
-   //return(XY);
-   return;
+   std::cout << "Ready to return from VisualTracker::get_robot_3D_position(std::vector<int>&)" << std::endl;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
-void VisualTracker::process_image(const cv::Mat & input_image_rgb, std::vector<int>& XY)
+bool VisualTracker::get_robot_3D_position_rectfied(double &x, double &y, double &z) {
+  // load calibration files
+  std::string calibration_filename = "/home/nash/Dropbox/PhD/modularRobotics/morphomotion/VisualTracker/camera_utils/camera.yml";
+  cv::Mat mapx, mapy;
+  cv::Mat intrinsics, distortion, intrinsics_inv;
+  CameraUtils::read_calibration_file
+      (calibration_filename, mapx, mapy, intrinsics, distortion, intrinsics_inv);
+
+  // Capture a single image from camera
+  cv::Mat3b input_image_rgb; // Image matrix
+  for (int var = 0; var < 5; ++var) // read 5 iamges
+  {
+      camera >> input_image_rgb;
+  }
+
+  if(!input_image_rgb.data || input_image_rgb.empty()) {
+    std::cout << "No input file from camera to process." << std::endl;
+    return false;
+  }
+
+  // Undistort image
+  cv::Mat3b input_image_rgb_remapped = input_image_rgb.clone();
+  cv::remap(input_image_rgb, input_image_rgb_remapped, mapx, mapy, cv::INTER_LINEAR);
+
+  // Process the captured camera image
+  int robot_x_pixels, robot_y_pixels;
+  bool process_image_success = true;
+
+  process_image_success = process_image(input_image_rgb_remapped, robot_x_pixels, robot_y_pixels);
+
+  if (!process_image_success)
+  {
+    //std::cout << "process_image() returned false! Aborting." << std::endl;
+    return false;
+  }
+
+  // reproject robot in 3D
+  double fixed_height = 1.29; // meters
+  cv::Point robot_center_pixels(robot_x_pixels, robot_y_pixels);
+  cv::Point3f p3D = CameraUtils::pixel2world_known_distance
+      (intrinsics_inv, robot_center_pixels, fixed_height);
+  x = p3D.x;
+  y = p3D.y;
+  z = p3D.z;
+
+  // show axes
+  double arrow_length = .5; // meters
+  cv::line(input_image_rgb_remapped,
+           CameraUtils::world2pixel(intrinsics, 0, 0, fixed_height),
+           CameraUtils::world2pixel(intrinsics, arrow_length, 0, fixed_height),
+           CV_RGB(255, 0, 0), 2);
+  cv::line(input_image_rgb_remapped,
+           CameraUtils::world2pixel(intrinsics, 0, 0, fixed_height),
+           CameraUtils::world2pixel(intrinsics, 0, arrow_length, fixed_height),
+           CV_RGB(0, 255, 0), 2);
+  cv::line(input_image_rgb_remapped,
+           CameraUtils::world2pixel(intrinsics, 0, 0, fixed_height),
+           CameraUtils::world2pixel(intrinsics, arrow_length, arrow_length, fixed_height + arrow_length),
+           CV_RGB(0, 0, 255), 2);
+
+  // show robot position
+  //cv::circle(input_image_rgb_remapped, robot_center_pixels, 2, CV_RGB(255, 0, 0), -1);
+
+  // show images
+  //namedWindow("input_image_rgb");
+  //imshow("input_image_rgb", input_image_rgb);
+
+  //namedWindow("input_image_rgb_remapped");
+  //imshow("input_image_rgb_remapped", input_image_rgb_remapped);
+  //waitKey(0);
+
+  return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool VisualTracker::process_image(const cv::Mat & input_image_rgb,
+                                  int & robot_x_pixels, int & robot_y_pixels)
 {
-   printf("process_image:%ix%i\n", input_image_rgb.cols, input_image_rgb.rows);
+   //printf("process_image:%ix%i\n", input_image_rgb.cols, input_image_rgb.rows);
    Mat3b imageHSV;
    Mat1b result;
    Mat1b Hbuffer;
@@ -74,7 +148,8 @@ void VisualTracker::process_image(const cv::Mat & input_image_rgb, std::vector<i
 
    // Color --> Parrot Green: H=63-128 (31.5-64 with OpenCV), S=20-72 (51-183.6 with OpenCV) , V=26-54 (66.3-137.7 with OpenCV)
    //int Hmin = 25, Hmax = 70, Smin  = 45, Smax = 190, Vmin = 60, Vmax = 145;
-   int Hmin = 30, Hmax = 65, Smin  = 50, Smax = 180, Vmin = 65, Vmax = 140;
+   //int Hmin = 30, Hmax = 65, Smin  = 50, Smax = 180, Vmin = 65, Vmax = 140;
+   int Hmin = 40, Hmax = 55, Smin  = 60, Smax = 170, Vmin = 75, Vmax = 125;
 
    image_utils::HSVfilter(imageHSV,
                           250, result,
@@ -98,68 +173,20 @@ void VisualTracker::process_image(const cv::Mat & input_image_rgb, std::vector<i
    // get results
    set.get_connected_components(cols, components_pts, boundingBoxes);
 
-/***************************************** Original **************************************************
-   printf("Number of components: %i\n", (int) components_pts.size());
-   for(int box_idx = 0; box_idx < boundingBoxes.size(); box_idx++)
+   if(boundingBoxes.size() < 3)
    {
-      printf("Box %i (%i, %i)+(%i, %i)\n",
-             box_idx,
-             boundingBoxes[box_idx].x,
-             boundingBoxes[box_idx].y,
-             boundingBoxes[box_idx].width,
-             boundingBoxes[box_idx].height);
-   }
-   // make an illustration of the result
-   cv::Mat3b illus = input_image_rgb.clone();
-   for(int box_idx = 0; box_idx < boundingBoxes.size(); box_idx++)
-   {
-      cv::rectangle(illus, boundingBoxes[box_idx], CV_RGB(255, 0, 0), 2);
-   }
-   cv::imshow( "illus", illus );
-/***************************************** Original **************************************************/
-
-/***************************** Minimum boundingBox size approach **************************************
-   std::vector<cv::Rect> boundingBoxes_filtered;
-
-   // Remove components whose bounding box size is below a set limit.
-   for(int box_idx = 0; box_idx < boundingBoxes.size(); box_idx++)
-   {
-      if((boundingBoxes[box_idx].width * boundingBoxes[box_idx].height) >= BOX_SIZE)
-      {
-         //boundingBoxes.erase(box_idx);
-         //box_idx--;
-         boundingBoxes_filtered.push_back(boundingBoxes[box_idx]);
-      }
+       //std::cout << std::endl << "Too few connected components found. Aborting" << std::endl;
+       return false;
    }
 
-   //printf("Number of components: %i\n", (int) components_pts.size());
-   printf("Number of components: %i\n", (int) boundingBoxes_filtered.size());
-   for(int box_idx = 0; box_idx < boundingBoxes_filtered.size(); box_idx++)
-   {
-      printf("Box %i (%i, %i)+(%i, %i)\n",
-             box_idx,
-             boundingBoxes_filtered[box_idx].x,
-             boundingBoxes_filtered[box_idx].y,
-             boundingBoxes_filtered[box_idx].width,
-             boundingBoxes_filtered[box_idx].height);
-   }
-
-   // make an illustration of the result
-   cv::Mat3b illus = input_image_rgb.clone();
-   for(int box_idx = 0; box_idx < boundingBoxes_filtered.size(); box_idx++)
-   {
-       cv::rectangle(illus, boundingBoxes_filtered[box_idx], CV_RGB(255, 0, 0), 2);
-   }
-   cv::imshow( "illus", illus );
-/***************************** Minimum boundingBox size approach **************************************/
 
 /***************************** Sort by boundingBox size approach **************************************/
    cv::Rect tempBoundingBox;
 
    // Sort the components based on the bounding box size.
-   for(unsigned int i = 0; i < boundingBoxes.size()-1; i++)
+   for(int i = 0; i < boundingBoxes.size()-1; i++)
    {
-      for(unsigned int j = i+1; j < boundingBoxes.size(); j++)
+      for(int j = i+1; j < boundingBoxes.size(); j++)
       {
          if((boundingBoxes[j].width * boundingBoxes[j].height) > (boundingBoxes[i].width * boundingBoxes[i].height))
          {
@@ -170,17 +197,18 @@ void VisualTracker::process_image(const cv::Mat & input_image_rgb, std::vector<i
       }
    }
 
-   printf("Total number of components: %i\n", (int) boundingBoxes.size());
-   std::cout << "Top three components:" << std::endl;
+   //printf("Total number of components: %i\n", (int) boundingBoxes.size());
+   //std::cout << "Top three components:" << std::endl;
    for(int box_idx = 0; box_idx < 3; box_idx++)
    {
-      printf("Box %i (%i, %i)+(%i, %i)\n",
+      /*printf("Box %i (%i, %i)+(%i, %i)\n",
              box_idx,
              boundingBoxes[box_idx].x,
              boundingBoxes[box_idx].y,
              boundingBoxes[box_idx].width,
-             boundingBoxes[box_idx].height);
+             boundingBoxes[box_idx].height);*/
    }
+
    // make an illustration of the result
    cv::Mat3b illus = input_image_rgb.clone();
    for(int box_idx = 0; box_idx < 3; box_idx++)
@@ -210,6 +238,45 @@ void VisualTracker::process_image(const cv::Mat & input_image_rgb, std::vector<i
    //cv::imshow( "illus_triangle", illus_triangle );
 /***************************** Extract center point of the markers ************************************/
 
+
+/******************************** Validate the extracted markers **************************************/
+   std::vector<double> eucDistance_marker(3);
+
+   //--Calculate the euclidean distance between the markers.
+   eucDistance_marker[0] = euclidean_distance(center[0], center[1]);
+   eucDistance_marker[1] = euclidean_distance(center[1], center[2]);
+   eucDistance_marker[2] = euclidean_distance(center[2], center[0]);
+
+   //--Sort the euclidean distance between markets.
+   double temp_ecuDist;
+   for(unsigned int i=0; i<2; i++)
+   {
+       for(unsigned int j=i+1; j<3; j++)
+       {
+           if(eucDistance_marker[i] < eucDistance_marker[j])
+           {
+               temp_ecuDist = eucDistance_marker[i];
+               eucDistance_marker[i] = eucDistance_marker[j];
+               eucDistance_marker[j] = temp_ecuDist;
+           }
+       }
+   }
+
+   for(unsigned int i=0; i<2; i++)
+   {
+       for(unsigned int j=i+1; j<3; j++)
+       {
+           if(eucDistance_marker[i]/eucDistance_marker[j] >= MARKER_ECU_DIST_RATIO)
+           {
+               //std::cout << std::endl << "Incorrect Markers" << std::endl;
+               //break;
+               return false;
+           }
+       }
+   }
+/******************************** Validate the extracted markers **************************************/
+
+
 /************************************ Detect orientation marker ***************************************/
 
    std::vector<double> diff_eucDistance(3);
@@ -220,81 +287,69 @@ void VisualTracker::process_image(const cv::Mat & input_image_rgb, std::vector<i
 
    for(int i=0; i<3; i++)
    {
-      std::cout << "euclidean_distance " << i+1 << ": " << diff_eucDistance[i] << std::endl;
+      //std::cout << "euclidean_distance " << i+1 << ": " << diff_eucDistance[i] << std::endl;
    }
 
    int orientationMarker_index = -1;
    cv::Point point2;
-   /*for(int i=0; i<3; i++)
-   {
-      if(diff_eucDistance[i] <= 1)
-      {
-         orientationMarker_index = i;
-         cv::rectangle(illus_triangle, boundingBoxes[i], CV_RGB(0, 255, 0), 1);
-
-         if(i == 0)
-         {
-            point2.x = center[2].x + ((center[1].x - center[2].x)/2);
-            point2.y = center[2].y + ((center[1].y - center[2].y)/2);
-         }
-         else if(i == 1)
-         {
-            point2.x = center[2].x + ((center[0].x - center[2].x)/2);
-            point2.y = center[2].y + ((center[0].y - center[2].y)/2);
-         }
-         else if(i == 2)
-         {
-            point2.x = center[1].x + ((center[0].x - center[1].x)/2);
-            point2.y = center[1].y + ((center[0].y - center[1].y)/2);
-         }
-
-         cv::line(illus_triangle, center[i], point2, CV_RGB(0, 0, 255), 1, 8, 0);
-      }
-   }*/
 
    if(diff_eucDistance[0] < diff_eucDistance[1] && diff_eucDistance[0] < diff_eucDistance[2])
    {
       orientationMarker_index = 0;
-      cv::rectangle(illus_triangle, boundingBoxes[0], CV_RGB(0, 255, 0), 1);
+      //cv::rectangle(illus_triangle, boundingBoxes[0], CV_RGB(0, 255, 0), 1);
 
       point2.x = center[2].x + ((center[1].x - center[2].x)/2);
       point2.y = center[2].y + ((center[1].y - center[2].y)/2);
 
       cv::line(illus_triangle, center[0], point2, CV_RGB(0, 0, 255), 1, 8, 0);
-      
-      XY[0] = boundingBoxes[0].x + (boundingBoxes[0].width/2);
-      XY[1] = boundingBoxes[0].y + (boundingBoxes[0].height/2);
-      
+
+      robot_x_pixels = boundingBoxes[0].x + (boundingBoxes[0].width/2);
+      robot_y_pixels = boundingBoxes[0].y + (boundingBoxes[0].height/2);
+
    }
    else if(diff_eucDistance[1] < diff_eucDistance[0] && diff_eucDistance[1] < diff_eucDistance[2])
    {
       orientationMarker_index = 1;
-      cv::rectangle(illus_triangle, boundingBoxes[1], CV_RGB(0, 255, 0), 1);
+      //cv::rectangle(illus_triangle, boundingBoxes[1], CV_RGB(0, 255, 0), 1);
 
       point2.x = center[2].x + ((center[0].x - center[2].x)/2);
       point2.y = center[2].y + ((center[0].y - center[2].y)/2);
 
       cv::line(illus_triangle, center[1], point2, CV_RGB(0, 0, 255), 1, 8, 0);
-      
-      XY[0] = boundingBoxes[1].x + (boundingBoxes[1].width/2);
-      XY[1] = boundingBoxes[1].y + (boundingBoxes[1].height/2);
+
+      robot_x_pixels = boundingBoxes[1].x + (boundingBoxes[1].width/2);
+      robot_y_pixels = boundingBoxes[1].y + (boundingBoxes[1].height/2);
    }
    else if(diff_eucDistance[2] < diff_eucDistance[0] && diff_eucDistance[2] < diff_eucDistance[1])
    {
       orientationMarker_index = 2;
-      cv::rectangle(illus_triangle, boundingBoxes[2], CV_RGB(0, 255, 0), 1);
+      //cv::rectangle(illus_triangle, boundingBoxes[2], CV_RGB(0, 255, 0), 1);
 
       point2.x = center[1].x + ((center[0].x - center[1].x)/2);
       point2.y = center[1].y + ((center[0].y - center[1].y)/2);
 
       cv::line(illus_triangle, center[2], point2, CV_RGB(0, 0, 255), 1, 8, 0);
-      
-      XY[0] = boundingBoxes[2].x + (boundingBoxes[2].width/2);
-      XY[1] = boundingBoxes[2].y + (boundingBoxes[2].height/2);
+
+      robot_x_pixels = boundingBoxes[2].x + (boundingBoxes[2].width/2);
+      robot_y_pixels = boundingBoxes[2].y + (boundingBoxes[2].height/2);
    }
 
-   cv::imshow( "illus_triangle", illus_triangle );
+   //cv::imshow( "illus_triangle", illus_triangle );
 /************************************ Detect orientation marker ***************************************/
+
+
+/**************************************** Calculate centroid ******************************************/
+   cv::Point centroid;
+   centroid.x = (center[0].x + center[1].x + center[2].x)/3;
+   centroid.y = (center[0].y + center[1].y + center[2].y)/3;
+
+   cv::circle(illus_triangle, centroid, 2, CV_RGB(0, 255, 0), 3, 8, 0);
+   cv::imshow( "illus_triangle", illus_triangle );
+
+   robot_x_pixels = centroid.x;
+   robot_y_pixels = centroid.y;
+/**************************************** Calculate centroid ******************************************/
+
 
 /************************************** Determine orientation *****************************************
    int quad = 0;

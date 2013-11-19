@@ -1,18 +1,26 @@
 #include "VisualTracker.h"
 
-int main(void)
-{
-   VisualTracker vt;
-   
-   std::vector<int> XY(2);
-   XY[0] = 0;
-   XY[1] = 0;
+int main(void) {
+  VisualTracker vt;
 
-   for(int i=0; i<10; i++)
-   {
-      vt.get_realRobot_XY(XY);
-      std::cout << std::endl << "X= " << XY[0] << "    Y= " << XY[1] << std::endl;
-   }
+  double x = 1.1;
+  double y = 2.2;
+  double z = 3.3;
 
-   return 0;
+  bool got_robot_position_success = false;
+
+  for(unsigned int i=0; i<30; i++)
+  {
+      unsigned int vtCounter = 0;
+      do
+      {
+        vtCounter++;
+        got_robot_position_success = vt.get_robot_3D_position_rectfied(x, y, z);
+      }while(!got_robot_position_success);
+
+      std::cout << std::endl << i+1 << " (" << vtCounter << ") -->  X = " << x << ", Y = " << y << ", Z = " << z << std::endl;
+      cv::waitKey(0);
+  }
+
+  return 0;
 }
