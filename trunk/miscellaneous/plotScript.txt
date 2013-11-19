@@ -56,5 +56,5 @@ plot "servo_raw.dat" using 1:2 with lines title 'Servo-1', \
 
 plot "servo_data.csv" using 1:2 with lines title 'Servo'
 
-plot "servo_raw.dat" using 1:3 with lines title 'Angle', \
-     "servo_raw.dat" using 1:2 with lines title 'Raw'
+plot "servo_raw.dat" using 1:2 with lines title 'Actual', \
+     "servo_raw.dat" using 1:3 with lines title 'predicted'

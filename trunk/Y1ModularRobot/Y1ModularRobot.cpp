@@ -22,7 +22,7 @@ Y1ModularRobot::Y1ModularRobot():Robot()
   set_default_parameters();
   
   //-- Create Visual Tracker
-  //vis_track = new VisualTracker; //-- TODO: This needs to be uncommented.
+  vis_track = new VisualTracker; //-- TODO: This needs to be uncommented.
 }
 
 
@@ -42,7 +42,7 @@ Y1ModularRobot::Y1ModularRobot(const Robot* source_object):Robot()
   set_default_parameters();
   
   //-- Create Visual Tracker
-  //vis_track = new VisualTracker; //-- TODO: This needs to be uncommented.
+  vis_track = new VisualTracker; //-- TODO: This needs to be uncommented.
   
   this->set_robot_type(source_object->get_robot_type());
   this->set_evaluation_method(source_object->get_evaluation_method());
@@ -59,7 +59,7 @@ Y1ModularRobot::Y1ModularRobot(const std::string& new_serial_port):Robot()
   set_default_parameters();
 
   //-- Create Visual Tracker
-  //vis_track = new VisualTracker; //-- TODO: This needs to be uncommented.
+  vis_track = new VisualTracker; //-- TODO: This needs to be uncommented.
 
   set_serial_port(new_serial_port, BAUD_RATE);
 }
@@ -715,17 +715,27 @@ std::vector<double> Y1ModularRobot::get_robot_XY()
 {
   // TODO: Dirty implementation. Clean it.
   std::vector<double> robot_XY(2);
-  std::vector<int> XY(2);
+
+  /*std::vector<int> XY(2);
   XY[0] = 0;
-  XY[1] = 0;
+  XY[1] = 0;*/
+
+  double x = 1.1;
+  double y = 2.2;
+  double z = 3.3;
+
+  bool got_robot_position_success = false;
 	
   if(vis_track!=NULL)
   {
-    vis_track->get_realRobot_XY(XY);
+    do
+    {
+      got_robot_position_success = vis_track->get_robot_3D_position_rectfied(x, y, z);
+    }while(!got_robot_position_success);
   }
   
-  robot_XY[0] = XY[0];
-  robot_XY[1] = XY[1];
+  robot_XY[0] = x;
+  robot_XY[1] = y;
   
   return(robot_XY);
 }
@@ -1006,14 +1016,14 @@ void Y1ModularRobot::measure_cumulative_distance(void)
 double Y1ModularRobot::get_robot_X(void)
 {
   //-- To be implemnted
-  return(0.0);
+    return(robot_pos_initial[0]);
 }
 
 
 double Y1ModularRobot::get_robot_Y(void)
 {
     //-- To be implemnted
-    return(0.0);
+    return(robot_pos_initial[1]);
 }
 
 void Y1ModularRobot::step(const std::string& type)
