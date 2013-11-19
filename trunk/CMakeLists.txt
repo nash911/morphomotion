@@ -149,3 +149,4 @@ add_executable(VisualTrackerEvaluator
 
 # target_link_libraries(VisualTrackerEvaluator ${OpenCV_LIBS} VisualTracker)
 target_link_libraries(VisualTrackerEvaluator ${OpenCV_LIBS})
+
