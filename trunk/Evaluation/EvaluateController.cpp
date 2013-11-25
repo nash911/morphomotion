@@ -28,10 +28,12 @@
 
 #define BAUD_RATE 115200
 
-#define ROBOT_PRIMARY_OPENRAVE
-//#define ROBOT_PRIMARY_Y1
+//#define ROBOT_PRIMARY_OPENRAVE
+#define ROBOT_PRIMARY_Y1
 
-#define ROBOT_SECONDARY
+//#define ROBOT_SECONDARY
+
+#define EVALUATION_PERIOD 50
 
 int main(int argc, char* argv[])
 {
@@ -210,8 +212,8 @@ int main(int argc, char* argv[])
   controller.init_controller();
   population.subtract_row(0);
 
-  //robot_primary->set_evaluation_method("Euclidean_Distance_Final");  // Debugger;
-  robot_primary->set_evaluation_method("Euclidean_Distance_Cumulative");  // Debugger;
+  robot_primary->set_evaluation_method("Euclidean_Distance_Final");  // Debugger;
+  //robot_primary->set_evaluation_method("Euclidean_Distance_Cumulative");  // Debugger;
 
 #ifdef ROBOT_SECONDARY
   if(robot_primary->get_robot_environment() == "SimulationOpenRave")
@@ -233,7 +235,7 @@ int main(int argc, char* argv[])
   // Output Layer Activation Function
   mlp.set_output_layer_activation_function("HyperbolicTangent");
 
-  controller.set_evaluation_period(600);
+  controller.set_evaluation_period(EVALUATION_PERIOD);
 
   Flood::Vector<double> individual(mlp.get_parameters_number());
   unsigned int population_size = population.get_rows_number();
@@ -284,11 +286,11 @@ int main(int argc, char* argv[])
 
       controller.set_oscillation_analyzer(&oscAnlz);
       oscAnlz.set_record_servo(true);
-      oscAnlz.set_record_amplitude(true);
-      oscAnlz.set_record_offset(true);
-      oscAnlz.set_record_frequency(true);
-      oscAnlz.set_record_phase(true);
-      oscAnlz.set_record_trajectory(true);
+      //oscAnlz.set_record_amplitude(true);
+      //oscAnlz.set_record_offset(true);
+      //oscAnlz.set_record_frequency(true);
+      //oscAnlz.set_record_phase(true);
+      //oscAnlz.set_record_trajectory(true);
 
       controller.run_Controller("evaluation",1,best_individual_fitness_index+1,1);
 
@@ -325,11 +327,14 @@ int main(int argc, char* argv[])
 
       controller.set_oscillation_analyzer(&oscAnlz);
       oscAnlz.set_record_servo(true);
-      oscAnlz.set_record_amplitude(true);
-      oscAnlz.set_record_offset(true);
-      oscAnlz.set_record_frequency(true);
-      oscAnlz.set_record_phase(true);
-      oscAnlz.set_record_trajectory(true);
+      //oscAnlz.set_record_amplitude(true);
+      //oscAnlz.set_record_offset(true);
+      //oscAnlz.set_record_frequency(true);
+      //oscAnlz.set_record_phase(true);
+      //oscAnlz.set_record_trajectory(true);
+
+      //controller.set_sinusoidal_frequency(0.11,6);
+      //std::cout << std::endl << "Freuency: " << controller.get_sinusoidal_frequency() << std::endl; // TODO: Debugger to be removed.
 
       controller.run_Controller("evaluation",1,i,1);
 

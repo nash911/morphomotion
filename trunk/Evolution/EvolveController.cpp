@@ -27,13 +27,13 @@
 #include "Controller.h"
 #include "FileHandler.h"
 
-#define ROBOT_OPENRAVE
-//#define ROBOT_Y1
+//#define ROBOT_OPENRAVE
+#define ROBOT_Y1
 
 #define EVALUATION_SAMPLE_SIZE 1
 
-#define POPULATION_SIZE 20
-#define GENERATIONS 20
+#define POPULATION_SIZE 10
+#define GENERATIONS 10
 
 #define CROSSOVER_RATIO 0.5
 #define ELITISM_RATIO 0.25

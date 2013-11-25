@@ -62,6 +62,7 @@ public:
   bool decode_message_with_individual_time(const char[], vector<double>&, vector<long>&); //-- Compatible with Arduino code --> servo_controller_charArray_V7.pde
   void get_current_time(void);
   std::vector<double> get_robot_XY();
+  double euclidean_distance(const std::vector<double> pos_1, const std::vector<double> pos_2);
 
   //-- INHERITED METHODS
   void copy(const Robot*);
@@ -69,6 +70,7 @@ public:
   void set_sinusoidal_controller_parameters(const vector<double>&, const vector<double>&, const vector<double>&, const double);
   void stop_sinusoidal_controller(void);
   void set_moduleServo_position(unsigned int, double);
+  void set_all_moduleServo_position(const vector<double>&);
   double get_moduleServo_position(unsigned int);
   void get_all_moduleServo_position(vector<ServoFeedback*>&);
   unsigned long get_elapsed_evaluation_time(void);

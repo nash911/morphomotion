@@ -17,14 +17,16 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
+#include <math.h>
+#include <unistd.h> // TODO: Not sure if this is needed.
+
 #include "Robot.h"
 #include "MultilayerPerceptron.h"
 #include "ServoFeedback.h"
 #include "GraphFile.h"
 #include "OscillationAnalyzer_OutputSignal.h"
 
-#include <unistd.h> // TODO: Not sure if this is needed.
-
+#define _USE_MATH_DEFINES
 
 #define ACTIVITY_LOG
 //#define DEBUGGER
@@ -37,6 +39,8 @@
 #define NOISE_MEAN 0
 #define NOISE_SD 5
 
+//#define PI 3.14159265
+
 
 using namespace std;
 
@@ -46,7 +50,7 @@ class Controller
 public:
 
   enum StartAngleType{Zero, Random, RandomEqual, Predefined, RunTime};
-  enum ControllerType{Sinusoidal_Controller, Neural_Controller, Naive_Controller, Simple_Controller, Hybrid_Controller, Semi_Hybrid_Controller};
+  enum ControllerType{Sinusoidal_Controller, Neural_Controller, Naive_Controller, Simple_Controller, Hybrid_Controller, Semi_Hybrid_Controller, Sine_Controller};
 
   // DEFAULT CONSTRUCTOR
   Controller(void);
@@ -72,13 +76,15 @@ public:
                             Flood::Vector<bool>&);
 
   bool run_Controller(const std::string&, int, int, int);
-  void actuate_with_neural_controller(int, Flood::Vector<double>&);
-  void actuate_with_simple_controller(int, Flood::Vector<double>&);
-  void actuate_with_hybrid_controller(int, Flood::Vector<double>&);
-  void actuate_module(int, double);
+  void actuate_with_sine_controller(const unsigned int, const double, Flood::Vector<double>&);
+  void actuate_with_neural_controller(const unsigned int, Flood::Vector<double>&);
+  void actuate_with_simple_controller(const unsigned int, Flood::Vector<double>&);
+  void actuate_with_hybrid_controller(const unsigned int, Flood::Vector<double>&);
+  void actuate_module(const unsigned int, double);
+  void actuate_all_modules(const Flood::Vector<double>&);
   void read_servo_positions_with_time(void); // TODO: This should be implemented as a seperate thread.
-  double calculate_servo_delta(int, double);
-  double calculate_servo_derivative_time(unsigned int, vector<vector<ServoFeedback*> >&);
+  double calculate_servo_delta(const unsigned int, double);
+  double calculate_servo_derivative_time(const unsigned int, vector<vector<ServoFeedback*> >&);
 
   void set_controller_type(const std::string&);
   std::string get_controller_type(void);
@@ -112,6 +118,11 @@ public:
   void set_sinusoidal_phase(const double, const unsigned int, const unsigned int);
   void set_sinusoidal_frequency(const double, const unsigned int);
 
+  double get_sinusoidal_amplitude(const unsigned int);
+  double get_sinusoidal_offset(const unsigned int);
+  double get_sinusoidal_phase(const unsigned int);
+  double get_sinusoidal_frequency(void);
+
   double calculate_random_uniform(double, double);
   double calculate_random_normal(double, double);
   double scale_to_range(double, double, double, double, double);
@@ -142,6 +153,8 @@ private:
   vector<double> sinusoidal_offset;
   vector<double> sinusoidal_phase;
   double sinusoidal_frequency;
+
+  //double Pi;
 };
 
 #endif

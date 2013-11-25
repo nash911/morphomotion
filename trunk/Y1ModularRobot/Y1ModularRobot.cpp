@@ -22,7 +22,7 @@ Y1ModularRobot::Y1ModularRobot():Robot()
   set_default_parameters();
   
   //-- Create Visual Tracker
-  vis_track = new VisualTracker; //-- TODO: This needs to be uncommented.
+  vis_track = new VisualTracker;
 }
 
 
@@ -42,7 +42,7 @@ Y1ModularRobot::Y1ModularRobot(const Robot* source_object):Robot()
   set_default_parameters();
   
   //-- Create Visual Tracker
-  vis_track = new VisualTracker; //-- TODO: This needs to be uncommented.
+  vis_track = new VisualTracker;
   
   this->set_robot_type(source_object->get_robot_type());
   this->set_evaluation_method(source_object->get_evaluation_method());
@@ -59,7 +59,7 @@ Y1ModularRobot::Y1ModularRobot(const std::string& new_serial_port):Robot()
   set_default_parameters();
 
   //-- Create Visual Tracker
-  vis_track = new VisualTracker; //-- TODO: This needs to be uncommented.
+  vis_track = new VisualTracker;
 
   set_serial_port(new_serial_port, BAUD_RATE);
 }
@@ -474,7 +474,6 @@ bool Y1ModularRobot::decode_message_with_time(const char inString[], vector<doub
         for(unsigned int i=0; i<time_data.size(); i++)
         {
             time_value = time_value + (time_data[i]*pow(10,(time_data.size()-(i+1))));
-            //std::cout << "time_data[" << i << "] = " << time_data[i] << "   time_value = " << time_value << std::endl; // TODO: Debugger to be removed.
         }
       }
 
@@ -643,7 +642,6 @@ bool Y1ModularRobot::decode_message_with_individual_time(const char inString[], 
         for(unsigned int i=0; i<time_data.size(); i++)
         {
             time_value = time_value + (time_data[i]*pow(10,(time_data.size()-(i+1))));
-            //std::cout << "time_data[" << i << "] = " << time_data[i] << "   time_value = " << time_value << std::endl; // TODO: Debugger to be removed.
         }
       }
 
@@ -713,12 +711,7 @@ bool Y1ModularRobot::decode_message_with_individual_time(const char inString[], 
 
 std::vector<double> Y1ModularRobot::get_robot_XY()
 {
-  // TODO: Dirty implementation. Clean it.
   std::vector<double> robot_XY(2);
-
-  /*std::vector<int> XY(2);
-  XY[0] = 0;
-  XY[1] = 0;*/
 
   double x = 1.1;
   double y = 2.2;
@@ -728,15 +721,17 @@ std::vector<double> Y1ModularRobot::get_robot_XY()
 	
   if(vis_track!=NULL)
   {
+    unsigned int vtCounter = 0;
     do
     {
+      //std::cout << std::endl << vtCounter++ << std::endl; // TODO: Debugger to be removed
       got_robot_position_success = vis_track->get_robot_3D_position_rectfied(x, y, z);
-    }while(!got_robot_position_success);
+    }while(!got_robot_position_success);// && vtCounter < 10);
   }
   
   robot_XY[0] = x;
   robot_XY[1] = y;
-  
+
   return(robot_XY);
 }
 
@@ -799,12 +794,60 @@ void Y1ModularRobot::set_moduleServo_position(unsigned int module, double servo_
 
   if(serial_port)
   {
-    SendBuf(serial_port, outBuf, outSS.str().size());
+    if(!SendBuf(serial_port, outBuf, outSS.str().size()))
+    {
+      std::cerr << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                << "void set_moduleServo_position(int, double) method." << std::endl
+                << "SendBuf Failed!" << std::endl;
+         exit(1);
+    }
   }
   else
   {
     std::cerr << "MorphoMotion Error: Y1ModularRobot class." << std::endl
               << "void set_moduleServo_position(int, double) method." << std::endl
+              << "No Serial Port: " << serial_port << "." <<std::endl;
+
+    exit(1);
+  }
+}
+
+
+void Y1ModularRobot::set_all_moduleServo_position(const vector<double>& servo_angle)
+{
+  stringstream outSS;
+  unsigned char outBuf[100];
+  unsigned int outBufSize = 0;
+
+  outSS << "#%0%&" << 4 << "&*";
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    //outSS << "><";
+      outSS << "<" << servo_angle[module] << ">";
+  }
+    outSS << "*$";
+
+  for(unsigned int i=0;i<outSS.str().size();i++)
+  {
+    outBuf[i] = outSS.str()[i];
+  }
+
+  if(serial_port)
+  {
+    //SendBuf(serial_port, outBuf, outSS.str().size());
+    if(!SendBuf(serial_port, outBuf, outSS.str().size()))
+    {
+      std::cerr << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                << "void set_all_moduleServo_position(const vector<double>&) method." << std::endl
+                << "SendBuf Failed!" << std::endl;
+
+      exit(1);
+    }
+  }
+  else
+  {
+    std::cerr << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+              << "void set_all_moduleServo_position(const vector<double>&) method." << std::endl
               << "No Serial Port: " << serial_port << "." <<std::endl;
 
     exit(1);
@@ -1000,8 +1043,14 @@ unsigned long Y1ModularRobot::get_previous_read_evaluation_time(void)
 
 double Y1ModularRobot::calculate_distance_travelled_euclidean(void)
 {
-  //-- TODO
-  double distanceTravelled = (double)rand()/(RAND_MAX+1.0);
+  double distanceTravelled;
+  std::vector<double> robot_pos_final;
+
+  // Capture the current position of the robot
+  robot_pos_final = get_robot_XY();
+
+  distanceTravelled = euclidean_distance(robot_pos_initial, robot_pos_final);
+
   return(distanceTravelled);
 }
 
@@ -1026,7 +1075,14 @@ double Y1ModularRobot::get_robot_Y(void)
     return(robot_pos_initial[1]);
 }
 
+
 void Y1ModularRobot::step(const std::string& type)
 {
   //-- TODO
+}
+
+
+double Y1ModularRobot::euclidean_distance(const std::vector<double> pos_1, const std::vector<double> pos_2)
+{
+    return( sqrt(((pos_1[0] - pos_2[0])*(pos_1[0] - pos_2[0])) + ((pos_1[1] - pos_2[1])*(pos_1[1] - pos_2[1]))));
 }
