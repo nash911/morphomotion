@@ -64,6 +64,7 @@ public:
   void set_sinusoidal_controller_parameters(const vector<double>&, const vector<double>&, const vector<double>&, const double);
   void stop_sinusoidal_controller(void);
   void set_moduleServo_position(unsigned int, double);
+  void set_all_moduleServo_position(const vector<double>&);
   double get_moduleServo_position(unsigned int);
   void get_all_moduleServo_position(vector<ServoFeedback*>&);
   unsigned long get_elapsed_evaluation_time(void);

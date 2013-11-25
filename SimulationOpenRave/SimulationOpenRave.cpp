@@ -341,6 +341,17 @@ void SimulationOpenRave::set_moduleServo_position(unsigned int module, double se
 }
 
 
+void SimulationOpenRave::set_all_moduleServo_position(const vector<double>& servo_angle)
+{
+  stringstream os,is;
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+      is << "setpos1" << " " << module << " " << servo_angle[module] << " ";
+    pcontroller->SendCommand(os,is);
+  }
+}
+
+
 double SimulationOpenRave::get_moduleServo_position(unsigned int module)
 {
   stringstream os,is;
