@@ -13,6 +13,7 @@
 class VisualTracker
 {
 private:
+    cv::VideoCapture camera; // From camera or video
 
 public:
   VisualTracker(void);
@@ -27,6 +28,4 @@ public:
   void get_robot_3D_position(double &x, double &y, double& z);
   bool get_robot_3D_position_rectfied(double &x, double &y, double& z);
   double euclidean_distance(cv::Point, cv::Point);
-
-  cv::VideoCapture camera; // From camera or video
 };

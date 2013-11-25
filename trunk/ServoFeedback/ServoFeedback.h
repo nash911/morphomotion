@@ -32,9 +32,9 @@ public:
 
   void reset_value(void);
 
-  void set_new_value(unsigned long, double);
-  void set_servo_position_read_time(unsigned long);
-  void set_servo_position(double);
+  void set_new_value(const unsigned long, const double);
+  void set_servo_position_read_time(const unsigned long);
+  void set_servo_position(const double);
 
   unsigned long get_servo_position_read_time(void);
   double get_servo_position(void);
