@@ -34,7 +34,7 @@ void VisualTracker::get_robot_3D_position(double & x, double & y, double &z)
    camera >> input_image_rgb;
 
    if(!input_image_rgb.data) {
-     std::cout << "No input file from camera to process." << std::endl;
+     std::cout << "No input file from camera to process." << std::endl;  // TODO: Debugger to be removed.
      //return -1;
    }
    //imshow("input_image_rgb", input_image_rgb);
@@ -44,7 +44,7 @@ void VisualTracker::get_robot_3D_position(double & x, double & y, double &z)
    process_image(input_image_rgb, robot_x_pixels, robot_y_pixels);
 
    waitKey(0);
-   std::cout << "Ready to return from VisualTracker::get_robot_3D_position(std::vector<int>&)" << std::endl;
+   //std::cout << "Ready to return from VisualTracker::get_robot_3D_position(std::vector<int>&)" << std::endl;  // TODO: Debugger to be removed.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -81,7 +81,7 @@ bool VisualTracker::get_robot_3D_position_rectfied(double &x, double &y, double 
 
   if (!process_image_success)
   {
-    //std::cout << "process_image() returned false! Aborting." << std::endl;
+    //std::cout << "process_image() returned false! Aborting." << std::endl; // TODO: Debugger to be removed.
     return false;
   }
 
@@ -93,6 +93,8 @@ bool VisualTracker::get_robot_3D_position_rectfied(double &x, double &y, double 
   x = p3D.x;
   y = p3D.y;
   z = p3D.z;
+
+  //std::cout << std::endl << "Finished -- reproject robot in 3D" << std::endl; // TODO: Debugger to be removed.
 
   // show axes
   double arrow_length = .5; // meters
@@ -109,17 +111,20 @@ bool VisualTracker::get_robot_3D_position_rectfied(double &x, double &y, double 
            CameraUtils::world2pixel(intrinsics, arrow_length, arrow_length, fixed_height + arrow_length),
            CV_RGB(0, 0, 255), 2);
 
+  //std::cout << std::endl << "Finished -- show axes" << std::endl; // TODO: Debugger to be removed.
+
   // show robot position
-  //cv::circle(input_image_rgb_remapped, robot_center_pixels, 2, CV_RGB(255, 0, 0), -1);
+  cv::circle(input_image_rgb_remapped, robot_center_pixels, 2, CV_RGB(255, 0, 0), -1);
 
   // show images
   //namedWindow("input_image_rgb");
   //imshow("input_image_rgb", input_image_rgb);
 
-  //namedWindow("input_image_rgb_remapped");
-  //imshow("input_image_rgb_remapped", input_image_rgb_remapped);
+  namedWindow("input_image_rgb_remapped");
+  imshow("input_image_rgb_remapped", input_image_rgb_remapped);
   //waitKey(0);
 
+  //std::cout << std::endl << "Leaving bool VisualTracker::get_robot_3D_position_rectfied(double&, double&, double&)" << std::endl; // TODO: Debugger to be removed.
   return true;
 }
 
@@ -175,7 +180,7 @@ bool VisualTracker::process_image(const cv::Mat & input_image_rgb,
 
    if(boundingBoxes.size() < 3)
    {
-       //std::cout << std::endl << "Too few connected components found. Aborting" << std::endl;
+       //std::cout << std::endl << "Too few connected components found. Aborting" << std::endl; // TODO: Debugger to be removed.
        return false;
    }
 
@@ -197,17 +202,17 @@ bool VisualTracker::process_image(const cv::Mat & input_image_rgb,
       }
    }
 
-   //printf("Total number of components: %i\n", (int) boundingBoxes.size());
-   //std::cout << "Top three components:" << std::endl;
+   /*printf("Total number of components: %i\n", (int) boundingBoxes.size());
+   std::cout << "Top three components:" << std::endl;
    for(int box_idx = 0; box_idx < 3; box_idx++)
    {
-      /*printf("Box %i (%i, %i)+(%i, %i)\n",
+      printf("Box %i (%i, %i)+(%i, %i)\n",
              box_idx,
              boundingBoxes[box_idx].x,
              boundingBoxes[box_idx].y,
              boundingBoxes[box_idx].width,
-             boundingBoxes[box_idx].height);*/
-   }
+             boundingBoxes[box_idx].height);
+   }*/
 
    // make an illustration of the result
    cv::Mat3b illus = input_image_rgb.clone();
@@ -268,12 +273,14 @@ bool VisualTracker::process_image(const cv::Mat & input_image_rgb,
        {
            if(eucDistance_marker[i]/eucDistance_marker[j] >= MARKER_ECU_DIST_RATIO)
            {
-               //std::cout << std::endl << "Incorrect Markers" << std::endl;
+               //std::cout << std::endl << "Incorrect Markers" << std::endl; // TODO: Debugger to be removed.
                //break;
                return false;
            }
        }
    }
+
+   //std::cout << std::endl << "Finished /**Validate the extracted markers**/" << std::endl; // TODO: Debugger to be removed.
 /******************************** Validate the extracted markers **************************************/
 
 
@@ -287,10 +294,10 @@ bool VisualTracker::process_image(const cv::Mat & input_image_rgb,
 
    for(int i=0; i<3; i++)
    {
-      //std::cout << "euclidean_distance " << i+1 << ": " << diff_eucDistance[i] << std::endl;
+      //std::cout << "euclidean_distance " << i+1 << ": " << diff_eucDistance[i] << std::endl;  // TODO: Debugger to be removed.
    }
 
-   int orientationMarker_index = -1;
+   int orientationMarker_index = 0;
    cv::Point point2;
 
    if(diff_eucDistance[0] < diff_eucDistance[1] && diff_eucDistance[0] < diff_eucDistance[2])
@@ -339,15 +346,21 @@ bool VisualTracker::process_image(const cv::Mat & input_image_rgb,
 
 
 /**************************************** Calculate centroid ******************************************/
+   //std::cout << std::endl << "Started /**Calculate centroid**/" << std::endl; // TODO: Debugger to be removed.
    cv::Point centroid;
    centroid.x = (center[0].x + center[1].x + center[2].x)/3;
    centroid.y = (center[0].y + center[1].y + center[2].y)/3;
 
-   cv::circle(illus_triangle, centroid, 2, CV_RGB(0, 255, 0), 3, 8, 0);
-   cv::imshow( "illus_triangle", illus_triangle );
+   //cv::circle(illus_triangle, centroid, 2, CV_RGB(0, 255, 0), 3, 8, 0);
+   //cv::imshow( "illus_triangle", illus_triangle );
 
    robot_x_pixels = centroid.x;
    robot_y_pixels = centroid.y;
+
+   //robot_x_pixels = 20;
+   //robot_y_pixels = 20;
+
+   //std::cout << std::endl << "Finished /**Calculate centroid**/" << std::endl; // TODO: Debugger to be removed.
 /**************************************** Calculate centroid ******************************************/
 
 
@@ -384,6 +397,8 @@ bool VisualTracker::process_image(const cv::Mat & input_image_rgb,
 
 /************************************** Determine orientation *****************************************/
 
+    //std::cout << std::endl << "Leaving process_image(const cv::Mat&, int&, int&)" << std::endl; // TODO: Debugger to be removed.
+    return true;
 }
 
 double VisualTracker::euclidean_distance(cv::Point point1, cv::Point point2)

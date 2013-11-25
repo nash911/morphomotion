@@ -33,7 +33,7 @@ void ServoFeedback::reset_value()
   servo_position = 0;
 }
 
-void ServoFeedback::set_new_value(unsigned long current_time_value, double current_servo_position)
+void ServoFeedback::set_new_value(const unsigned long current_time_value, const double current_servo_position)
 {
   if(current_time_value < servo_position_read_time)
   {
@@ -51,13 +51,13 @@ void ServoFeedback::set_new_value(unsigned long current_time_value, double curre
 
 }
 
-void ServoFeedback::set_servo_position_read_time(unsigned long current_time_value)
+void ServoFeedback::set_servo_position_read_time(const unsigned long current_time_value)
 {
   servo_position_read_time = current_time_value;
 }
 
 
-void ServoFeedback::set_servo_position(double current_servo_position)
+void ServoFeedback::set_servo_position(const double current_servo_position)
 {
   servo_position = current_servo_position;
 }
