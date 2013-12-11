@@ -142,17 +142,17 @@ public:
    // Objective functional evaluation methods
 
    double calculate_evaluation();
-   double calculate_evaluation(int,int);
+   //double calculate_evaluation(int,int); //--TODO: To be removed
    double calculate_evaluation(int,int,int);
 
    double calculate_potential_evaluation(const Vector<double>&);
-   double calculate_potential_evaluation(const Vector<double>&,int,int);
+   //double calculate_potential_evaluation(const Vector<double>&,int,int); //--TODO: To be removed
    double calculate_potential_evaluation(const Vector<double>&,int,int,int);
 
    /// This method returns the objective value of a multilayer perceptron.
 
    virtual double calculate_objective() = 0;
-   virtual double calculate_objective(int,int) = 0;
+   //virtual double calculate_objective(int,int) = 0; //--TODO: To be removed
    virtual double calculate_objective(int,int,int) = 0;
 
    virtual double calculate_regularization(void); 

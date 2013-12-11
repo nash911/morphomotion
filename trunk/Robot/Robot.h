@@ -67,6 +67,7 @@ public:
   //-- VIRTUAL FUNCTIONS
   virtual void copy(const Robot*) = 0;
   virtual void reset_robot(void) = 0;
+  virtual void reset_modules(void) = 0;
   virtual void set_sinusoidal_controller_parameters(const vector<double>&, const vector<double>&, const vector<double>&, const double) = 0;
   virtual void stop_sinusoidal_controller(void) = 0;
   virtual void set_moduleServo_position(unsigned int, double) = 0;
@@ -90,7 +91,7 @@ protected:
   unsigned int number_of_modules;
   unsigned long initial_evaluation_time;
   unsigned long previous_read_evaluation_time;
-  unsigned long elapsed_evaluation_time;
+  unsigned long elapsed_evaluation_time; //--microseconds
   double distance_travelled;
 };
 

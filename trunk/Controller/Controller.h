@@ -20,6 +20,12 @@
 #include <math.h>
 #include <unistd.h> // TODO: Not sure if this is needed.
 
+#include <stdio.h>
+#include <termios.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/time.h>
+
 #include "Robot.h"
 #include "MultilayerPerceptron.h"
 #include "ServoFeedback.h"
@@ -27,6 +33,10 @@
 #include "OscillationAnalyzer_OutputSignal.h"
 
 #define _USE_MATH_DEFINES
+
+#define Q 81
+#define q 113
+#define SPACE 32
 
 #define ACTIVITY_LOG
 //#define DEBUGGER
@@ -75,7 +85,7 @@ public:
                             Flood::Vector<double>&,
                             Flood::Vector<bool>&);
 
-  bool run_Controller(const std::string&, int, int, int);
+  bool run_Controller(const std::string&, std::stringstream&, int, int, int);
   void actuate_with_sine_controller(const unsigned int, const double, Flood::Vector<double>&);
   void actuate_with_neural_controller(const unsigned int, Flood::Vector<double>&);
   void actuate_with_simple_controller(const unsigned int, Flood::Vector<double>&);
@@ -126,6 +136,9 @@ public:
   double calculate_random_uniform(double, double);
   double calculate_random_normal(double, double);
   double scale_to_range(double, double, double, double, double);
+
+  void changemode(int);
+  int kbhit (void);
   /*void record_servo_graph_simulated(int);
   void record_servo_graph_real(int);*/
 

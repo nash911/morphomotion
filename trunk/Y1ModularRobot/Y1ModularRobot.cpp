@@ -15,6 +15,9 @@
 
 #include "Y1ModularRobot.h"
 
+void changemode(int);
+int  kbhit(void);
+
 // DEFAULT CONSTRUCTOR
 Y1ModularRobot::Y1ModularRobot():Robot()
 {
@@ -709,7 +712,7 @@ bool Y1ModularRobot::decode_message_with_individual_time(const char inString[], 
 }
 
 
-std::vector<double> Y1ModularRobot::get_robot_XY()
+std::vector<double> Y1ModularRobot::get_robot_XY(const std::string& phase)
 {
   std::vector<double> robot_XY(2);
 
@@ -718,20 +721,53 @@ std::vector<double> Y1ModularRobot::get_robot_XY()
   double z = 3.3;
 
   bool got_robot_position_success = false;
+
+  unsigned int key = 'H';
+  changemode(1);
 	
   if(vis_track!=NULL)
   {
     unsigned int vtCounter = 0;
+
+    /*do
+    {
+        do
+        {
+          //std::cout << std::endl << vtCounter++ << std::endl; // TODO: Debugger to be removed
+          got_robot_position_success = vis_track->get_robot_3D_position_rectfied(phase, x, y, z);
+          vtCounter++;
+        }while(!got_robot_position_success); //&& vtCounter < 1);
+
+        std::cout << "Approve? " << std::endl;
+        do
+        {
+            while(!kbhit());
+            key = getchar();
+        }while(!(key==ENTER || key==ESC)); //--Do until either ENTER or ESC is pressed.
+
+        if(key == ENTER)
+        {
+            std::cout << "    Yes" << std::endl;
+        }
+        else if(key == ESC)
+        {
+            std::cout << "    No" << std::endl;
+        }
+    }while(key == ESC); //--DO if ESC is pressed.
+    */
+
     do
     {
       //std::cout << std::endl << vtCounter++ << std::endl; // TODO: Debugger to be removed
-      got_robot_position_success = vis_track->get_robot_3D_position_rectfied(x, y, z);
-    }while(!got_robot_position_success);// && vtCounter < 10);
+      got_robot_position_success = vis_track->get_robot_3D_position_rectfied(phase, x, y, z);
+      vtCounter++;
+    }while(!got_robot_position_success); //&& vtCounter < 1);
   }
   
   robot_XY[0] = x;
   robot_XY[1] = y;
 
+  changemode(0);
   return(robot_XY);
 }
 
@@ -742,13 +778,18 @@ void Y1ModularRobot::reset_robot(void)
   //TODO: Reset the robot to (0,0) according to image coordinate.
 
   //-- Set the servo of each module to zero.
-  for(unsigned int module=0; module<number_of_modules; module++)
+  /*for(unsigned int module=0; module<number_of_modules; module++)
   {
     set_moduleServo_position(module, 0);
-  }
+  }*/
 
-  // Capture initial position of the robot
-  robot_pos_initial = get_robot_XY();
+  reset_modules();
+
+  if(this->robot_priority == Robot_Primary)
+  {
+    // Capture initial position of the robot
+    robot_pos_initial = get_robot_XY("Reset");
+  }
 
   if(this->robot_priority == Robot_Primary)
   {
@@ -756,6 +797,19 @@ void Y1ModularRobot::reset_robot(void)
   }
 
   distance_travelled = 0;
+}
+
+
+void Y1ModularRobot::reset_modules(void)
+{
+    //-- Set the servo of each module to zero.
+    for(unsigned int module=0; module<number_of_modules; module++)
+    {
+      set_moduleServo_position(module, 0);
+    }
+
+    //--Sleep for 1 seconds.
+    usleep(1000000);
 }
 
 
@@ -1047,7 +1101,7 @@ double Y1ModularRobot::calculate_distance_travelled_euclidean(void)
   std::vector<double> robot_pos_final;
 
   // Capture the current position of the robot
-  robot_pos_final = get_robot_XY();
+  robot_pos_final = get_robot_XY("Final");
 
   distanceTravelled = euclidean_distance(robot_pos_initial, robot_pos_final);
 
@@ -1085,4 +1139,37 @@ void Y1ModularRobot::step(const std::string& type)
 double Y1ModularRobot::euclidean_distance(const std::vector<double> pos_1, const std::vector<double> pos_2)
 {
     return( sqrt(((pos_1[0] - pos_2[0])*(pos_1[0] - pos_2[0])) + ((pos_1[1] - pos_2[1])*(pos_1[1] - pos_2[1]))));
+}
+
+
+void changemode(int dir)
+{
+  static struct termios oldt, newt;
+
+  if ( dir == 1 )
+  {
+    tcgetattr( STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~( ICANON | ECHO );
+    tcsetattr( STDIN_FILENO, TCSANOW, &newt);
+  }
+  else
+    tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
+}
+
+
+int kbhit (void)
+{
+  struct timeval tv;
+  fd_set rdfs;
+
+  tv.tv_sec = 0;
+  tv.tv_usec = 0;
+
+  FD_ZERO(&rdfs);
+  FD_SET (STDIN_FILENO, &rdfs);
+
+  select(STDIN_FILENO+1, &rdfs, NULL, NULL, &tv);
+  return FD_ISSET(STDIN_FILENO, &rdfs);
+
 }

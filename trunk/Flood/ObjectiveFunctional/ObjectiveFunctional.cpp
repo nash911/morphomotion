@@ -636,7 +636,7 @@ double ObjectiveFunctional::calculate_evaluation()
 
 
 /*---------------------------Avinash Ranganath------------------------------------------*/
-double ObjectiveFunctional::calculate_evaluation(int generation, int individual)
+/*double ObjectiveFunctional::calculate_evaluation(int generation, int individual)
 {
    // Increment number of evaluations count
 
@@ -655,7 +655,7 @@ double ObjectiveFunctional::calculate_evaluation(int generation, int individual)
    
       return(objective_weight*objective + regularization_weight*regularization);
    }
-}
+}*/
 
 
 /*---------------------------Avinash Ranganath------------------------------------------*/
@@ -763,7 +763,7 @@ double ObjectiveFunctional::calculate_potential_evaluation(const Vector<double>&
 
 
 /*---------------------------Avinash Ranganath-------------------------------------*/
-double ObjectiveFunctional::calculate_potential_evaluation(const Vector<double>& potential_parameters,int generation, int individual)
+/*double ObjectiveFunctional::calculate_potential_evaluation(const Vector<double>& potential_parameters,int generation, int individual)  //--TODO: To be removed
 {
    // Control sentence (if debug)
 
@@ -799,7 +799,7 @@ double ObjectiveFunctional::calculate_potential_evaluation(const Vector<double>&
    multilayer_perceptron_pointer->set_parameters(parameters);
 
    return(potential_evaluation);
-}
+}*/
 
 
 /*---------------------------Avinash Ranganath-------------------------------------*/

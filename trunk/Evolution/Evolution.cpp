@@ -57,10 +57,10 @@ double Evolution::calculate_objective(void)
   return evaluation;
 }
 
-double Evolution::calculate_objective(int generation, int individual)  //-- TODO: To be removed from here and from ObjectiveFunction.h
+/*double Evolution::calculate_objective(int generation, int individual)  //-- TODO: To be removed from here and from ObjectiveFunction.h
 {
     return 0;
-}
+}*/
 
 double Evolution::calculate_objective(int generation, int individual, int evaluation_sample_size)
 {
@@ -69,21 +69,46 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
   double mean_distance = 0;
   double mean_speed = 0;
 
-  //double gen = generation;
-  //double ind = individual;
-
   std::cout << std::endl << generation << " -- " << individual << ":";
   for(int i=0; i<evaluation_sample_size; i++)
   {
-    //-- Initialise the robot with 0 degrees to the motor and move it to the initial position.
-    robot->reset_robot();
 
-    //-- Run controller.
-    controller->run_Controller("evolution",individual,generation,i);
+    std::string result;
 
-    //-- Calculate distance travelled by the robot.
-    //evaluation[i] = robot->calculate_distance_travelled_euclidean();
-    evaluation[i] = robot->get_distance_travelled();
+    do
+    {
+        std::stringstream SS;
+
+        //std::cout << "  Reset  ";
+        //std::cout << std::endl;
+
+        //-- Initialise the robot with 0 degrees to the motor and move it to the initial position.
+        robot->reset_robot();
+
+        //std::cout << "  Running...  ";
+        //std::cout << std::endl;
+
+        //-- Run controller.
+        controller->run_Controller("evolution", SS, individual, generation, i);
+
+        SS >> result;
+    }while(result == "REDO");
+
+    if(result == "CANCEL")
+    {
+        std::cout << "  Aborted  " << std::endl;
+        evaluation[i] = 0;
+    }
+    else
+    {
+        //std::cout << "  Evaluate  ";
+        //std::cout << std::endl;
+
+        robot->reset_modules();
+
+        //-- Calculate distance travelled by the robot.
+        evaluation[i] = robot->get_distance_travelled();
+    }
 
     std::cout << "    (" << i+1 << ") " << evaluation[i];
   }
@@ -95,21 +120,9 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
 
   mean_distance = total_distance/evaluation_sample_size;
   mean_speed = (mean_distance/controller->get_evaluation_period())*100;  //-- Mean speed calculated as cms/second.
-  
-  //--------------------TODO: Debugger to be removed--------------------//
-  /*std::cout << std::endl;
-  double user_fitness;
-  std::cin >> user_fitness;
-  
-  if(user_fitness)
-  {
-		mean_speed = user_fitness;
-	}
-	else
-	{
-		mean_speed = mean_speed/10;
-	}*/
-  //--------------------TODO: Debugger to be removed--------------------//
+
+  //--Adding a small random noise to avoid fitness value of zero.
+  mean_speed = mean_speed + controller->calculate_random_uniform(0.001,0.01);
 
   return(mean_speed);
 }

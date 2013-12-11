@@ -263,7 +263,7 @@ void SimulationOpenRave::reset_robot(void)
   penv->StopSimulation();
 
   //-- Set the servo of each module to zero.
-  for(unsigned int i=0; i<number_of_modules; i++)
+  /*for(unsigned int i=0; i<number_of_modules; i++)
   {
     set_moduleServo_position(i, 0);
   }
@@ -273,7 +273,9 @@ void SimulationOpenRave::reset_robot(void)
   for (int ss=0; ss<two_seconds; ss++)
   {
     penv->StepSimulation(simu_resolution_microseconds);
-  }
+  }*/
+
+  reset_modules();
 
   //-- Set the translation of the robot to the initial position.
   probot->SetTransform(t0);
@@ -287,6 +289,22 @@ void SimulationOpenRave::reset_robot(void)
   distance_travelled = 0;
 }
 
+
+void SimulationOpenRave::reset_modules(void)
+{
+    //-- Set the servo of each module to zero.
+    for(unsigned int i=0; i<number_of_modules; i++)
+    {
+      set_moduleServo_position(i, 0);
+    }
+
+    // Wait for two seconds.
+    int two_seconds = (1/simu_resolution_microseconds)*2;
+    for (int ss=0; ss<two_seconds; ss++)
+    {
+      penv->StepSimulation(simu_resolution_microseconds);
+    }
+}
 
 void SimulationOpenRave::set_sinusoidal_controller_parameters(const vector<double>& sinusoidal_amplitude, const vector<double>& sinusoidal_offset, const vector<double>& sinusoidal_phase, const double sinusoidal_frequency)
 {
@@ -452,8 +470,8 @@ void SimulationOpenRave::step(const std::string& type)
   {
     if(type == "evaluation")
     {
-      usleep(get_simu_resolution_microseconds() * 1000000);  //-- Real-Time
-      //usleep(get_simu_resolution_microseconds() * 200000);  //-- Real-Time
+      //usleep(get_simu_resolution_microseconds() * 1000000);  //-- Real-Time
+      usleep(get_simu_resolution_microseconds() * 500000);  //-- Real-Time
     }
 
     update_elapsed_evaluation_time();

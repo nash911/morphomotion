@@ -49,7 +49,10 @@ void VisualTracker::get_robot_3D_position(double & x, double & y, double &z)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool VisualTracker::get_robot_3D_position_rectfied(double &x, double &y, double &z) {
+bool VisualTracker::get_robot_3D_position_rectfied(const std::string& windowName, double &x, double &y, double &z)
+{
+  //std::string windowName = "Random";
+
   // load calibration files
   std::string calibration_filename = "/home/nash/Dropbox/PhD/modularRobotics/morphomotion/VisualTracker/camera_utils/camera.yml";
   cv::Mat mapx, mapy;
@@ -94,8 +97,6 @@ bool VisualTracker::get_robot_3D_position_rectfied(double &x, double &y, double 
   y = p3D.y;
   z = p3D.z;
 
-  //std::cout << std::endl << "Finished -- reproject robot in 3D" << std::endl; // TODO: Debugger to be removed.
-
   // show axes
   double arrow_length = .5; // meters
   cv::line(input_image_rgb_remapped,
@@ -111,8 +112,6 @@ bool VisualTracker::get_robot_3D_position_rectfied(double &x, double &y, double 
            CameraUtils::world2pixel(intrinsics, arrow_length, arrow_length, fixed_height + arrow_length),
            CV_RGB(0, 0, 255), 2);
 
-  //std::cout << std::endl << "Finished -- show axes" << std::endl; // TODO: Debugger to be removed.
-
   // show robot position
   cv::circle(input_image_rgb_remapped, robot_center_pixels, 2, CV_RGB(255, 0, 0), -1);
 
@@ -122,9 +121,11 @@ bool VisualTracker::get_robot_3D_position_rectfied(double &x, double &y, double 
 
   namedWindow("input_image_rgb_remapped");
   imshow("input_image_rgb_remapped", input_image_rgb_remapped);
-  //waitKey(0);
 
-  //std::cout << std::endl << "Leaving bool VisualTracker::get_robot_3D_position_rectfied(double&, double&, double&)" << std::endl; // TODO: Debugger to be removed.
+  //namedWindow(windowName);
+  //imshow(windowName, input_image_rgb_remapped);
+  waitKey(100); //--Wait for 100 uSeconds.
+
   return true;
 }
 
@@ -360,7 +361,6 @@ bool VisualTracker::process_image(const cv::Mat & input_image_rgb,
    //robot_x_pixels = 20;
    //robot_y_pixels = 20;
 
-   //std::cout << std::endl << "Finished /**Calculate centroid**/" << std::endl; // TODO: Debugger to be removed.
 /**************************************** Calculate centroid ******************************************/
 
 

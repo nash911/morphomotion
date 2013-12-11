@@ -1,0 +1,8 @@
+XBEE to Skymega Wiring
+
+XBEE		Skymega
+----		-------
+Black 	--> 	GND
+Grey	-->	Tx
+Blue	-->	Rx
+Brown	-->	VCC [Bottom right most pin on ICSP]

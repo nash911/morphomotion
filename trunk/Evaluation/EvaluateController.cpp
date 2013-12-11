@@ -292,13 +292,15 @@ int main(int argc, char* argv[])
       //oscAnlz.set_record_phase(true);
       //oscAnlz.set_record_trajectory(true);
 
-      controller.run_Controller("evaluation",1,best_individual_fitness_index+1,1);
+      std::stringstream SS;
+
+      controller.run_Controller("evaluation", SS, 1, best_individual_fitness_index+1, 1);
 
       std::cout << "    (" << best_individual_fitness_index+1 << ") " << "Simulated Robot: Distance travelled = " << robot_primary->get_distance_travelled() << std::endl;
 
       if(robot_secondary)
       {
-        std::cout << "    (" << best_individual_fitness_index+1 << ") " << "Simulated Robot: Distance travelled = " << robot_secondary->get_distance_travelled() << std::endl;
+        //std::cout << "    (" << best_individual_fitness_index+1 << ") " << "Simulated Robot: Distance travelled = " << robot_secondary->get_distance_travelled() << std::endl;
       }
 
       std::cout << "  Select individual to be evaluated number:  " << std::endl;
@@ -336,13 +338,15 @@ int main(int argc, char* argv[])
       //controller.set_sinusoidal_frequency(0.11,6);
       //std::cout << std::endl << "Freuency: " << controller.get_sinusoidal_frequency() << std::endl; // TODO: Debugger to be removed.
 
-      controller.run_Controller("evaluation",1,i,1);
+      std::stringstream SS;
+
+      controller.run_Controller("evaluation", SS, 1, i, 1);
 
       std::cout << "    (" << i+1 << ") " << robot_primary->get_robot_environment() << ": Distance travelled = " << robot_primary->get_distance_travelled() << std::endl;
 
       if(robot_secondary)
       {
-        std::cout << "    (" << i+1 << ") " << robot_secondary->get_robot_environment() << ": Distance travelled = " << robot_secondary->get_distance_travelled() << std::endl;
+        //std::cout << "    (" << i+1 << ") " << robot_secondary->get_robot_environment() << ": Distance travelled = " << robot_secondary->get_distance_travelled() << std::endl;
       }
 
       //std::cout << std::endl << generation_index[i] << " --> Fitness: " << elite_fitness[46] << std::endl;
