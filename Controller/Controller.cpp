@@ -15,8 +15,12 @@
 
 #include <cmath>
 #include <vector>
-//#include <cctype>
+
 #include "Controller.h"
+
+
+//void changemode(int);
+//int  kbhit(void);
 
 using namespace std;
 
@@ -193,7 +197,7 @@ void Controller::init_local_variables(Flood::Vector<double> &output,
 }
 
 
-bool Controller::run_Controller(const std::string& type, int memberID, int generation, int eval_no)
+bool Controller::run_Controller(const std::string& type, std::stringstream& SS, int memberID, int generation, int eval_no)
 {
   // Reset controller.
   reset_controller();
@@ -266,218 +270,251 @@ bool Controller::run_Controller(const std::string& type, int memberID, int gener
   }*/
 //--------------Debugger Relater--------------//
 
+  unsigned int key = 'H';
+  changemode(1);
+
   do
   {
-    if(controller_type == Sinusoidal_Controller)
-    {
-      if(isFirstStep[0])
+      do
       {
-        // Set Sinusoidal Controller parameters here
-        robot_primary->set_sinusoidal_controller_parameters(sinusoidal_amplitude, sinusoidal_offset, sinusoidal_phase, sinusoidal_frequency);
-
-        isFirstStep[0] = false;
-      }
-
-      read_servo_positions_with_time();
-
-      //-- Without the following cleanup of the servo_feedback_history vector, it grows indefinately, and leads to memory-leak.
-      for(unsigned int module=0; module<number_of_modules; module++)
-      {
-        for(unsigned int n=0; n<servo_feedback_history[module].size(); n++)
+        if(controller_type == Sinusoidal_Controller)
         {
-          delete servo_feedback_history[module][n];
-        }
-        servo_feedback_history[module].resize(0);
-      }
-    }
-    else if(controller_type == Sine_Controller)
-    {
-      read_servo_positions_with_time();
-      double t = (double)robot_primary->get_elapsed_evaluation_time()/1000000.0;
-
-      for(unsigned int module=0; module<number_of_modules; module++)
-      {
-/***************************************************************** Debugger ***********************************************************/
-#ifdef DEBUGGER
-          if(module==0)
+          if(isFirstStep[0])
           {
-            std::cout << "Count: " << evaluation_elapsed_time/1000 << "  Output[" << module << "]: " << output[module] << "  Feedback Self: " << current_servo_angle[module] << "  Feed Back Diff: " << servo_delta << "  Servo Delta: " << servo_derivative;
-          }
-#endif
-/***************************************************************** Debugger ***********************************************************/
+            // Set Sinusoidal Controller parameters here
+            robot_primary->set_sinusoidal_controller_parameters(sinusoidal_amplitude, sinusoidal_offset, sinusoidal_phase, sinusoidal_frequency);
 
-/*************************************************************** Activity Log *********************************************************/
-#ifdef ACTIVITY_LOG
-          if(type == "evaluation")
-          {
-            std::cout << generation << " -->  " << evaluation_elapsed_time << ": Previous Output[" << module << "]: " << previous_cycle_output[module] << "  Actual Angle: " << servo_feedback[module]->get_servo_position() << "  Current Output[" << module << "]: " << output[module];
-          }
-#endif
-/*************************************************************** Activity Log *********************************************************/
-
-          //-- Storing the output of the previous cycle.
-          previous_cycle_output[module] = output[module];
-
-          actuate_with_sine_controller(module, t, output);
-
-          //-- BUG FIX: Fixing the memory-leak bug.
-          for(unsigned int n=0; n<servo_feedback_history[module].size(); n++)
-          {
-            delete servo_feedback_history[module][n];
+            isFirstStep[0] = false;
           }
 
-          servo_feedback_history[module].resize(0);
+          read_servo_positions_with_time();
 
-#ifdef DEBUGGER
-          if(module==0)
+          //-- Without the following cleanup of the servo_feedback_history vector, it grows indefinately, and leads to memory-leak.
+          for(unsigned int module=0; module<number_of_modules; module++)
           {
-            std::cout << "  Next Output " << output[module] << std::endl;
-          }
-#endif
-#ifdef ACTIVITY_LOG
-          if(type == "evaluation")
-          {
-            std::cout << "  Next Output[" << module << "]: " << output[module] << std::endl;
-          }
-#endif
-      }
-      actuate_all_modules(output);
-    }
-    else
-    {
-      read_servo_positions_with_time();
-
-      for(unsigned int module=0; module<number_of_modules; module++)
-      {
-        if(isFirstStep[module])
-        {
-          actuate_module(module, output[module]); // TODO: Not sure if this is needed indeed.
-          isFirstStep[module] = false;
-        }
-
-        servo_delta = calculate_servo_delta(module, output[module]);
-        servo_derivative = calculate_servo_derivative_time(module, servo_feedback_history);
-
-        if(servo_delta < servo_delta_threshold || servo_derivative < servo_derivative_threshold)
-        {
-
-/***************************************************************** Debugger ***********************************************************/
-#ifdef DEBUGGER
-          if(module==0)
-          {
-            std::cout << "Count: " << evaluation_elapsed_time/1000 << "  Output[" << module << "]: " << output[module] << "  Feedback Self: " << current_servo_angle[module] << "  Feed Back Diff: " << servo_delta << "  Servo Delta: " << servo_derivative;
-          }
-#endif
-/***************************************************************** Debugger ***********************************************************/
-
-/*************************************************************** Activity Log *********************************************************/
-#ifdef ACTIVITY_LOG
-          if(type == "evaluation")
-          {
-            std::cout << generation << " -->  " << evaluation_elapsed_time/1000 << ": Previous Output[" << module << "]: " << previous_cycle_output[module] << "  Actual Angle: " << servo_feedback[module]->get_servo_position() << "  Current Output[" << module << "]: " << output[module];
-          }
-#endif
-/*************************************************************** Activity Log *********************************************************/
-
-          //-- Storing the output of the previous cycle.
-          previous_cycle_output[module] = output[module];
-
-          if(controller_type == Neural_Controller)
-          {
-            actuate_with_neural_controller(module, output);
-          }
-          else if(controller_type == Naive_Controller)
-          {
-            actuate_with_simple_controller(module, output);
-          }
-          else if(controller_type == Simple_Controller)
-          {
-            actuate_with_simple_controller(module, output);
-          }
-          else if(controller_type == Hybrid_Controller)
-          {
-            actuate_with_hybrid_controller(module, output);
-          }
-          else if(controller_type == Semi_Hybrid_Controller)
-          {
-            actuate_with_hybrid_controller(module, output);
-          }
-
-          if(oscAnlz)
-          {
-            // Checking if the previous and the current neural outputs are on opposite directions from value 0.
-            if((previous_cycle_output[module] * output[module]) < 0.0) // Here we are assuming that the control signal to each module is always oscillatory. As well as that two subsequent neural outputs are always on opposite directions from the value 0.
+            for(unsigned int n=0; n<servo_feedback_history[module].size(); n++)
             {
-              //oscAnlz->update_oscillation_short_history(module,output[module]); // TODO: Oscillation analyses is performed based on control signal generated by controller output. This should be changed by analysing an oscillation based on the actual feedback from the module.
-              oscAnlz->update_oscillation_short_history(module,servo_feedback[module]->get_servo_position()); // Analysing oscillation based on propreoseptive feedback from the module's actuator.
+              delete servo_feedback_history[module][n];
             }
-            else
+            servo_feedback_history[module].resize(0);
+          }
+        }
+        else if(controller_type == Sine_Controller)
+        {
+          read_servo_positions_with_time();
+          double t = (double)robot_primary->get_elapsed_evaluation_time()/1000000.0;
+
+          for(unsigned int module=0; module<number_of_modules; module++)
+          {
+    /***************************************************************** Debugger ***********************************************************/
+    #ifdef DEBUGGER
+              if(module==0)
+              {
+                std::cout << "Count: " << evaluation_elapsed_time/1000 << "  Output[" << module << "]: " << output[module] << "  Feedback Self: " << current_servo_angle[module] << "  Feed Back Diff: " << servo_delta << "  Servo Delta: " << servo_derivative;
+              }
+    #endif
+    /***************************************************************** Debugger ***********************************************************/
+
+    /*************************************************************** Activity Log *********************************************************/
+    #ifdef ACTIVITY_LOG
+              if(type == "evaluation")
+              {
+                std::cout << generation << " -->  " << evaluation_elapsed_time << ": Previous Output[" << module << "]: " << previous_cycle_output[module] << "  Actual Angle: " << servo_feedback[module]->get_servo_position() << "  Current Output[" << module << "]: " << output[module];
+              }
+    #endif
+    /*************************************************************** Activity Log *********************************************************/
+
+              //-- Storing the output of the previous cycle.
+              previous_cycle_output[module] = output[module];
+
+              actuate_with_sine_controller(module, t, output);
+
+              //-- BUG FIX: Fixing the memory-leak bug.
+              for(unsigned int n=0; n<servo_feedback_history[module].size(); n++)
+              {
+                delete servo_feedback_history[module][n];
+              }
+
+              servo_feedback_history[module].resize(0);
+
+    #ifdef DEBUGGER
+              if(module==0)
+              {
+                std::cout << "  Next Output " << output[module] << std::endl;
+              }
+    #endif
+    #ifdef ACTIVITY_LOG
+              if(type == "evaluation")
+              {
+                std::cout << "  Next Output[" << module << "]: " << output[module] << std::endl;
+              }
+    #endif
+          }
+          actuate_all_modules(output);
+        }
+        else
+        {
+          read_servo_positions_with_time();
+
+          for(unsigned int module=0; module<number_of_modules; module++)
+          {
+            if(isFirstStep[module])
             {
+              actuate_module(module, output[module]); // TODO: Not sure if this is needed indeed.
+              isFirstStep[module] = false;
+            }
+
+            servo_delta = calculate_servo_delta(module, output[module]);
+            servo_derivative = calculate_servo_derivative_time(module, servo_feedback_history);
+
+            if(servo_delta < servo_delta_threshold || servo_derivative < servo_derivative_threshold)
+            {
+
+    /***************************************************************** Debugger ***********************************************************/
+    #ifdef DEBUGGER
+              if(module==0)
+              {
+                std::cout << "Count: " << evaluation_elapsed_time/1000 << "  Output[" << module << "]: " << output[module] << "  Feedback Self: " << current_servo_angle[module] << "  Feed Back Diff: " << servo_delta << "  Servo Delta: " << servo_derivative;
+              }
+    #endif
+    /***************************************************************** Debugger ***********************************************************/
+
+    /*************************************************************** Activity Log *********************************************************/
+    #ifdef ACTIVITY_LOG
+              if(type == "evaluation")
+              {
+                std::cout << generation << " -->  " << evaluation_elapsed_time/1000 << ": Previous Output[" << module << "]: " << previous_cycle_output[module] << "  Actual Angle: " << servo_feedback[module]->get_servo_position() << "  Current Output[" << module << "]: " << output[module];
+              }
+    #endif
+    /*************************************************************** Activity Log *********************************************************/
+
+              //-- Storing the output of the previous cycle.
+              previous_cycle_output[module] = output[module];
+
+              if(controller_type == Neural_Controller)
+              {
+                actuate_with_neural_controller(module, output);
+              }
+              else if(controller_type == Naive_Controller)
+              {
+                actuate_with_simple_controller(module, output);
+              }
+              else if(controller_type == Simple_Controller)
+              {
+                actuate_with_simple_controller(module, output);
+              }
+              else if(controller_type == Hybrid_Controller)
+              {
+                actuate_with_hybrid_controller(module, output);
+              }
+              else if(controller_type == Semi_Hybrid_Controller)
+              {
+                actuate_with_hybrid_controller(module, output);
+              }
+
+              if(oscAnlz)
+              {
+                // Checking if the previous and the current neural outputs are on opposite directions from value 0.
+                if((previous_cycle_output[module] * output[module]) < 0.0) // Here we are assuming that the control signal to each module is always oscillatory. As well as that two subsequent neural outputs are always on opposite directions from the value 0.
+                {
+                  //oscAnlz->update_oscillation_short_history(module,output[module]); // TODO: Oscillation analyses is performed based on control signal generated by controller output. This should be changed by analysing an oscillation based on the actual feedback from the module.
+                  oscAnlz->update_oscillation_short_history(module,servo_feedback[module]->get_servo_position()); // Analysing oscillation based on propreoseptive feedback from the module's actuator.
+                }
+                else
+                {
+                }
+              }
+              else
+              {
+              }
+
+              //-- BUG FIX: Fixing the memory-leak bug.
+              for(unsigned int n=0; n<servo_feedback_history[module].size(); n++)
+              {
+                delete servo_feedback_history[module][n];
+              }
+
+              servo_feedback_history[module].resize(0);
+
+    #ifdef DEBUGGER
+              if(module==0)
+              {
+                std::cout << "  Next Output " << output[module] << "  Time Diff: " << oscillation_time[module]  << "  Counter: " << time_diff_counter[module] << std::endl;
+                time_diff_counter[module] = 0;
+                oscillation_time[module] = 0
+              }
+    #endif
+    #ifdef ACTIVITY_LOG
+              if(type == "evaluation")
+              {
+                std::cout << "  Next Output[" << module << "]: " << output[module] << "  Time Diff: " << oscillation_time[module] << "  Counter: " << time_diff_counter[module] << std::endl;
+                time_diff_counter[module] = 0;
+                oscillation_time[module] = 0;
+              }
+    #endif
+            }
+            else // This is for Debugger only
+            {
+              time_diff_counter[module]++;
+              oscillation_time[module] = oscillation_time[module] + (evaluation_elapsed_time - previous_read_elapsed_time);
             }
           }
-          else
-          {
-          }
-
-          //-- BUG FIX: Fixing the memory-leak bug.
-          for(unsigned int n=0; n<servo_feedback_history[module].size(); n++)
-          {
-            delete servo_feedback_history[module][n];
-          }
-
-          servo_feedback_history[module].resize(0);
-
-#ifdef DEBUGGER
-          if(module==0)
-          {
-            std::cout << "  Next Output " << output[module] << "  Time Diff: " << oscillation_time[module]  << "  Counter: " << time_diff_counter[module] << std::endl;
-            time_diff_counter[module] = 0;
-            oscillation_time[module] = 0
-          }
-#endif
-#ifdef ACTIVITY_LOG
-          if(type == "evaluation")
-          {
-            std::cout << "  Next Output[" << module << "]: " << output[module] << "  Time Diff: " << oscillation_time[module] << "  Counter: " << time_diff_counter[module] << std::endl;
-            time_diff_counter[module] = 0;
-            oscillation_time[module] = 0;
-          }
-#endif
         }
-        else // This is for Debugger only
+
+        robot_primary->step(type);
+        previous_read_elapsed_time = robot_primary->get_previous_read_evaluation_time();
+        evaluation_elapsed_time = robot_primary->get_elapsed_evaluation_time();
+
+        if(robot_secondary != NULL)
         {
-          time_diff_counter[module]++;
-          oscillation_time[module] = oscillation_time[module] + (evaluation_elapsed_time - previous_read_elapsed_time);
+          if(robot_secondary->get_robot_environment() == "SimulationOpenRave")
+          {
+            //-- Stepping through simulation as many time as needed to be in sync with the realtime evaluation of Y1.
+            do
+            {
+              robot_secondary->step(type);
+            }while(robot_secondary->get_elapsed_evaluation_time() <= evaluation_elapsed_time);
+          }
+          else if(robot_secondary->get_robot_type() == "Y1")
+          {
+            robot_secondary->step(type);
+          }
         }
-      }
-    }
 
-    robot_primary->step(type);
-    previous_read_elapsed_time = robot_primary->get_previous_read_evaluation_time();
-    evaluation_elapsed_time = robot_primary->get_elapsed_evaluation_time();
-
-    if(robot_secondary != NULL)
-    {
-      if(robot_secondary->get_robot_environment() == "SimulationOpenRave")
-      {
-        //-- Stepping through simulation as many time as needed to be in sync with the realtime evaluation of Y1.
-        do
+        //-- Record trajectory
+        if(oscAnlz && oscAnlz->get_record_trajectory())
         {
-          robot_secondary->step(type);
-        }while(robot_secondary->get_elapsed_evaluation_time() <= evaluation_elapsed_time);
-      }
-      else if(robot_secondary->get_robot_type() == "Y1")
-      {
-        robot_secondary->step(type);
-      }
-    }
+          oscAnlz->write_trajectory();
+        }
+      }while(evaluation_elapsed_time < evaluation_window && !kbhit());
 
-    //-- Record trajectory
-    if(oscAnlz && oscAnlz->get_record_trajectory())
-    {
-      oscAnlz->write_trajectory();
-    }
-  }while(evaluation_elapsed_time < evaluation_window);
+      if(kbhit())
+      {
+          key = getchar();
+      }
+
+      if(key==q || key==Q)
+      {
+          SS << "CANCEL" << " ";
+          return false;
+      }
+      else if(key==SPACE)
+      {
+          do
+          {
+              while(!kbhit());
+              key = getchar();
+
+          }while(key!=SPACE);
+
+          key = 'q';
+
+          SS << "REDO" << " ";
+          return true;
+      }
+  }while(evaluation_elapsed_time < evaluation_window && (key != q || key != Q));
+
+  changemode(0);
 
   if(controller_type == Sinusoidal_Controller)
   {
@@ -488,6 +525,8 @@ bool Controller::run_Controller(const std::string& type, int memberID, int gener
 #ifdef DEBUGGER
   std::cout << std::endl << std::endl << std::endl << std::endl << std::endl << std::endl << std::endl;
 #endif
+
+  SS << "SUCCESS" << " ";
 
   return true;
 }
@@ -1199,4 +1238,37 @@ double Controller::scale_to_range(double from_min, double from_max, double to_mi
   std::cout << "   Scaled Output: " << output; // Debugger;
 
   return output;
+}
+
+
+void Controller::changemode(int dir)
+{
+  static struct termios oldt, newt;
+
+  if ( dir == 1 )
+  {
+    tcgetattr( STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~( ICANON | ECHO );
+    tcsetattr( STDIN_FILENO, TCSANOW, &newt);
+  }
+  else
+    tcsetattr( STDIN_FILENO, TCSANOW, &oldt);
+}
+
+
+int Controller::kbhit (void)
+{
+  struct timeval tv;
+  fd_set rdfs;
+
+  tv.tv_sec = 0;
+  tv.tv_usec = 0;
+
+  FD_ZERO(&rdfs);
+  FD_SET (STDIN_FILENO, &rdfs);
+
+  select(STDIN_FILENO+1, &rdfs, NULL, NULL, &tv);
+  return FD_ISSET(STDIN_FILENO, &rdfs);
+
 }

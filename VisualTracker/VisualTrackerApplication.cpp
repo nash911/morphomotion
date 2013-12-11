@@ -15,7 +15,7 @@ int main(void) {
       do
       {
         vtCounter++;
-        got_robot_position_success = vt.get_robot_3D_position_rectfied(x, y, z);
+        got_robot_position_success = vt.get_robot_3D_position_rectfied("VisionApplication", x, y, z);
       }while(!got_robot_position_success);
 
       std::cout << std::endl << i+1 << " (" << vtCounter << ") -->  X = " << x << ", Y = " << y << ", Z = " << z << std::endl;

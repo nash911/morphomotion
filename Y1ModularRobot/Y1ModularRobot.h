@@ -22,6 +22,12 @@
 #include "VisualTracker.h"
 #include "SerialCommunication.h"
 
+#define Q 81
+#define q 113
+#define SPACE 32
+#define ENTER 10
+#define ESC 27
+
 #define BAUD_RATE 115200
 
 //#define MAX_POLL_TRIALS 10  //-- For Wired-Communication between PC and Skymega
@@ -61,12 +67,13 @@ public:
   bool decode_message_with_time(const char[], vector<double>&); //-- Compatible with Arduino code --> servo_controller_charArray_V6.pde
   bool decode_message_with_individual_time(const char[], vector<double>&, vector<long>&); //-- Compatible with Arduino code --> servo_controller_charArray_V7.pde
   void get_current_time(void);
-  std::vector<double> get_robot_XY();
+  std::vector<double> get_robot_XY(const std::string&);
   double euclidean_distance(const std::vector<double> pos_1, const std::vector<double> pos_2);
 
   //-- INHERITED METHODS
   void copy(const Robot*);
   void reset_robot(void);
+  void reset_modules(void);
   void set_sinusoidal_controller_parameters(const vector<double>&, const vector<double>&, const vector<double>&, const double);
   void stop_sinusoidal_controller(void);
   void set_moduleServo_position(unsigned int, double);

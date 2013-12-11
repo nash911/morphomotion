@@ -26,6 +26,6 @@ public:
   //! return position of the robot in meters
   bool process_image(const cv::Mat&, int &robot_x_pixels, int &robot_y_pixels);
   void get_robot_3D_position(double &x, double &y, double& z);
-  bool get_robot_3D_position_rectfied(double &x, double &y, double& z);
+  bool get_robot_3D_position_rectfied(const std::string&, double&, double&, double&);
   double euclidean_distance(cv::Point, cv::Point);
 };

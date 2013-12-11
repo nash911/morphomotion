@@ -61,6 +61,7 @@ public:
   // INHERITED METHODS
   void copy(const Robot*);
   void reset_robot(void);
+  void reset_modules(void);
   void set_sinusoidal_controller_parameters(const vector<double>&, const vector<double>&, const vector<double>&, const double);
   void stop_sinusoidal_controller(void);
   void set_moduleServo_position(unsigned int, double);

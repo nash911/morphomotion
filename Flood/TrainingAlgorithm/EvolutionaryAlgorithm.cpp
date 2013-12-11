@@ -3687,6 +3687,9 @@ void EvolutionaryAlgorithm::perform_my_intermediate_recombination_with_elitism_a
    }*/
 //#endif
 
+   //--Known BUG: If there exists two evaluations with same fitness value, then it is prone to cause segmentation fault, as all individuals with the ame fitness value will be assigned the same rank.
+   //--TODO: Fix the above bug.
+
    int parent_1_candidate_index = 0;
    int index = elite_population_size;
    while(new_population_size_count < population_size)

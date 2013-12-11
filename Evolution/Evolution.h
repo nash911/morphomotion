@@ -54,7 +54,7 @@ public:
 
   //-- Objective methods
   double calculate_objective(); // Default objective function for debugging purpose.
-  double calculate_objective(int,int); // TODO: To be removed from here nand ObjectiveFunction.h
+  //double calculate_objective(int,int); // TODO: To be removed from here nand ObjectiveFunction.h
   double calculate_objective(int,int,int);
 
 };
