@@ -51,7 +51,7 @@ public:
   void load_controller(std::string);
   void set_scene_file_name(const std::string);
   std::string get_scene_file_name(void);
-  void get_all_moduleServo_position_with_time(vector<ServoFeedback*>&);
+  bool get_all_moduleServo_position_with_time(vector<ServoFeedback*>&);
   void init_elapsed_evaluation_time(void);
   void update_elapsed_evaluation_time(void);
   void set_simu_resolution_microseconds(double);
@@ -62,12 +62,13 @@ public:
   void copy(const Robot*);
   void reset_robot(void);
   void reset_modules(void);
+  void reset_comm_link(void) {} //--Does nothing.
   void set_sinusoidal_controller_parameters(const vector<double>&, const vector<double>&, const vector<double>&, const double);
   void stop_sinusoidal_controller(void);
   void set_moduleServo_position(unsigned int, double);
   void set_all_moduleServo_position(const vector<double>&);
   double get_moduleServo_position(unsigned int);
-  void get_all_moduleServo_position(vector<ServoFeedback*>&);
+  bool get_all_moduleServo_position(vector<ServoFeedback*>&);
   unsigned long get_elapsed_evaluation_time(void);
   unsigned long get_previous_read_evaluation_time(void);
   double calculate_distance_travelled_euclidean(void);

@@ -83,9 +83,12 @@ unsigned int set_serial_port(const std::string& new_serial_port, int baud_rate)
 
 int main(int argc, char* argv[])
 {
-  int poll_counter = 0, n, comm_id = 0;
+  unsigned int poll_counter = 0;
+  int n;
+  //int comm_id = 0;
   unsigned int i=0;
   bool foundEndBit = false;
+  unsigned int poll_trail_fail_counter = 0;
 
   unsigned int serial_port=0;
 
@@ -137,14 +140,28 @@ int main(int argc, char* argv[])
         foundEndBit = true;
       }
       poll_counter++;
-    //}while(foundEndBit != true);
     }while(foundEndBit != true && poll_counter <= MAX_POLL_TRIALS);
 
-    message[message_size] = '\0'; // always put a "null" at the end of a string!
+//---------------------------------------------------PERFORMNCE TEST---------------------------------------------------//
+    if(poll_counter > MAX_POLL_TRIALS)
+    {
+        poll_trail_fail_counter++;
+    }
+    else
+    {
+        poll_trail_fail_counter = 0;
+    }
 
-    //std::cout << std::endl << std::endl << "Poll Counter = " << poll_counter << " --> " << message << std::endl << std::endl << std::endl;
+    if(poll_trail_fail_counter >= 3)
+    {
+        std::cout << std::endl << std::endl << "EXCEEDED POLL COUNTER! --> " << poll_counter << std::endl;
+        exit(0);
+    }
+//---------------------------------------------------PERFORMNCE TEST---------------------------------------------------//
+
+    message[message_size] = '\0'; //--Always put a "null" at the end of a string!
+
     std::cout << "Message " << i << " --> Poll Counter = " << poll_counter << " --> " << message << std::endl;
-    //std::cout << std::endl << message << std::endl << std::endl;
 
     i++;
   }

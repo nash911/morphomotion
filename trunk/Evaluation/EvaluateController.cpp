@@ -28,12 +28,12 @@
 
 #define BAUD_RATE 115200
 
-//#define ROBOT_PRIMARY_OPENRAVE
-#define ROBOT_PRIMARY_Y1
+#define ROBOT_PRIMARY_OPENRAVE
+//#define ROBOT_PRIMARY_Y1
 
 //#define ROBOT_SECONDARY
 
-#define EVALUATION_PERIOD 50
+#define EVALUATION_PERIOD 100
 
 int main(int argc, char* argv[])
 {
@@ -342,6 +342,7 @@ int main(int argc, char* argv[])
 
       controller.run_Controller("evaluation", SS, 1, i, 1);
 
+      robot_primary->reset_modules();
       std::cout << "    (" << i+1 << ") " << robot_primary->get_robot_environment() << ": Distance travelled = " << robot_primary->get_distance_travelled() << std::endl;
 
       if(robot_secondary)
@@ -352,7 +353,9 @@ int main(int argc, char* argv[])
       //std::cout << std::endl << generation_index[i] << " --> Fitness: " << elite_fitness[46] << std::endl;
 
       std::cout << "  Population Size: " << population_size << std::endl << "  Select individual to be evaluated number:  " << std::endl;
-      //std::cin >> x;
+
+      unsigned int x;
+      std::cin >> x;
     }
   }
 }

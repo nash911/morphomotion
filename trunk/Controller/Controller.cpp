@@ -301,7 +301,15 @@ bool Controller::run_Controller(const std::string& type, std::stringstream& SS, 
         }
         else if(controller_type == Sine_Controller)
         {
-          read_servo_positions_with_time();
+          if(!read_servo_positions_with_time())
+          {
+              std::cout << "  Communication break down. Redo evaluation." << std::endl;
+              robot_primary->reset_comm_link();
+
+              SS << "REDO" << " ";
+              return true;
+          }
+
           double t = (double)robot_primary->get_elapsed_evaluation_time()/1000000.0;
 
           for(unsigned int module=0; module<number_of_modules; module++)
@@ -600,9 +608,11 @@ void Controller::actuate_all_modules(const Flood::Vector<double>& output)
 }
 
 
-void Controller::read_servo_positions_with_time() // TODO: This should be implemented as a seperate thread.
+bool Controller::read_servo_positions_with_time() // TODO: This should be implemented as a seperate thread.
 {
-  robot_primary->get_all_moduleServo_position(servo_feedback);
+  bool got_position;
+
+  got_position = robot_primary->get_all_moduleServo_position(servo_feedback);
   //robot_primary->get_all_moduleServo_position_with_individual_time(servo_feedback);
 
 /**********************************************************TEMP FIX**************************************************************************/
@@ -618,6 +628,8 @@ void Controller::read_servo_positions_with_time() // TODO: This should be implem
     oscAnlz->write_servo(servo_positions);
   }
 /**********************************************************TEMP FIX**************************************************************************/
+
+  return got_position;
 }
 
 double Controller::calculate_servo_delta(const unsigned int module, double last_output)

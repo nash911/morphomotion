@@ -33,6 +33,9 @@
 //#define MAX_POLL_TRIALS 10  //-- For Wired-Communication between PC and Skymega
 #define MAX_POLL_TRIALS 14  //-- For XBEE-Communication between PC and Skymega
 
+#define MAX_COMM_FAIL 4
+#define MAX_COMM_FAIL_CONSECUTIVE 2
+
 using namespace std;
 
 class Y1ModularRobot: public Robot
@@ -59,14 +62,14 @@ public:
   bool set_serial_port(const std::string&, int);
   void set_elapsed_evaluation_time(unsigned long);
   void init_elapsed_evaluation_time(unsigned long);
-  void get_all_moduleServo_position_with_time(vector<ServoFeedback*>&); //-- Compatible with Arduino code --> servo_controller_charArray_V6.pde
-  void get_all_moduleServo_position_with_individual_time(vector<ServoFeedback*>&); //-- Compatible with Arduino code --> servo_controller_charArray_V7.pde
+  bool get_all_moduleServo_position_with_time(vector<ServoFeedback*>&); //-- Compatible with Arduino code --> servo_controller_charArray_V6.pde
+  bool get_all_moduleServo_position_with_individual_time(vector<ServoFeedback*>&); //-- Compatible with Arduino code --> servo_controller_charArray_V7.pde
   bool get_message(char*);
   bool get_message_with_time(char*); //-- Compatible with Arduino code --> servo_controller_charArray_V6.pde
   bool decode_message(const char[], vector<double>&);
   bool decode_message_with_time(const char[], vector<double>&); //-- Compatible with Arduino code --> servo_controller_charArray_V6.pde
   bool decode_message_with_individual_time(const char[], vector<double>&, vector<long>&); //-- Compatible with Arduino code --> servo_controller_charArray_V7.pde
-  void get_current_time(void);
+  unsigned int get_current_time(void);
   std::vector<double> get_robot_XY(const std::string&);
   double euclidean_distance(const std::vector<double> pos_1, const std::vector<double> pos_2);
 
@@ -74,12 +77,13 @@ public:
   void copy(const Robot*);
   void reset_robot(void);
   void reset_modules(void);
+  void reset_comm_link(void);
   void set_sinusoidal_controller_parameters(const vector<double>&, const vector<double>&, const vector<double>&, const double);
   void stop_sinusoidal_controller(void);
   void set_moduleServo_position(unsigned int, double);
   void set_all_moduleServo_position(const vector<double>&);
   double get_moduleServo_position(unsigned int);
-  void get_all_moduleServo_position(vector<ServoFeedback*>&);
+  bool get_all_moduleServo_position(vector<ServoFeedback*>&);
   unsigned long get_elapsed_evaluation_time(void);
   unsigned long get_previous_read_evaluation_time(void);
   double calculate_distance_travelled_euclidean(void);
@@ -92,6 +96,8 @@ private:
   std::vector<double> robot_pos_initial;
   VisualTracker *vis_track;
   unsigned int serial_port;
+
+  unsigned int comm_fail_counter;
 };
 
 #endif

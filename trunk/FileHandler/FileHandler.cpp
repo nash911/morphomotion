@@ -112,10 +112,10 @@ FileHandler::FileHandler(std::string note,
   myFile << std::endl << "<Controller>" << std::endl;
   myFile << "\t<ControllerType>" << std::endl << "\t   " << controller->get_controller_type() << std::endl << "\t</ControllerType>" << std::endl;
   myFile << std::endl << "\t<EvaluationPeriod>" << std::endl << "\t   " << controller->get_evaluation_period() << std::endl << "\t</EvaluationPeriod>" << std::endl;
-  myFile << std::endl << "\t<ServoMax>" << std::endl << "\t   " << controller->get_servo_max() << std::endl << "\t</ServoMax>" << std::endl;
-  myFile << std::endl << "\t<ServoMin>" << std::endl << "\t   " << controller->get_servo_min() << std::endl << "\t</ServoMin>" << std::endl;
-  if(controller->get_controller_type() != "Sinusoidal_Controller" || controller->get_controller_type() != "Sine_Controller")
+  if(controller->get_controller_type() != "Sinusoidal_Controller" && controller->get_controller_type() != "Sine_Controller")
   {
+    myFile << std::endl << "\t<ServoMax>" << std::endl << "\t   " << controller->get_servo_max() << std::endl << "\t</ServoMax>" << std::endl;
+    myFile << std::endl << "\t<ServoMin>" << std::endl << "\t   " << controller->get_servo_min() << std::endl << "\t</ServoMin>" << std::endl;
     myFile << std::endl << "\t<StartAngleType>" << std::endl << "\t   " << controller->get_start_angle_type() << std::endl << "\t</StartAngleType>" << std::endl;
     myFile << std::endl << "\t<ServoDeltaThreshold>" << std::endl << "\t   " << controller->get_servo_delta_threshold() << std::endl << "\t</ServoDeltaThreshold>" << std::endl;
   }
