@@ -92,7 +92,7 @@ public:
   void actuate_with_hybrid_controller(const unsigned int, Flood::Vector<double>&);
   void actuate_module(const unsigned int, double);
   void actuate_all_modules(const Flood::Vector<double>&);
-  void read_servo_positions_with_time(void); // TODO: This should be implemented as a seperate thread.
+  bool read_servo_positions_with_time(void); // TODO: This should be implemented as a seperate thread.
   double calculate_servo_delta(const unsigned int, double);
   double calculate_servo_derivative_time(const unsigned int, vector<vector<ServoFeedback*> >&);
 

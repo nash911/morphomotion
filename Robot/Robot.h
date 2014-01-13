@@ -68,12 +68,13 @@ public:
   virtual void copy(const Robot*) = 0;
   virtual void reset_robot(void) = 0;
   virtual void reset_modules(void) = 0;
+  virtual void reset_comm_link(void) = 0;
   virtual void set_sinusoidal_controller_parameters(const vector<double>&, const vector<double>&, const vector<double>&, const double) = 0;
   virtual void stop_sinusoidal_controller(void) = 0;
   virtual void set_moduleServo_position(unsigned int, double) = 0;
   virtual void set_all_moduleServo_position(const vector<double>&) = 0;
   virtual double get_moduleServo_position(unsigned int) = 0;
-  virtual void get_all_moduleServo_position(vector<ServoFeedback*>&) = 0;
+  virtual bool get_all_moduleServo_position(vector<ServoFeedback*>&) = 0;
   virtual unsigned long get_elapsed_evaluation_time(void) = 0;
   virtual unsigned long get_previous_read_evaluation_time(void) = 0;
   virtual double calculate_distance_travelled_euclidean(void) = 0;

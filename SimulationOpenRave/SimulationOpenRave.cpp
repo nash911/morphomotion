@@ -383,13 +383,13 @@ double SimulationOpenRave::get_moduleServo_position(unsigned int module)
 }
 
 
-void SimulationOpenRave::get_all_moduleServo_position(vector<ServoFeedback*>& servo_feedback)
+bool SimulationOpenRave::get_all_moduleServo_position(vector<ServoFeedback*>& servo_feedback)
 {
-  get_all_moduleServo_position_with_time(servo_feedback);
+  return(get_all_moduleServo_position_with_time(servo_feedback));
 }
 
 
-void SimulationOpenRave::get_all_moduleServo_position_with_time(vector<ServoFeedback*>& servo_feedback)
+bool SimulationOpenRave::get_all_moduleServo_position_with_time(vector<ServoFeedback*>& servo_feedback)
 {
   stringstream os,is;
   double angle = 12.3456; //-- This value set to 12.3456 as a way of detecting when a failuer to read module position occurs.
@@ -401,6 +401,8 @@ void SimulationOpenRave::get_all_moduleServo_position_with_time(vector<ServoFeed
     os >> angle;
     servo_feedback[module]->set_new_value(elapsed_evaluation_time, angle);
   }
+
+  return true;
 }
 
 
@@ -470,8 +472,8 @@ void SimulationOpenRave::step(const std::string& type)
   {
     if(type == "evaluation")
     {
-      //usleep(get_simu_resolution_microseconds() * 1000000);  //-- Real-Time
-      usleep(get_simu_resolution_microseconds() * 500000);  //-- Real-Time
+      usleep(get_simu_resolution_microseconds() * 1000000);  //-- Real-Time
+      //usleep(get_simu_resolution_microseconds() * 2000000);  //-- Real-Time
     }
 
     update_elapsed_evaluation_time();

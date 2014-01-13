@@ -797,6 +797,7 @@ void Y1ModularRobot::reset_robot(void)
   }
 
   distance_travelled = 0;
+  comm_fail_counter = 0;
 }
 
 
@@ -812,6 +813,28 @@ void Y1ModularRobot::reset_modules(void)
     usleep(1000000);
 }
 
+
+void Y1ModularRobot::reset_comm_link(void)
+{
+    unsigned int comm_trial_counter=0;
+     usleep(1000000); //--Sleep for 1 second.
+
+     do
+     {
+         if(get_current_time() == 1)
+         {
+             comm_trial_counter++;
+         }
+         else
+         {
+             comm_trial_counter = 0;
+         }
+     }while(comm_trial_counter < 3);
+
+     //get_current_time();
+
+     usleep(1000000); //--Sleep for 1 second.
+}
 
 void Y1ModularRobot::set_sinusoidal_controller_parameters(const vector<double>& sinusoidal_amplitude, const vector<double>& sinusoidal_offset, const vector<double>& sinusoidal_phase, const double sinusoidal_frequency)
 {
@@ -888,7 +911,6 @@ void Y1ModularRobot::set_all_moduleServo_position(const vector<double>& servo_an
 
   if(serial_port)
   {
-    //SendBuf(serial_port, outBuf, outSS.str().size());
     if(!SendBuf(serial_port, outBuf, outSS.str().size()))
     {
       std::cerr << "MorphoMotion Error: Y1ModularRobot class." << std::endl
@@ -915,15 +937,15 @@ double Y1ModularRobot::get_moduleServo_position(unsigned int module)
 }
 
 
-void Y1ModularRobot::get_all_moduleServo_position(vector<ServoFeedback*>& servo_feedback)
+bool Y1ModularRobot::get_all_moduleServo_position(vector<ServoFeedback*>& servo_feedback)
 {
-  get_all_moduleServo_position_with_individual_time(servo_feedback);
+  return(get_all_moduleServo_position_with_individual_time(servo_feedback));
 }
 
 
 //-- To get servo position via serial communication with the controller board [Skymega], along with a single time value at which all servo position were read.
 //-- Compatible with Arduino code --> servo_controller_charArray_V6.pde
-void Y1ModularRobot::get_all_moduleServo_position_with_time(vector<ServoFeedback*>& servo_feedback)
+bool Y1ModularRobot::get_all_moduleServo_position_with_time(vector<ServoFeedback*>& servo_feedback)
 {
     std::vector<double> servo_feedback_angle;
     servo_feedback_angle.resize(number_of_modules);
@@ -969,18 +991,22 @@ void Y1ModularRobot::get_all_moduleServo_position_with_time(vector<ServoFeedback
                 << "Serial port not open." << std::endl;
       exit(1);
     }
+
+    return true;
 }
 
 
 //-- To get servo position via serial communication with the controller board [Skymega], along with individual time value at which each servo position was read.
 //-- Compatible with Arduino code --> servo_controller_charArray_V7.pde
-void Y1ModularRobot::get_all_moduleServo_position_with_individual_time(vector<ServoFeedback*>& servo_feedback)
+bool Y1ModularRobot::get_all_moduleServo_position_with_individual_time(vector<ServoFeedback*>& servo_feedback)
 {
     std::vector<double> servo_feedback_angle;
     servo_feedback_angle.resize(number_of_modules);
     
     std::vector<long> servo_read_time;
     servo_read_time.resize(number_of_modules);
+
+    unsigned int comm_fail_consec_counter=0;
 
     if(serial_port)
     {
@@ -1004,6 +1030,13 @@ void Y1ModularRobot::get_all_moduleServo_position_with_individual_time(vector<Se
           else
           {
             flush_cport(serial_port, 1);
+            comm_fail_counter++;
+            comm_fail_consec_counter++;
+          }
+
+          if(comm_fail_counter>=MAX_COMM_FAIL || comm_fail_consec_counter>=MAX_COMM_FAIL_CONSECUTIVE)
+          {
+              return false;
           }
         }while(!message_got);
 
@@ -1023,11 +1056,14 @@ void Y1ModularRobot::get_all_moduleServo_position_with_individual_time(vector<Se
                 << "Serial port not open." << std::endl;
       exit(1);
     }
+
+    return true;
 }
 
-void Y1ModularRobot::get_current_time(void)
+unsigned int Y1ModularRobot::get_current_time(void)
 {
     std::vector<double> servo_feedback_angle;
+    unsigned int trial_counter=0;
 
     if(serial_port)
     {
@@ -1041,6 +1077,7 @@ void Y1ModularRobot::get_current_time(void)
         do
         {
           cprintf(serial_port, (char *)outBuf); //-- Send message requesting currnt servo position of all modules to Skymega.
+          trial_counter++;
 
           char inString[40];
           message_got = get_message_with_time(inString);
@@ -1065,6 +1102,8 @@ void Y1ModularRobot::get_current_time(void)
                 << "Serial port not open." << std::endl;
       exit(1);
     }
+
+    return trial_counter;
 }
 
 
