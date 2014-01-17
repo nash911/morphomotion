@@ -121,6 +121,8 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
   mean_distance = total_distance/evaluation_sample_size;
   mean_speed = (mean_distance/controller->get_evaluation_period())*100;  //-- Mean speed calculated as cms/second.
 
+  //std::cout << std::endl << "get_evaluation_period() = " << controller->get_evaluation_period() << std::endl; // TODO: Debugger to be removed.
+
   //--Adding a small random noise to avoid fitness value of zero.
   mean_speed = mean_speed + controller->calculate_random_uniform(0.001,0.01);
 

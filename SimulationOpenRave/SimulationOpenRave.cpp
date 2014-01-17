@@ -173,14 +173,8 @@ void SimulationOpenRave::init_simu_env(std::string controller)
   number_of_modules = probot->GetDOF();
 
   //-- Load the controller.
-  if(controller == "Sinusoidal_Controller")
-  {
-    pcontroller=RaveCreateController(penv,"sinoscontroller");
-  }
-  else
-  {
-    pcontroller=RaveCreateController(penv,"servocontroller");
-  }
+  pcontroller=RaveCreateController(penv,"servocontroller");
+
   vector<int> dofindices(probot->GetDOF());
   for(int i = 0; i < probot->GetDOF(); ++i)
   {

@@ -25,10 +25,13 @@
 #include "SimulationOpenRave.h"
 #include "Y1ModularRobot.h"
 #include "Controller.h"
+#include "HybridController.h"
+#include "SineController.h"
+#include "SimpleController.h"
 #include "FileHandler.h"
 
-//#define ROBOT_OPENRAVE
-#define ROBOT_Y1
+#define ROBOT_OPENRAVE
+//#define ROBOT_Y1
 
 #define EVALUATION_SAMPLE_SIZE 1
 
@@ -83,7 +86,27 @@ int main(int argc, char* argv[])
   Flood::MultilayerPerceptron mlp(0,0,0);
   mlp.set_independent_parameters_number(0);
 
-  Controller controller(&mlp, robot);
+  //Controller controller(&mlp, robot);
+  Controller *controller = NULL;
+
+  //HybridController hyC(&mlp, robot_primary);
+
+  std::string controller_type;
+  FileHandler geneFile;
+  controller_type = geneFile.get_controller_type(argv[2]);
+
+  if(controller_type == "Hybrid_Controller")
+  {
+    controller = new HybridController(&mlp, robot);
+  }
+  else if(controller_type == "Sine_Controller")
+  {
+    controller = new SineController(&mlp, robot);
+  }
+  else if(controller_type == "Simple_Controller")
+  {
+    controller = new SimpleController(&mlp, robot);
+  }
 
    if(argc < 3)
    {
@@ -98,16 +121,16 @@ int main(int argc, char* argv[])
    }
 
 #ifdef ROBOT_OPENRAVE
-  FileHandler parametersFileHandler(parameter_file, robot, &simuOR_robot, &controller, &mlp);
-  simuOR_robot.init_simu_env(controller.get_controller_type());
+  FileHandler parametersFileHandler(parameter_file, robot, &simuOR_robot, controller, &mlp);
+  simuOR_robot.init_simu_env(controller->get_controller_type());
 #elif defined(ROBOT_Y1)
-  FileHandler parametersFileHandler(parameter_file, robot, NULL, &controller, &mlp);
+  FileHandler parametersFileHandler(parameter_file, robot, NULL, controller, &mlp);
 #endif
 
   //-- Initialise objects after parameters loaded from the parameter file.
   //Robot *robot = &simuOR_robot;
-  //simuOR_robot.init_simu_env(controller.get_controller_type());
-  controller.init_controller();
+  //simuOR_robot.init_simu_env(controller->get_controller_type());
+  controller->init_controller();
 
 #ifdef CUMUALATIVE_DISTANCE
   robot->set_evaluation_method("Euclidean_Distance_Cumulative");
@@ -123,8 +146,8 @@ int main(int argc, char* argv[])
   mlp.set_output_layer_activation_function("HyperbolicTangent");
 
   //-- Evolution object
-  //Flood::Evolution evolve(&mlp, &simuOR_robot, &controller);
-  Flood::Evolution evolve(&mlp, robot, &controller);
+  //Flood::Evolution evolve(&mlp, &simuOR_robot, controller);
+  Flood::Evolution evolve(&mlp, robot, controller);
 
   //-- Evolutionary algorithm object
   Flood::EvolutionaryAlgorithm ea(&evolve);
@@ -155,7 +178,7 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef FITNESS_GRAPH_FILE
-  GraphFile fitness_graph_file(robot->get_robot_environment(), robot->get_robot_type(), controller.get_controller_type());
+  GraphFile fitness_graph_file(robot->get_robot_environment(), robot->get_robot_type(), controller->get_controller_type());
   ea.set_fitness_graph_history(true);
   ea.set_fitness_graph_file(&fitness_graph_file);
 #endif
@@ -171,7 +194,7 @@ int main(int argc, char* argv[])
                                &ea,
                                robot,
                                &simuOR_robot,
-                               &controller,
+                               controller,
                                &mlp);
 #else
   //-- With Flood::EvolutionaryAlgorithm*
@@ -181,7 +204,7 @@ int main(int argc, char* argv[])
                                &ea,
                                robot,
                                NULL,
-                               &controller,
+                               controller,
                                &mlp);
 #endif
 
@@ -191,8 +214,8 @@ int main(int argc, char* argv[])
   ea.train();
 
   Flood::Vector<double> minimal_argument = mlp.get_independent_parameters();
-
   std::cout << "Minimal argument:" << std::endl << minimal_argument << std::endl;
 
-   return(0);
+  delete controller;
+  return(0);
 }

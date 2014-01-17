@@ -39,9 +39,9 @@ MESSAGE("OpenCV_LIBS : ${OpenCV_LIBS}")
 
 ### include dirs
 INCLUDE_DIRECTORIES(
-Evolution Evaluation Robot SimulationOpenRave Y1ModularRobot Controller ServoFeedback
+Evolution Evaluation Robot SimulationOpenRave Y1ModularRobot Controller HybridController SineController SimpleController
 Flood/Utilities Flood/MultilayerPerceptron Flood/ObjectiveFunctional Flood/TrainingAlgorithm
-GraphFile FileHandler OscillationAnalyzer_OutputSignal VisualTracker SerialCommunication
+ServoFeedback GraphFile FileHandler OscillationAnalyzer_OutputSignal VisualTracker SerialCommunication
 )
 
 # add_library(VisualTracker
@@ -64,6 +64,9 @@ add_executable(Evolve
   SimulationOpenRave/SimulationOpenRave.cpp
   Y1ModularRobot/Y1ModularRobot.cpp
   Controller/Controller.cpp
+  HybridController/HybridController.cpp
+  SineController/SineController.cpp
+  SimpleController/SimpleController.cpp
   ServoFeedback/ServoFeedback.cpp
   FileHandler/FileHandler.cpp
   GraphFile/GraphFile.cpp
@@ -92,6 +95,9 @@ add_executable(Evaluate
   SimulationOpenRave/SimulationOpenRave.cpp
   Y1ModularRobot/Y1ModularRobot.cpp
   Controller/Controller.cpp
+  HybridController/HybridController.cpp
+  SineController/SineController.cpp
+  SimpleController/SimpleController.cpp
   ServoFeedback/ServoFeedback.cpp
   FileHandler/FileHandler.cpp
   GraphFile/GraphFile.cpp
@@ -120,6 +126,9 @@ add_executable(NeuralModelEvaluator
   Robot/Robot.cpp
   SimulationOpenRave/SimulationOpenRave.cpp
   Controller/Controller.cpp
+  HybridController/HybridController.cpp
+  SineController/SineController.cpp
+  SimpleController/SimpleController.cpp
   ServoFeedback/ServoFeedback.cpp
   FileHandler/FileHandler.cpp
   GraphFile/GraphFile.cpp

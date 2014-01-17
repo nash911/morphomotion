@@ -23,6 +23,9 @@
 #include "SimulationOpenRave.h"
 #include "Y1ModularRobot.h"
 #include "Controller.h"
+#include "HybridController.h"
+#include "SineController.h"
+#include "SimpleController.h"
 #include "FileHandler.h"
 #include "OscillationAnalyzer_OutputSignal.h"
 
@@ -77,7 +80,28 @@ int main(int argc, char* argv[])
   mlp.set_independent_parameters_number(0);
 
   //Controller controller(&mlp, &simuOR_robot);
-  Controller controller(&mlp, robot_primary);
+  //Controller controller(&mlp, robot_primary);
+  Controller *controller = NULL;
+
+  //HybridController hyC(&mlp, robot_primary);
+
+  std::string controller_type;
+  FileHandler geneFile;
+  controller_type = geneFile.get_controller_type(argv[2]);
+
+  if(controller_type == "Hybrid_Controller")
+  {
+    controller = new HybridController(&mlp, robot_primary);
+  }
+  else if(controller_type == "Sine_Controller")
+  {
+    controller = new SineController(&mlp, robot_primary);
+  }
+  else if(controller_type == "Simple_Controller")
+  {
+    controller = new SimpleController(&mlp, robot_primary);
+  }
+
 
   // Elite population gene
   Flood::Matrix<double> population;
@@ -87,10 +111,10 @@ int main(int argc, char* argv[])
 
   if(argc < 3)
   {
-      std::cerr << "MorphoMotion Error: EvaluateController." << std::endl
-                << "int main(int, char*) method." << std::endl
-                << "Insufficient parameters. " << std::endl;
-      exit(1);
+    std::cerr << "MorphoMotion Error: EvaluateController." << std::endl
+              << "int main(int, char*) method." << std::endl
+              << "Insufficient parameters. " << std::endl;
+    exit(1);
   }
   else if(argc == 3)
   {
@@ -98,11 +122,11 @@ int main(int argc, char* argv[])
 
     if(robot_primary->get_robot_environment() == "SimulationOpenRave" || robot_secondary)
     {
-      FileHandler geneFileHandler(gene_file, robot_primary, &simuOR_robot, &controller, &mlp, &population, &generation_index);
+      FileHandler geneFileHandler(gene_file, robot_primary, &simuOR_robot, controller, &mlp, &population, &generation_index);
     }
     else
     {
-      FileHandler geneFileHandler(gene_file, robot_primary, NULL, &controller, &mlp, &population, &generation_index);
+      FileHandler geneFileHandler(gene_file, robot_primary, NULL, controller, &mlp, &population, &generation_index);
     }
   }
   else if(argc == 4)
@@ -171,11 +195,11 @@ int main(int argc, char* argv[])
 
     if(robot_primary->get_robot_environment() == "SimulationOpenRave" || robot_secondary)
     {
-      FileHandler gene_fitness_FileHandler(gene_file, fitness_file, robot_primary, &simuOR_robot, &controller, &mlp, &population, &generation_index, &elite_fitness);
+      FileHandler gene_fitness_FileHandler(gene_file, fitness_file, robot_primary, &simuOR_robot, controller, &mlp, &population, &generation_index, &elite_fitness);
     }
     else
     {
-      FileHandler gene_fitness_FileHandler(gene_file, fitness_file, robot_primary, NULL, &controller, &mlp, &population, &generation_index, &elite_fitness);
+      FileHandler gene_fitness_FileHandler(gene_file, fitness_file, robot_primary, NULL, controller, &mlp, &population, &generation_index, &elite_fitness);
     }
   }
 
@@ -206,10 +230,10 @@ int main(int argc, char* argv[])
 
   if(robot_primary->get_robot_environment() == "SimulationOpenRave" || robot_secondary)
   {
-    simuOR_robot.init_simu_env(controller.get_controller_type());
+    simuOR_robot.init_simu_env(controller->get_controller_type());
   }
 
-  controller.init_controller();
+  controller->init_controller();
   population.subtract_row(0);
 
   robot_primary->set_evaluation_method("Euclidean_Distance_Final");  // Debugger;
@@ -219,12 +243,12 @@ int main(int argc, char* argv[])
   if(robot_primary->get_robot_environment() == "SimulationOpenRave")
   {
     robot_secondary->copy(robot_primary);
-    controller.set_robot_secondary(robot_secondary);
+    controller->set_robot_secondary(robot_secondary);
   }
   else if(robot_primary->get_robot_environment() == "Y1")
   {
     robot_secondary->copy(robot_primary);
-    controller.set_robot_secondary(robot_secondary);
+    controller->set_robot_secondary(robot_secondary);
   }
 #endif
 
@@ -235,7 +259,7 @@ int main(int argc, char* argv[])
   // Output Layer Activation Function
   mlp.set_output_layer_activation_function("HyperbolicTangent");
 
-  controller.set_evaluation_period(EVALUATION_PERIOD);
+  controller->set_evaluation_period(EVALUATION_PERIOD);
 
   Flood::Vector<double> individual(mlp.get_parameters_number());
   unsigned int population_size = population.get_rows_number();
@@ -284,7 +308,7 @@ int main(int argc, char* argv[])
 
       OscillationAnalyzer_OutputSignal oscAnlz(robot_primary);
 
-      controller.set_oscillation_analyzer(&oscAnlz);
+      controller->set_oscillation_analyzer(&oscAnlz);
       oscAnlz.set_record_servo(true);
       //oscAnlz.set_record_amplitude(true);
       //oscAnlz.set_record_offset(true);
@@ -294,7 +318,7 @@ int main(int argc, char* argv[])
 
       std::stringstream SS;
 
-      controller.run_Controller("evaluation", SS, 1, best_individual_fitness_index+1, 1);
+      controller->run_Controller("evaluation", SS, 1, best_individual_fitness_index+1, 1);
 
       std::cout << "    (" << best_individual_fitness_index+1 << ") " << "Simulated Robot: Distance travelled = " << robot_primary->get_distance_travelled() << std::endl;
 
@@ -327,7 +351,7 @@ int main(int argc, char* argv[])
 
       OscillationAnalyzer_OutputSignal oscAnlz(robot_primary);
 
-      controller.set_oscillation_analyzer(&oscAnlz);
+      controller->set_oscillation_analyzer(&oscAnlz);
       oscAnlz.set_record_servo(true);
       //oscAnlz.set_record_amplitude(true);
       //oscAnlz.set_record_offset(true);
@@ -340,7 +364,7 @@ int main(int argc, char* argv[])
 
       std::stringstream SS;
 
-      controller.run_Controller("evaluation", SS, 1, i, 1);
+      controller->run_Controller("evaluation", SS, 1, i, 1);
 
       robot_primary->reset_modules();
       std::cout << "    (" << i+1 << ") " << robot_primary->get_robot_environment() << ": Distance travelled = " << robot_primary->get_distance_travelled() << std::endl;
@@ -358,4 +382,6 @@ int main(int argc, char* argv[])
       std::cin >> x;
     }
   }
+
+  delete controller;
 }
