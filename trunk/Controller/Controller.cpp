@@ -13,8 +13,8 @@
 /*                                                                                                              */
 /****************************************************************************************************************/
 
-#include <cmath>
-#include <vector>
+//#include <cmath>
+//#include <vector>
 
 #include "Controller.h"
 
@@ -95,24 +95,11 @@ void Controller::init_controller()
   {
     servo_feedback[module] = new ServoFeedback;
   }
-
-  //-- Set the size of the predef_start_angle vector and initialize its content to 0.
-  predef_start_angle.set(number_of_modules);
-  predef_start_angle.initialize(0);
-
-  if(controller_type == Sinusoidal_Controller || controller_type == Sine_Controller)
-  {
-    //-- Set the size of Sinusoidal Controller parameters vector
-    sinusoidal_amplitude.resize(number_of_modules);
-    sinusoidal_offset.resize(number_of_modules);
-    sinusoidal_phase.resize(number_of_modules);
-  }
 }
 
 
 void Controller::set_default(void)
 {
-  //Pi = 3.14159265;
   robot_primary =  NULL;
   robot_secondary = NULL;
   controller_type = Neural_Controller;
@@ -120,18 +107,12 @@ void Controller::set_default(void)
   servo_min = -90.0;
   number_of_modules = 2;
   evaluation_period = 50;
-  start_angle_type = Zero;
-  servo_delta_threshold = 0.0; // TODO: This has to be reverted back to 3.0
-  servo_derivative_threshold = 0.0; // TODO: This has to be reverted back to 5.0
-  servo_derivative_epsilon = 0; // TODO: This has to be reverted back to 30
-  oscillator_amplitude = 0;
-  oscillator_offset = 0;
   mlp = NULL;
   oscAnlz = NULL;
 }
 
 
-void Controller::init_local_variables(Flood::Vector<double> &output,
+/*void Controller::init_local_variables(Flood::Vector<double> &output,
                                       Flood::Vector<double> &previous_cycle_output,
                                       Flood::Vector<bool> &isFirstStep)
 {
@@ -178,9 +159,9 @@ void Controller::init_local_variables(Flood::Vector<double> &output,
               << "void init_local_variables() method." << std::endl
               << "Unknown start angle type: " << start_angle_type << "." <<std::endl;
     exit(1);
-  }
+  }*/
 
-  if(controller_type == Simple_Controller || controller_type == Naive_Controller)
+  /*if(controller_type == Simple_Controller || controller_type == Naive_Controller)
   {
     for(unsigned int module=0; module<number_of_modules; module++)
     {
@@ -194,17 +175,17 @@ void Controller::init_local_variables(Flood::Vector<double> &output,
     previous_cycle_output[module] = 0;
     isFirstStep[module] = true;
   }
-}
+}*/
 
 
-bool Controller::run_Controller(const std::string& type, std::stringstream& SS, int memberID, int generation, int eval_no)
+/*bool Controller::run_Controller(const std::string& type, std::stringstream& SS, int memberID, int generation, int eval_no)
 {
   // Reset controller.
   reset_controller();
 
   if(controller_type == Sinusoidal_Controller || controller_type == Sine_Controller)
   {
-    load_sinusoidal_control_parameters();
+    load_sine_control_parameters();
   }
   else if(controller_type == Naive_Controller)
   {
@@ -263,11 +244,11 @@ bool Controller::run_Controller(const std::string& type, std::stringstream& SS, 
 //--------------Debugger Relater--------------//
   std::vector<unsigned long> oscillation_time(number_of_modules,0);
   std::vector<int> time_diff_counter(number_of_modules,0);
-  /*int time_diff_counter[number_of_modules];
-  for(int i=0; i<number_of_modules; i++)
-  {
-    time_diff_counter[i] = 0;
-  }*/
+  //int time_diff_counter[number_of_modules];
+  //for(int i=0; i<number_of_modules; i++)
+  //{
+  //  time_diff_counter[i] = 0;
+  //}
 //--------------Debugger Relater--------------//
 
   unsigned int key = 'H';
@@ -282,7 +263,7 @@ bool Controller::run_Controller(const std::string& type, std::stringstream& SS, 
           if(isFirstStep[0])
           {
             // Set Sinusoidal Controller parameters here
-            robot_primary->set_sinusoidal_controller_parameters(sinusoidal_amplitude, sinusoidal_offset, sinusoidal_phase, sinusoidal_frequency);
+            robot_primary->set_sine_controller_parameters(sine_amplitude, sine_offset, sine_phase, sine_frequency);
 
             isFirstStep[0] = false;
           }
@@ -314,23 +295,23 @@ bool Controller::run_Controller(const std::string& type, std::stringstream& SS, 
 
           for(unsigned int module=0; module<number_of_modules; module++)
           {
-    /***************************************************************** Debugger ***********************************************************/
+    //---------------------------------------------------------------- Debugger ----------------------------------------------------------/
     #ifdef DEBUGGER
               if(module==0)
               {
                 std::cout << "Count: " << evaluation_elapsed_time/1000 << "  Output[" << module << "]: " << output[module] << "  Feedback Self: " << current_servo_angle[module] << "  Feed Back Diff: " << servo_delta << "  Servo Delta: " << servo_derivative;
               }
     #endif
-    /***************************************************************** Debugger ***********************************************************/
+    //---------------------------------------------------------------- Debugger ----------------------------------------------------------/
 
-    /*************************************************************** Activity Log *********************************************************/
+    //-------------------------------------------------------------- Activity Log --------------------------------------------------------/
     #ifdef ACTIVITY_LOG
               if(type == "evaluation")
               {
                 std::cout << generation << " -->  " << evaluation_elapsed_time << ": Previous Output[" << module << "]: " << previous_cycle_output[module] << "  Actual Angle: " << servo_feedback[module]->get_servo_position() << "  Current Output[" << module << "]: " << output[module];
               }
     #endif
-    /*************************************************************** Activity Log *********************************************************/
+    //-------------------------------------------------------------- Activity Log --------------------------------------------------------/
 
               //-- Storing the output of the previous cycle.
               previous_cycle_output[module] = output[module];
@@ -378,23 +359,23 @@ bool Controller::run_Controller(const std::string& type, std::stringstream& SS, 
             if(servo_delta < servo_delta_threshold || servo_derivative < servo_derivative_threshold)
             {
 
-    /***************************************************************** Debugger ***********************************************************/
+    //---------------------------------------------------------------- Debugger ----------------------------------------------------------/
     #ifdef DEBUGGER
               if(module==0)
               {
                 std::cout << "Count: " << evaluation_elapsed_time/1000 << "  Output[" << module << "]: " << output[module] << "  Feedback Self: " << current_servo_angle[module] << "  Feed Back Diff: " << servo_delta << "  Servo Delta: " << servo_derivative;
               }
     #endif
-    /***************************************************************** Debugger ***********************************************************/
+    //---------------------------------------------------------------- Debugger ----------------------------------------------------------/
 
-    /*************************************************************** Activity Log *********************************************************/
+    //-------------------------------------------------------------- Activity Log --------------------------------------------------------/
     #ifdef ACTIVITY_LOG
               if(type == "evaluation")
               {
                 std::cout << generation << " -->  " << evaluation_elapsed_time/1000 << ": Previous Output[" << module << "]: " << previous_cycle_output[module] << "  Actual Angle: " << servo_feedback[module]->get_servo_position() << "  Current Output[" << module << "]: " << output[module];
               }
     #endif
-    /*************************************************************** Activity Log *********************************************************/
+    //-------------------------------------------------------------- Activity Log --------------------------------------------------------/
 
               //-- Storing the output of the previous cycle.
               previous_cycle_output[module] = output[module];
@@ -537,16 +518,16 @@ bool Controller::run_Controller(const std::string& type, std::stringstream& SS, 
   SS << "SUCCESS" << " ";
 
   return true;
-}
+}*/
 
 
-void Controller::actuate_with_sine_controller(const unsigned int module, const double t, Flood::Vector<double>& output)
+/*void Controller::actuate_with_sine_controller(const unsigned int module, const double t, Flood::Vector<double>& output)
 {
-  output[module] = sinusoidal_amplitude[module] * sin(2*M_PI*sinusoidal_frequency*t + ((sinusoidal_phase[module] * M_PI)/180.0)) + sinusoidal_offset[module];
-}
+  output[module] = sine_amplitude[module] * sin(2*M_PI*sine_frequency*t + ((sine_phase[module] * M_PI)/180.0)) + sine_offset[module];
+}*/
 
 
-void Controller::actuate_with_neural_controller(const unsigned int module, Flood::Vector<double>& output)
+/*void Controller::actuate_with_neural_controller(const unsigned int module, Flood::Vector<double>& output)
 {
   Flood::Vector<double> nnOutput(mlp->get_outputs_number());
   Flood::Vector<double> nnInput(mlp->get_inputs_number());
@@ -562,20 +543,20 @@ void Controller::actuate_with_neural_controller(const unsigned int module, Flood
 
   //-- Send actuation command to the corrsponding module in the robot configuration.
   actuate_module(module, output[module]);
-}
+}*/
 
 
-void Controller::actuate_with_hybrid_controller(const unsigned int module, Flood::Vector<double>& output)
+/*void Controller::actuate_with_hybrid_controller(const unsigned int module, Flood::Vector<double>& output)
 {
   actuate_with_neural_controller(module, output);
-}
+}*/
 
 
-void Controller::actuate_with_simple_controller(const unsigned int module, Flood::Vector<double>& output)
+/*void Controller::actuate_with_simple_controller(const unsigned int module, Flood::Vector<double>& output)
 {
   output[module] = (-1.0 * (output[module] - oscillator_offset)) + oscillator_offset; // BUG FIX: -(Amplitude) + Offset
   actuate_module(module, output[module]);
-}
+}*/
 
 
 void Controller::actuate_module(const unsigned int module, double output)
@@ -639,35 +620,6 @@ double Controller::calculate_servo_delta(const unsigned int module, double last_
   servo_delta = fabs(last_output-servo_feedback[module]->get_servo_position());
   return(servo_delta);
 }
-
-/*********************************************** BUGGY IMPLEMENTATION *****************************************************************/
-/* Calculating servo derivative based on time info of servo feedback data */
-/*double Controller::calculate_servo_derivative_time(unsigned int module, vector<vector<ServoFeedback*> > &servo_feedback_history)
-{
-  double servo_derivative = servo_derivative_threshold + 1.0;
-
-  ServoFeedback *servo_FB_data = NULL;
-  servo_FB_data = new ServoFeedback;
-  servo_FB_data->set_new_value(servo_feedback[module]->get_servo_position_read_time(), servo_feedback[module]->get_servo_position());
-  servo_feedback_history[module].push_back(servo_FB_data);
-
-  unsigned int history_buffer_size = servo_feedback_history[module].size();
-  //if(servo_feedback_history[module]->size() > 1)
-  for(unsigned int i=0; i<history_buffer_size; i++)
-  {
-    if((servo_feedback_history[module][history_buffer_size-1]->get_servo_position_read_time() - servo_feedback_history[module][i]->get_servo_position_read_time()) >= servo_derivative_epsilon)
-    {
-      servo_derivative = servo_feedback_history[module][history_buffer_size-1]->get_servo_position() - servo_feedback_history[module][i]->get_servo_position();
-      servo_derivative = fabs(servo_derivative);
-    }
-    else
-    {
-      return(servo_derivative);
-    }
-  }
-  return(servo_derivative);
-}*/
-/*********************************************** BUGGY IMPLEMENTATION *****************************************************************/
 
 
 /* Calculating servo derivative based on time info of servo feedback data */
@@ -964,156 +916,156 @@ double Controller::get_oscillator_offset(void)
 }
 
 
-void Controller::load_sinusoidal_control_parameters()
+void Controller::load_sine_control_parameters()
 {
   unsigned int independent_parameter_index = 0;
 
   //-- Load Amplitude
   for(unsigned int module=0; module<number_of_modules; module++)
   {
-    set_sinusoidal_amplitude(mlp->get_independent_parameter(independent_parameter_index), module, independent_parameter_index);
+    set_sine_amplitude(mlp->get_independent_parameter(independent_parameter_index), module, independent_parameter_index);
     independent_parameter_index++;
   }
 
   //-- Load Offset
   for(unsigned int module=0; module<number_of_modules; module++)
   {
-    set_sinusoidal_offset(mlp->get_independent_parameter(independent_parameter_index), module, independent_parameter_index);
+    set_sine_offset(mlp->get_independent_parameter(independent_parameter_index), module, independent_parameter_index);
     independent_parameter_index++;
   }
 
   //-- Load Phase
   for(unsigned int module=0; module<number_of_modules; module++)
   {
-    set_sinusoidal_phase(mlp->get_independent_parameter(independent_parameter_index), module, independent_parameter_index);
+    set_sine_phase(mlp->get_independent_parameter(independent_parameter_index), module, independent_parameter_index);
     independent_parameter_index++;
   }
 
   //-- Load Frequency
-  set_sinusoidal_frequency(mlp->get_independent_parameter(independent_parameter_index), independent_parameter_index);
+  set_sine_frequency(mlp->get_independent_parameter(independent_parameter_index), independent_parameter_index);
   independent_parameter_index++;
 
 }
 
-void Controller::set_sinusoidal_amplitude(const double new_sinusoidal_amplitude, const unsigned int module, const unsigned int independent_parameter_index)
+void Controller::set_sine_amplitude(const double new_sine_amplitude, const unsigned int module, const unsigned int independent_parameter_index)
 {
-  if(new_sinusoidal_amplitude > 0 && new_sinusoidal_amplitude <= 90)
+  if(new_sine_amplitude > 0 && new_sine_amplitude <= 90)
   {
-    sinusoidal_amplitude[module] = new_sinusoidal_amplitude;
+    sine_amplitude[module] = new_sine_amplitude;
   }
   else
   {
     std::cerr << "Morphomotion Error: Controller class." << std::endl
-              << "void set_sinusoidal_amplitude(const double, const unsigned int, const unsigned int) method." << std::endl
-              << "Sinusoidal amplitude must be between 0 and 90. Independent parameter Min: " << mlp->get_independent_parameter_minimum(independent_parameter_index) << " Independent parameter Max: " << mlp->get_independent_parameter_maximum(independent_parameter_index) << std::endl
-              << "Sinusoidal amplitude[" << independent_parameter_index%number_of_modules << "]: " << new_sinusoidal_amplitude << std::endl;
+              << "void set_sine_amplitude(const double, const unsigned int, const unsigned int) method." << std::endl
+              << "sine amplitude must be between 0 and 90. Independent parameter Min: " << mlp->get_independent_parameter_minimum(independent_parameter_index) << " Independent parameter Max: " << mlp->get_independent_parameter_maximum(independent_parameter_index) << std::endl
+              << "sine amplitude[" << independent_parameter_index%number_of_modules << "]: " << new_sine_amplitude << std::endl;
     exit(1);
   }
 }
 
 
-void Controller::set_sinusoidal_offset(const double new_sinusoidal_offset, const unsigned int module, const unsigned int independent_parameter_index)
+void Controller::set_sine_offset(const double new_sine_offset, const unsigned int module, const unsigned int independent_parameter_index)
 {
-  if(new_sinusoidal_offset > -90 && new_sinusoidal_offset < 90)
+  if(new_sine_offset > -90 && new_sine_offset < 90)
   {
-    sinusoidal_offset[module] = new_sinusoidal_offset;
+    sine_offset[module] = new_sine_offset;
   }
   else
   {
     std::cerr << "Morphomotion Error: Controller class." << std::endl
-              << "void set_sinusoidal_offset(const double, const unsigned int, const unsigned int) method." << std::endl
-              << "Sinusoidal offset must be between -90 and 90. Independent parameter Min: " << mlp->get_independent_parameter_minimum(independent_parameter_index) << " Independent parameter Max: " << mlp->get_independent_parameter_maximum(independent_parameter_index) << std::endl
-              << "Sinusoidal offset[" << independent_parameter_index%number_of_modules << "]: " << new_sinusoidal_offset << std::endl;
+              << "void set_sine_offset(const double, const unsigned int, const unsigned int) method." << std::endl
+              << "sine offset must be between -90 and 90. Independent parameter Min: " << mlp->get_independent_parameter_minimum(independent_parameter_index) << " Independent parameter Max: " << mlp->get_independent_parameter_maximum(independent_parameter_index) << std::endl
+              << "sine offset[" << independent_parameter_index%number_of_modules << "]: " << new_sine_offset << std::endl;
     exit(1);
   }
 }
 
 
-void Controller::set_sinusoidal_phase(const double new_sinusoidal_phase, const unsigned int module, const unsigned int independent_parameter_index)
+void Controller::set_sine_phase(const double new_sine_phase, const unsigned int module, const unsigned int independent_parameter_index)
 {
-  if(new_sinusoidal_phase > mlp->get_independent_parameter_minimum(independent_parameter_index) && new_sinusoidal_phase < mlp->get_independent_parameter_maximum(independent_parameter_index))
+  if(new_sine_phase > mlp->get_independent_parameter_minimum(independent_parameter_index) && new_sine_phase < mlp->get_independent_parameter_maximum(independent_parameter_index))
   {
-    sinusoidal_phase[module] = new_sinusoidal_phase;
+    sine_phase[module] = new_sine_phase;
   }
   else
   {
     std::cerr << "Morphomotion Error: Controller class." << std::endl
-              << "void set_sinusoidal_phase(const double, const unsigned int, const unsigned int) method." << std::endl
-              << "Sinusoidal phase must be between Independent parameter Min: " << mlp->get_independent_parameter_minimum(independent_parameter_index) << " and Independent parameter Max: " << mlp->get_independent_parameter_maximum(independent_parameter_index) << std::endl
-              << "Sinusoidal phase[" << independent_parameter_index%number_of_modules << "]: " << new_sinusoidal_phase << std::endl;
+              << "void set_sine_phase(const double, const unsigned int, const unsigned int) method." << std::endl
+              << "sine phase must be between Independent parameter Min: " << mlp->get_independent_parameter_minimum(independent_parameter_index) << " and Independent parameter Max: " << mlp->get_independent_parameter_maximum(independent_parameter_index) << std::endl
+              << "sine phase[" << independent_parameter_index%number_of_modules << "]: " << new_sine_phase << std::endl;
     exit(1);
   }
 }
 
 
-void Controller::set_sinusoidal_frequency(const double new_sinusoidal_frequency, const unsigned int independent_parameter_index)
+void Controller::set_sine_frequency(const double new_sine_frequency, const unsigned int independent_parameter_index)
 {
-  if(new_sinusoidal_frequency > mlp->get_independent_parameter_minimum(independent_parameter_index) && new_sinusoidal_frequency < mlp->get_independent_parameter_maximum(independent_parameter_index))
+  if(new_sine_frequency > mlp->get_independent_parameter_minimum(independent_parameter_index) && new_sine_frequency < mlp->get_independent_parameter_maximum(independent_parameter_index))
   {
-    sinusoidal_frequency = new_sinusoidal_frequency;
+    sine_frequency = new_sine_frequency;
   }
   else
   {
     std::cerr << "Morphomotion Error: Controller class." << std::endl
-              << "void set_sinusoidal_frequency(const double, const unsigned int) method." << std::endl
-              << "Sinusoidal frequency must be between Independent parameter Min: " << mlp->get_independent_parameter_minimum(independent_parameter_index) << " and Independent parameter Max: " << mlp->get_independent_parameter_maximum(independent_parameter_index) << std::endl
-              << "Sinusoidal frequency: " << new_sinusoidal_frequency << std::endl;
+              << "void set_sine_frequency(const double, const unsigned int) method." << std::endl
+              << "sine frequency must be between Independent parameter Min: " << mlp->get_independent_parameter_minimum(independent_parameter_index) << " and Independent parameter Max: " << mlp->get_independent_parameter_maximum(independent_parameter_index) << std::endl
+              << "sine frequency: " << new_sine_frequency << std::endl;
     exit(1);
    }
 }
 
 
-double Controller::get_sinusoidal_amplitude(const unsigned int module)
+double Controller::get_sine_amplitude(const unsigned int module)
 {
     if(module < number_of_modules)
     {
-        return sinusoidal_amplitude[module];
+        return sine_amplitude[module];
     }
     else
     {
         std::cerr << "Morphomotion Error: Controller class." << std::endl
-                  << "double get_sinusoidal_amplitude(const unsigned int method." << std::endl
+                  << "double get_sine_amplitude(const unsigned int method." << std::endl
                   << "Module: " << module << " should be less than or etual to number of modules: " << number_of_modules << std::endl;
         exit(1);
     }
 }
 
 
-double Controller::get_sinusoidal_offset(const unsigned int module)
+double Controller::get_sine_offset(const unsigned int module)
 {
     if(module < number_of_modules)
     {
-        return sinusoidal_offset[module];
+        return sine_offset[module];
     }
     else
     {
         std::cerr << "Morphomotion Error: Controller class." << std::endl
-                  << "double get_sinusoidal_offset(const unsigned int method." << std::endl
+                  << "double get_sine_offset(const unsigned int method." << std::endl
                   << "Module: " << module << " should be less than or etual to number of modules: " << number_of_modules << std::endl;
         exit(1);
     }
 }
 
 
-double Controller::get_sinusoidal_phase(const unsigned int module)
+double Controller::get_sine_phase(const unsigned int module)
 {
     if(module < number_of_modules)
     {
-        return sinusoidal_phase[module];
+        return sine_phase[module];
     }
     else
     {
         std::cerr << "Morphomotion Error: Controller class." << std::endl
-                  << "double get_sinusoidal_phase(const unsigned int method." << std::endl
+                  << "double get_sine_phase(const unsigned int method." << std::endl
                   << "Module: " << module << " should be less than or etual to number of modules: " << number_of_modules << std::endl;
         exit(1);
     }
 }
 
 
-double Controller::get_sinusoidal_frequency()
+double Controller::get_sine_frequency()
 {
-    return sinusoidal_frequency;
+    return sine_frequency;
 }
 
 
@@ -1130,10 +1082,6 @@ void Controller::set_controller_type(const std::string& new_controller_type)
   else if(new_controller_type == "Simple_Controller")
   {
     controller_type = Simple_Controller;
-  }
-  else if(new_controller_type == "Sinusoidal_Controller")
-  {
-    controller_type = Sinusoidal_Controller;
   }
   else if(new_controller_type == "Sine_Controller")
   {
@@ -1165,7 +1113,6 @@ std::string Controller::get_controller_type(void)
     {
       return("Neural_Controller");
     }
-    break;
     case Naive_Controller:
     {
       return("Naive_Controller");
@@ -1174,21 +1121,14 @@ std::string Controller::get_controller_type(void)
     {
       return("Simple_Controller");
     }
-    case Sinusoidal_Controller:
-    {
-      return("Sinusoidal_Controller");
-    }
-    break;
     case Sine_Controller:
     {
       return("Sine_Controller");
     }
-    break;
     case Hybrid_Controller:
     {
       return("Hybrid_Controller");
     }
-    break;
     case Semi_Hybrid_Controller:
     {
       return("Semi_Hybrid_Controller");

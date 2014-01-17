@@ -45,6 +45,8 @@ private:
 
 public:
 
+  FileHandler(){}
+
   // CONSTRUCTOR FOR SAVING ELITE GENE POPULATION
   FileHandler(std::string, bool, bool, Flood::EvolutionaryAlgorithm*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*);
 
@@ -76,7 +78,8 @@ public:
   void load_independent_parameters(std::fstream&, Flood::MultilayerPerceptron*);
   void load_genes(std::fstream&, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, std::vector<std::string>*);
   void load_elite_fitness(std::fstream&, std::vector<double>*);
+
+  std::string get_controller_type(char*);
 };
 
 #endif
-

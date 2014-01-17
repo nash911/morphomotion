@@ -112,7 +112,7 @@ FileHandler::FileHandler(std::string note,
   myFile << std::endl << "<Controller>" << std::endl;
   myFile << "\t<ControllerType>" << std::endl << "\t   " << controller->get_controller_type() << std::endl << "\t</ControllerType>" << std::endl;
   myFile << std::endl << "\t<EvaluationPeriod>" << std::endl << "\t   " << controller->get_evaluation_period() << std::endl << "\t</EvaluationPeriod>" << std::endl;
-  if(controller->get_controller_type() != "Sinusoidal_Controller" && controller->get_controller_type() != "Sine_Controller")
+  if(controller->get_controller_type() != "Sine_Controller")
   {
     myFile << std::endl << "\t<ServoMax>" << std::endl << "\t   " << controller->get_servo_max() << std::endl << "\t</ServoMax>" << std::endl;
     myFile << std::endl << "\t<ServoMin>" << std::endl << "\t   " << controller->get_servo_min() << std::endl << "\t</ServoMin>" << std::endl;
@@ -1288,6 +1288,94 @@ void FileHandler::load_elite_fitness(std::fstream& fitness_file, std::vector<dou
     //-- Worst Fitness (Discarded)
     fitness_file >> fitness;
   }while(!fitness_file.eof());
+}
+
+
+std::string FileHandler::get_controller_type(char* gene_filename)
+{
+    std::fstream gene_file;
+
+    gene_file.open(gene_filename, std::ios::in);
+    if(!gene_file.is_open())
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_controller_type(char*)" << std::endl
+                << "Cannot open Parameter file: "<< gene_filename  << std::endl;
+      exit(1);
+    }
+
+    std::string line;
+    std::string word;
+    std::string controller_type;
+
+    getline(gene_file, line);
+
+    if(line != "<Morphomotion: Flood + OpenRave + Y1>")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_controller_type(char*)" << std::endl
+                << "Unknown file declaration: " << line << std::endl;
+
+      exit(1);
+    }
+
+    //-- File type
+    gene_file >> word;
+
+    if(word != "<FileType>")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_controller_type(char*)" << std::endl
+                << "Unknown file type begin tag: " << word << std::endl;
+
+      exit(1);
+    }
+
+    gene_file >> word;
+
+    if(word != "GeneFile" && word != "Evolution_Parameters")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_controller_type(char*)" << std::endl
+                << "Unknown file type: " << word << std::endl;
+
+      exit(1);
+    }
+
+    gene_file >> word;
+
+    if(word != "</FileType>")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_controller_type(char*)" << std::endl
+                << "Unknown file type end tag: " << word << std::endl;
+
+      exit(1);
+    }
+
+    do
+    {
+      gene_file >> word;
+
+      if(word == "<ControllerType>")
+      {
+        gene_file >> controller_type;
+
+        gene_file >> word;
+
+        if(word != "</ControllerType>")
+        {
+          std::cerr << "Morphomotion Error: FileHandler Class." << std::endl
+                    << "void load_Controller_parameters(std::fstream&, Controller*) method." << std::endl
+                    << "Unknown Controller Type end tag: " << word << std::endl;
+
+          exit(1);
+        }
+      }
+
+    }while(word != "</ControllerType>");
+    gene_file.close();
+    return controller_type;
 }
 
 

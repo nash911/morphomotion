@@ -20,6 +20,10 @@
 #include <math.h>
 #include <unistd.h> // TODO: Not sure if this is needed.
 
+#include <cmath>
+#include <vector>
+
+
 #include <stdio.h>
 #include <termios.h>
 #include <unistd.h>
@@ -49,9 +53,6 @@
 #define NOISE_MEAN 0
 #define NOISE_SD 5
 
-//#define PI 3.14159265
-
-
 using namespace std;
 
 class Controller
@@ -60,7 +61,7 @@ class Controller
 public:
 
   enum StartAngleType{Zero, Random, RandomEqual, Predefined, RunTime};
-  enum ControllerType{Sinusoidal_Controller, Neural_Controller, Naive_Controller, Simple_Controller, Hybrid_Controller, Semi_Hybrid_Controller, Sine_Controller};
+  enum ControllerType{Neural_Controller, Naive_Controller, Simple_Controller, Hybrid_Controller, Semi_Hybrid_Controller, Sine_Controller};
 
   // DEFAULT CONSTRUCTOR
   Controller(void);
@@ -78,18 +79,13 @@ public:
   // METHODS
 
   void reset_controller(void);
-  void set_default(void);
   void set_oscillation_analyzer(OscillationAnalyzer_OutputSignal*);
-  void init_controller(void);
-  void init_local_variables(Flood::Vector<double>&,
-                            Flood::Vector<double>&,
-                            Flood::Vector<bool>&);
 
-  bool run_Controller(const std::string&, std::stringstream&, int, int, int);
-  void actuate_with_sine_controller(const unsigned int, const double, Flood::Vector<double>&);
-  void actuate_with_neural_controller(const unsigned int, Flood::Vector<double>&);
-  void actuate_with_simple_controller(const unsigned int, Flood::Vector<double>&);
-  void actuate_with_hybrid_controller(const unsigned int, Flood::Vector<double>&);
+
+  //void actuate_with_sine_controller(const unsigned int, const double, Flood::Vector<double>&);
+  //void actuate_with_neural_controller(const unsigned int, Flood::Vector<double>&);
+  //void actuate_with_simple_controller(const unsigned int, Flood::Vector<double>&);
+  //void actuate_with_hybrid_controller(const unsigned int, Flood::Vector<double>&);
   void actuate_module(const unsigned int, double);
   void actuate_all_modules(const Flood::Vector<double>&);
   bool read_servo_positions_with_time(void); // TODO: This should be implemented as a seperate thread.
@@ -122,16 +118,16 @@ public:
   void set_oscillator_offset(double);
   double get_oscillator_offset(void);
 
-  void load_sinusoidal_control_parameters(void);
-  void set_sinusoidal_amplitude(const double, const unsigned int, const unsigned int);
-  void set_sinusoidal_offset(const double, const unsigned int, const unsigned int);
-  void set_sinusoidal_phase(const double, const unsigned int, const unsigned int);
-  void set_sinusoidal_frequency(const double, const unsigned int);
+  void load_sine_control_parameters(void);
+  void set_sine_amplitude(const double, const unsigned int, const unsigned int);
+  void set_sine_offset(const double, const unsigned int, const unsigned int);
+  void set_sine_phase(const double, const unsigned int, const unsigned int);
+  void set_sine_frequency(const double, const unsigned int);
 
-  double get_sinusoidal_amplitude(const unsigned int);
-  double get_sinusoidal_offset(const unsigned int);
-  double get_sinusoidal_phase(const unsigned int);
-  double get_sinusoidal_frequency(void);
+  double get_sine_amplitude(const unsigned int);
+  double get_sine_offset(const unsigned int);
+  double get_sine_phase(const unsigned int);
+  double get_sine_frequency(void);
 
   double calculate_random_uniform(double, double);
   double calculate_random_normal(double, double);
@@ -143,7 +139,17 @@ public:
   void record_servo_graph_real(int);*/
 
 
-private:
+  //-- VIRTUAL FUNCTIONS
+  virtual void set_default(void);
+  virtual void init_controller(void);
+  /*virtual void init_local_variables(Flood::Vector<double>&,
+                            Flood::Vector<double>&,
+                            Flood::Vector<bool>&);*/
+  virtual bool run_Controller(const std::string&, std::stringstream&, int, int, int) = 0;
+  //virtual bool run_Controller(const std::string&, std::stringstream&, int, int, int){}
+
+
+protected:
   Flood::MultilayerPerceptron *mlp;
   Robot *robot_primary;
   Robot *robot_secondary;
@@ -162,10 +168,10 @@ private:
   double oscillator_amplitude;
   double oscillator_offset;
 
-  vector<double> sinusoidal_amplitude;
-  vector<double> sinusoidal_offset;
-  vector<double> sinusoidal_phase;
-  double sinusoidal_frequency;
+  vector<double> sine_amplitude;
+  vector<double> sine_offset;
+  vector<double> sine_phase;
+  double sine_frequency;
 
   //double Pi;
 };
