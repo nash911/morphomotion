@@ -78,7 +78,6 @@ bool SineController::run_Controller(const std::string& type, std::stringstream& 
 
   double t;
 
-
   unsigned long previous_read_elapsed_time = 0;
   unsigned long evaluation_elapsed_time = 0;
   unsigned long evaluation_window = (unsigned long)evaluation_period * 1000000; // Converted to microseconds;
@@ -97,6 +96,12 @@ bool SineController::run_Controller(const std::string& type, std::stringstream& 
 
             SS << "REDO" << " ";
             return true;
+        }
+
+        //--Record the reference position.
+        if(oscAnlz && oscAnlz->get_record_ref())
+        {
+          oscAnlz->write_ref(output);
         }
 
         t = (double)robot_primary->get_elapsed_evaluation_time()/1000000.0;
@@ -216,5 +221,6 @@ bool SineController::run_Controller(const std::string& type, std::stringstream& 
 
 void SineController::actuate_with_sine_controller(const unsigned int module, const double t, Flood::Vector<double>& output)
 {
-  output[module] = sine_amplitude[module] * sin(2*M_PI*sine_frequency*t + ((sine_phase[module] * M_PI)/180.0)) + sine_offset[module];
+  //output[module] = sine_amplitude[module] * sin(2*M_PI*sine_frequency*t + ((sine_phase[module] * M_PI)/180.0)) + sine_offset[module];
+  output[module] = sine_wave(sine_amplitude[module], sine_offset[module], sine_frequency, sine_phase[module], t);
 }

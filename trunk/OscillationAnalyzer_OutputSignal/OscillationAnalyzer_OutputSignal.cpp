@@ -52,6 +52,7 @@ OscillationAnalyzer_OutputSignal::OscillationAnalyzer_OutputSignal(Robot* robot_
   record_trajectory = false;
 
   servo_graph_file = NULL;
+  ref_graph_file = NULL;
   amplitude_graph_file = NULL;
   offset_graph_file = NULL;
   frequency_graph_file = NULL;
@@ -64,6 +65,53 @@ OscillationAnalyzer_OutputSignal::OscillationAnalyzer_OutputSignal(Robot* robot_
 // DESTRUCTOR
 OscillationAnalyzer_OutputSignal::~OscillationAnalyzer_OutputSignal(void)
 {
+    if(servo_graph_file != NULL)
+    {
+        delete[] servo_graph_file;
+        std::cout << std::endl << "servo_graph_file Deleted." << std::endl;
+    }
+
+    if(ref_graph_file != NULL)
+    {
+        delete ref_graph_file;
+        std::cout << std::endl << "ref_graph_file Deleted." << std::endl;
+    }
+
+    if(amplitude_graph_file != NULL)
+    {
+        delete amplitude_graph_file;
+        std::cout << std::endl << "amplitude_graph_file Deleted." << std::endl;
+    }
+
+    if(offset_graph_file != NULL)
+    {
+        delete offset_graph_file;
+        std::cout << std::endl << "offset_graph_file Deleted." << std::endl;
+    }
+
+    if(frequency_graph_file != NULL)
+    {
+        delete frequency_graph_file;
+        std::cout << std::endl << "frequency_graph_file Deleted." << std::endl;
+    }
+
+    if(phase_180_graph_file != NULL)
+    {
+        delete phase_180_graph_file;
+        std::cout << std::endl << "phase_180_graph_file Deleted." << std::endl;
+    }
+
+    if(phase_360_graph_file != NULL)
+    {
+        delete phase_360_graph_file;
+        std::cout << std::endl << "phase_360_graph_file Deleted." << std::endl;
+    }
+
+    if(trajectory_graph_file != NULL)
+    {
+        delete trajectory_graph_file;
+        std::cout << std::endl << "trajectory_graph_file Deleted." << std::endl;
+    }
 }
 
 void OscillationAnalyzer_OutputSignal::update_oscillation_short_history(unsigned int module, double new_oscillation_value)
@@ -166,6 +214,12 @@ bool OscillationAnalyzer_OutputSignal::get_record_servo(void)
 }
 
 
+bool OscillationAnalyzer_OutputSignal::get_record_ref(void)
+{
+  return(record_ref);
+}
+
+
 bool OscillationAnalyzer_OutputSignal::get_record_trajectory(void)
 {
   return(record_trajectory);
@@ -198,6 +252,18 @@ void OscillationAnalyzer_OutputSignal::set_record_servo(const bool record_servo_
   {
     remove("../Evaluation_Files/servo.dat");
     servo_graph_file = new GraphFile("../Evaluation_Files/servo.dat");
+  }
+}
+
+
+void OscillationAnalyzer_OutputSignal::set_record_ref(const bool record_ref_bool_value)
+{
+  record_servo = record_ref_bool_value;
+
+  if(record_ref_bool_value)
+  {
+    remove("../Evaluation_Files/ref.dat");
+    ref_graph_file = new GraphFile("../Evaluation_Files/ref.dat");
   }
 }
 
@@ -263,7 +329,7 @@ void OscillationAnalyzer_OutputSignal::set_record_phase(const bool record_phase_
 
 void OscillationAnalyzer_OutputSignal::set_record_trajectory(const bool record_trajectory_bool_value)
 {
-  record_servo = record_trajectory_bool_value;
+  record_trajectory = record_trajectory_bool_value;
 
   if(record_trajectory_bool_value)
   {
@@ -292,6 +358,22 @@ void OscillationAnalyzer_OutputSignal::write_servo(std::vector<double>& servo_po
     ss << servo_positions[module] << " ";
   }
   servo_graph_file->write(ss);
+}
+
+
+void OscillationAnalyzer_OutputSignal::write_ref(Flood::Vector<double>& ref_positions)
+{
+  std::stringstream ss;
+  unsigned int number_of_modules = robot->get_number_of_modules();
+
+  ss << number_of_modules+1 << " ";
+  ss << robot->get_elapsed_evaluation_time()/1000 << " "; // X-axis in micro seconds.
+
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    ss << ref_positions[module] << " ";
+  }
+  ref_graph_file->write(ss);
 }
 
 
@@ -387,7 +469,7 @@ void OscillationAnalyzer_OutputSignal::write_trajectory()
   std::stringstream ss;
 
   ss << 2 << " ";
-  ss << robot->get_robot_Y() << " " << robot->get_robot_X() << " "; // X-axis in micro seconds.
+  ss << robot->get_robot_Y() << " " << robot->get_robot_X() << " ";
 
   trajectory_graph_file->write(ss);
 }
