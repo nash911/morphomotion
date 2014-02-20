@@ -112,7 +112,7 @@ FileHandler::FileHandler(std::string note,
   myFile << std::endl << "<Controller>" << std::endl;
   myFile << "\t<ControllerType>" << std::endl << "\t   " << controller->get_controller_type() << std::endl << "\t</ControllerType>" << std::endl;
   myFile << std::endl << "\t<EvaluationPeriod>" << std::endl << "\t   " << controller->get_evaluation_period() << std::endl << "\t</EvaluationPeriod>" << std::endl;
-  if(controller->get_controller_type() != "Sine_Controller")
+  if(controller->get_controller_type() != "Sine_Controller" && controller->get_controller_type() != "InverseSine_Controller")
   {
     myFile << std::endl << "\t<ServoMax>" << std::endl << "\t   " << controller->get_servo_max() << std::endl << "\t</ServoMax>" << std::endl;
     myFile << std::endl << "\t<ServoMin>" << std::endl << "\t   " << controller->get_servo_min() << std::endl << "\t</ServoMin>" << std::endl;
@@ -236,7 +236,7 @@ FileHandler::FileHandler(char* filename, Robot *robot, SimulationOpenRave *simuE
     exit(1);
   }
 
-  // File type
+  //--File type
   file >> word;
 
   if(word != "<FileType>")
@@ -329,7 +329,7 @@ FileHandler::FileHandler(char* gene_filename, Robot *robot, SimulationOpenRave *
     exit(1);
   }
 
-  // File type
+  //--File type
   gene_file >> word;
 
   if(word != "<FileType>")
@@ -404,7 +404,7 @@ FileHandler::FileHandler(char* gene_filename, Robot *robot, SimulationOpenRave *
 }
 
 
-//-- CONSTRUCTOR FOR EXTRACTING PARAMETERS FROM GENE FILE AND FITNESS FILE
+//--CONSTRUCTOR FOR EXTRACTING PARAMETERS FROM GENE FILE AND FITNESS FILE
 FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Robot *robot, SimulationOpenRave *simuEnv, Controller *controller, Flood::MultilayerPerceptron *mlp, Flood::Matrix<double>* population, std::vector<std::string>* generation_index, std::vector<double>* elite_fitness)
 {
   std::fstream gene_file;
@@ -442,7 +442,7 @@ FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Robot *rob
     exit(1);
   }
 
-  //-- File type
+  //--File type
   gene_file >> word;
 
   if(word != "<FileType>")
@@ -519,7 +519,7 @@ FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Robot *rob
 }
 
 
-//-- CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE
+//--CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE
 FileHandler::FileHandler(char* gene_filename, Flood::MultilayerPerceptron *mlp, Flood::Matrix<double>* population, std::vector<std::string>* generation_index)
 {
   std::fstream gene_file;
@@ -546,7 +546,7 @@ FileHandler::FileHandler(char* gene_filename, Flood::MultilayerPerceptron *mlp, 
     exit(1);
   }
 
-  //-- File type
+  //--File type
   gene_file >> word;
 
   if(word != "<FileType>")
@@ -603,7 +603,7 @@ FileHandler::FileHandler(char* gene_filename, Flood::MultilayerPerceptron *mlp, 
 }
 
 
-//-- CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE AND FITNESS FILE
+//--CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE AND FITNESS FILE
 FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Flood::MultilayerPerceptron *mlp, Flood::Matrix<double>* population, std::vector<std::string>* generation_index, std::vector<double>* elite_fitness)
 {
   std::fstream gene_file;
@@ -641,7 +641,7 @@ FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Flood::Mul
     exit(1);
   }
 
-  //-- File type
+  //--File type
   gene_file >> word;
 
   if(word != "<FileType>")
@@ -700,13 +700,13 @@ FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Flood::Mul
 }
 
 
-//-- DESTRUCTOR
+//--DESTRUCTOR
 FileHandler::~FileHandler(void)
 {
 }
 
 
-//-- METHODS
+//--METHODS
 
 void FileHandler::load_Robot_parameters(std::fstream& file, Robot *robot)
 {
@@ -1115,7 +1115,7 @@ void FileHandler::load_independent_parameters(std::fstream& file, Flood::Multila
 
           if(totalParameters > 1)
           {
-            //-- Undoing incrementing independentParametersNumber a few lines above.
+            //--Undoing incrementing independentParametersNumber a few lines above.
             independentParametersNumber--;
             independentParametersNumber = independentParametersNumber + totalParameters;
           }
@@ -1172,7 +1172,8 @@ void FileHandler::load_independent_parameters(std::fstream& file, Flood::Multila
           file >> word;
           for(unsigned int parameter=0; parameter<totalParameters; parameter++)
           {
-            independentParametersMinimum.push_back(atoi(word.c_str()));
+            //independentParametersMinimum.push_back(atod(word.c_str())); //TODO: Need to change this to atod().
+            independentParametersMinimum.push_back(atof(word.c_str()));
           }
 
           file >> word;
@@ -1192,7 +1193,8 @@ void FileHandler::load_independent_parameters(std::fstream& file, Flood::Multila
           file >> word;
           for(unsigned int parameter=0; parameter<totalParameters; parameter++)
           {
-            independentParametersMaximum.push_back(atoi(word.c_str()));
+            //independentParametersMaximum.push_back(atod(word.c_str()));  //TODO: Need to change this to atod().
+            independentParametersMaximum.push_back(atof(word.c_str()));  //TODO: Need to change this to atod().
           }
 
           file >> word;
@@ -1276,16 +1278,16 @@ void FileHandler::load_elite_fitness(std::fstream& fitness_file, std::vector<dou
 
   do
   {
-    //-- index number (Discarded)
+    //--index number (Discarded)
     fitness_file >> fitness;
 
-    //-- Best Fitness
+    //--Best Fitness
     fitness_file >> fitness;
     elite_fitness->push_back(fitness);
 
-    //-- Average Fitness (Discarded)
+    //--Average Fitness (Discarded)
     fitness_file >> fitness;
-    //-- Worst Fitness (Discarded)
+    //--Worst Fitness (Discarded)
     fitness_file >> fitness;
   }while(!fitness_file.eof());
 }
@@ -1319,7 +1321,7 @@ std::string FileHandler::get_controller_type(char* gene_filename)
       exit(1);
     }
 
-    //-- File type
+    //--File type
     gene_file >> word;
 
     if(word != "<FileType>")
@@ -1377,47 +1379,3 @@ std::string FileHandler::get_controller_type(char* gene_filename)
     gene_file.close();
     return controller_type;
 }
-
-
-/********************************************************* From http://www.dreamincode.net/ *************************************************************/
-char* substr(char* str, int start, int end)
-{
-  char* a = new char[1+(end-start)]; // we need a new char array for the return
-  for(int i=start; i<end; i++) // loop through the string
-  {
-    a[i-start] = str[i]; // set the characters in the new char array to those from the old one compensating for the substring
-  }
-  a[end-start] = '\0'; // add the null character, so we can output
-  return a; // return
-}
-
-double atod(char* a)
-{
-  double retVal = atoi(a); // start off getting the number, assuming it is a valid string to use atoi on.
-  int start = 0;
-  int end = 0;
-
-  for(int i=0; a[i] != '\0'; i++) // loop through the string to find the positions of the decimal portion, if there is one
-  {
-    if(a[i] == '.' && start == 0)
-    {
-      start = i+1; // set the start position to 1 more than the current (avoids a char as the first character - we want a digit)
-    }
-    else if(start != 0 &&  (a[i] < '0' || a[i] > '9')) // make sure that start is set and that we aren't looking at digits
-    {
-      end = i; // if so, set the end location for the substring
-      break; // we don't need to continue anymore - break out of the loop
-    }
-  }
-
-  if(end > start) // avoids substring problems.
-  {
-    char* decimal = substr(a, start, end); // get the string that is after the decimal point
-    int dec = atoi(decimal); // make it an integer
-    int power = end-start; // find the power of 10 we need to divide by
-    retVal += ((double)dec)/(pow(10.0, (double)power)); // divide and add to the return value (thus making it a true double)
-  }
-
-  return retVal; // return - simple enough
-}
-/********************************************************* From http://www.dreamincode.net/ *************************************************************/

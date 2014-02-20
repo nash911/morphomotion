@@ -28,15 +28,16 @@
 #include "HybridController.h"
 #include "SineController.h"
 #include "SimpleController.h"
+#include "InverseSineController.h"
 #include "FileHandler.h"
 
-#define ROBOT_OPENRAVE
-//#define ROBOT_Y1
+//#define ROBOT_OPENRAVE
+#define ROBOT_Y1
 
 #define EVALUATION_SAMPLE_SIZE 1
 
 #define POPULATION_SIZE 20
-#define GENERATIONS 20
+#define GENERATIONS 10
 
 #define CROSSOVER_RATIO 0.5
 #define ELITISM_RATIO 0.25
@@ -106,6 +107,17 @@ int main(int argc, char* argv[])
   else if(controller_type == "Simple_Controller")
   {
     controller = new SimpleController(&mlp, robot);
+  }
+  else if(controller_type == "InverseSine_Controller")
+  {
+    controller = new InverseSineController(&mlp, robot);
+  }
+  else
+  {
+    std::cerr << "Morphomotion Error: EvolveController." << std::endl
+              << "int main(int, char*) method."
+              << "Unknown controller type: " << controller_type << std::endl;
+    exit(1);
   }
 
    if(argc < 3)

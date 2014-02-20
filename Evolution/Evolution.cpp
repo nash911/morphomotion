@@ -51,15 +51,28 @@ Evolution::~Evolution(void)
 
 //-- Default objective function for debugging purpose.
 double Evolution::calculate_objective(void)
+//double Evolution::calculate_objective(int generation, int individual, int evaluation_sample_size)
 {
   double evaluation;
   evaluation =  controller->calculate_random_uniform(0.1,5.0);
   return evaluation;
 }
 
-/*double Evolution::calculate_objective(int generation, int individual)  //-- TODO: To be removed from here and from ObjectiveFunction.h
+
+/*double Evolution::calculate_objective(int generation, int individual, int evaluation_sample_size)
 {
-    return 0;
+  double evaluation;
+  evaluation =  controller->calculate_random_uniform(0.1,5.0);
+  std::cout << std::endl << generation << " -- " << individual << ":";
+  std::cout << "    (1) " << evaluation << "        ";
+
+  std::cout << "    I_Parameters: ";
+  for(unsigned int i=0; i<controller->get_mlp()->get_independent_parameters_number(); i++)
+  {
+    std::cout << "[" << i+1 << "] " << controller->get_mlp()->get_independent_parameter(i) << "    ";
+  }
+
+  return evaluation;
 }*/
 
 double Evolution::calculate_objective(int generation, int individual, int evaluation_sample_size)
@@ -70,6 +83,14 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
   double mean_speed = 0;
 
   std::cout << std::endl << generation << " -- " << individual << ":";
+
+  std::cout << "   I_Parameters: ";
+  for(unsigned int n=0; n<controller->get_mlp()->get_independent_parameters_number(); n++)
+  {
+    std::cout << "[" << n+1 << "] " << controller->get_mlp()->get_independent_parameter(n) << "  ";
+  }
+  std::cout << "  Evaluation: ";
+
   for(int i=0; i<evaluation_sample_size; i++)
   {
 
@@ -79,14 +100,8 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
     {
         std::stringstream SS;
 
-        //std::cout << "  Reset  ";
-        //std::cout << std::endl;
-
         //-- Initialise the robot with 0 degrees to the motor and move it to the initial position.
         robot->reset_robot();
-
-        //std::cout << "  Running...  ";
-        //std::cout << std::endl;
 
         //-- Run controller.
         controller->run_Controller("evolution", SS, individual, generation, i);
@@ -101,16 +116,13 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
     }
     else
     {
-        //std::cout << "  Evaluate  ";
-        //std::cout << std::endl;
-
         robot->reset_modules();
 
         //-- Calculate distance travelled by the robot.
         evaluation[i] = robot->get_distance_travelled();
     }
 
-    std::cout << "    (" << i+1 << ") " << evaluation[i];
+    std::cout << "  (" << i+1 << ") " << evaluation[i];
   }
 
   for(int i=0; i<evaluation_sample_size; i++)
@@ -120,8 +132,6 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
 
   mean_distance = total_distance/evaluation_sample_size;
   mean_speed = (mean_distance/controller->get_evaluation_period())*100;  //-- Mean speed calculated as cms/second.
-
-  //std::cout << std::endl << "get_evaluation_period() = " << controller->get_evaluation_period() << std::endl; // TODO: Debugger to be removed.
 
   //--Adding a small random noise to avoid fitness value of zero.
   mean_speed = mean_speed + controller->calculate_random_uniform(0.001,0.01);
