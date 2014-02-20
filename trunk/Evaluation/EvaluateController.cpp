@@ -26,24 +26,25 @@
 #include "HybridController.h"
 #include "SineController.h"
 #include "SimpleController.h"
+#include "InverseSineController.h"
 #include "FileHandler.h"
 #include "OscillationAnalyzer_OutputSignal.h"
 
 #define BAUD_RATE 115200
 
-#define ROBOT_PRIMARY_OPENRAVE
-//#define ROBOT_PRIMARY_Y1
+//#define ROBOT_PRIMARY_OPENRAVE
+#define ROBOT_PRIMARY_Y1
 
 //#define ROBOT_SECONDARY
 
-#define EVALUATION_PERIOD 100
+#define EVALUATION_PERIOD 30
 
 int main(int argc, char* argv[])
 {
   bool evaluate_best_individual = false;
 
-  char* gene_file;
-  char* fitness_file;
+  char* gene_file = NULL;
+  char* fitness_file = NULL;
 
   Robot *robot_primary = NULL;
   Robot *robot_secondary = NULL;
@@ -79,11 +80,7 @@ int main(int argc, char* argv[])
   Flood::MultilayerPerceptron mlp(0,0,0);
   mlp.set_independent_parameters_number(0);
 
-  //Controller controller(&mlp, &simuOR_robot);
-  //Controller controller(&mlp, robot_primary);
   Controller *controller = NULL;
-
-  //HybridController hyC(&mlp, robot_primary);
 
   std::string controller_type;
   FileHandler geneFile;
@@ -100,6 +97,17 @@ int main(int argc, char* argv[])
   else if(controller_type == "Simple_Controller")
   {
     controller = new SimpleController(&mlp, robot_primary);
+  }
+  else if(controller_type == "InverseSine_Controller")
+  {
+    controller = new InverseSineController(&mlp, robot_primary);
+  }
+  else
+  {
+    std::cerr << "Morphomotion Error: EvaluateController." << std::endl
+              << "int main(int, char*) method."
+              << "Unknown controller type: " << controller_type << std::endl;
+    exit(1);
   }
 
 
@@ -201,6 +209,11 @@ int main(int argc, char* argv[])
     {
       FileHandler gene_fitness_FileHandler(gene_file, fitness_file, robot_primary, NULL, controller, &mlp, &population, &generation_index, &elite_fitness);
     }
+
+    if(fitness_file != NULL)
+    {
+      delete[] fitness_file;
+    }
   }
 
   // Cross Evaluation
@@ -236,8 +249,8 @@ int main(int argc, char* argv[])
   controller->init_controller();
   population.subtract_row(0);
 
-  robot_primary->set_evaluation_method("Euclidean_Distance_Final");  // Debugger;
-  //robot_primary->set_evaluation_method("Euclidean_Distance_Cumulative");  // Debugger;
+  robot_primary->set_evaluation_method("Euclidean_Distance_Final");
+  //robot_primary->set_evaluation_method("Euclidean_Distance_Cumulative");
 
 #ifdef ROBOT_SECONDARY
   if(robot_primary->get_robot_environment() == "SimulationOpenRave")
@@ -252,11 +265,11 @@ int main(int argc, char* argv[])
   }
 #endif
 
-  // Hidden Layer Activation Function
+  //--Hidden Layer Activation Function
   Flood::Vector<std::string> hiddenLayerActivation(mlp.get_hidden_layers_number());
   hiddenLayerActivation[0] = "HyperbolicTangent";
 
-  // Output Layer Activation Function
+  //--Output Layer Activation Function
   mlp.set_output_layer_activation_function("HyperbolicTangent");
 
   controller->set_evaluation_period(EVALUATION_PERIOD);
@@ -310,11 +323,12 @@ int main(int argc, char* argv[])
 
       controller->set_oscillation_analyzer(&oscAnlz);
       oscAnlz.set_record_servo(true);
-      //oscAnlz.set_record_amplitude(true);
-      //oscAnlz.set_record_offset(true);
-      //oscAnlz.set_record_frequency(true);
-      //oscAnlz.set_record_phase(true);
-      //oscAnlz.set_record_trajectory(true);
+      oscAnlz.set_record_ref(true);
+      oscAnlz.set_record_amplitude(true);
+      oscAnlz.set_record_offset(true);
+      oscAnlz.set_record_frequency(true);
+      oscAnlz.set_record_phase(true);
+      oscAnlz.set_record_trajectory(true);
 
       std::stringstream SS;
 
@@ -345,6 +359,59 @@ int main(int argc, char* argv[])
       }
 
       individual = population.get_row(i);
+
+      //-------------------------To Be Removed-----------------------------//
+      //--InverseSine Controller
+      // [1] 53.2143   [2] 458005   [3] 10.5565   [4] 49.9843   [5] 0.935509 -- Minibot Crashed
+      // 38.9258 284639 79.446 4.22644 0.553617  -- Y-bot Evolved
+      //[1] 44.6612  [2] 67520.8  [3] 89.4786  [4] 74.9153  [5] 1.32266 -- Lizard
+      /*individual[0] = 44.6612;
+      individual[1] = 67520;
+      individual[2] = 89.4786;
+      individual[3] = 74.9153;
+      individual[4] = 1.32266;*/
+      //-------------------------To Be Removed-----------------------------//
+
+      //-------------------------To Be Removed-----------------------------//
+      //--Amplitude
+      /*individual[0] = 0;
+      individual[1] = 0;
+      individual[2] = 0;
+      individual[3] = 80;
+
+      //--Offset
+      individual[4] = 0;
+      individual[5] = 0;
+      individual[6] = 0;
+      individual[7] = 0;
+
+      //--Phase
+      individual[8] = 0;
+      individual[9] = 0;
+      individual[10] = 0;
+      individual[11] = 0;
+
+      //--Frequency
+      individual[12] = 0.75;*/
+      //-------------------------To Be Removed-----------------------------//
+
+      //-------------------------To Be Removed-----------------------------//
+      //--Amplitude
+      individual[0] = 0;
+      individual[1] = 0;
+
+      //--Offset
+      individual[2] = 0;
+      individual[3] = 0;
+
+      //--Phase
+      individual[4] = 0;
+      individual[5] = 0;
+
+      //--Frequency
+      individual[6] = 0.75;
+      //-------------------------To Be Removed-----------------------------//
+
       mlp.set_parameters(individual);
 
       std::cout << std::endl << individual << std::endl << std::endl;
@@ -353,14 +420,12 @@ int main(int argc, char* argv[])
 
       controller->set_oscillation_analyzer(&oscAnlz);
       oscAnlz.set_record_servo(true);
-      //oscAnlz.set_record_amplitude(true);
-      //oscAnlz.set_record_offset(true);
-      //oscAnlz.set_record_frequency(true);
-      //oscAnlz.set_record_phase(true);
-      //oscAnlz.set_record_trajectory(true);
-
-      //controller.set_sinusoidal_frequency(0.11,6);
-      //std::cout << std::endl << "Freuency: " << controller.get_sinusoidal_frequency() << std::endl; // TODO: Debugger to be removed.
+      oscAnlz.set_record_ref(true);
+      oscAnlz.set_record_amplitude(true);
+      oscAnlz.set_record_offset(true);
+      oscAnlz.set_record_frequency(true);
+      oscAnlz.set_record_phase(true);
+      oscAnlz.set_record_trajectory(true);
 
       std::stringstream SS;
 
@@ -373,8 +438,6 @@ int main(int argc, char* argv[])
       {
         //std::cout << "    (" << i+1 << ") " << robot_secondary->get_robot_environment() << ": Distance travelled = " << robot_secondary->get_distance_travelled() << std::endl;
       }
-
-      //std::cout << std::endl << generation_index[i] << " --> Fitness: " << elite_fitness[46] << std::endl;
 
       std::cout << "  Population Size: " << population_size << std::endl << "  Select individual to be evaluated number:  " << std::endl;
 

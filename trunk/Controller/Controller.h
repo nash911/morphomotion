@@ -61,7 +61,7 @@ class Controller
 public:
 
   enum StartAngleType{Zero, Random, RandomEqual, Predefined, RunTime};
-  enum ControllerType{Neural_Controller, Naive_Controller, Simple_Controller, Hybrid_Controller, Semi_Hybrid_Controller, Sine_Controller};
+  enum ControllerType{Neural_Controller, Naive_Controller, Simple_Controller, Hybrid_Controller, Semi_Hybrid_Controller, Sine_Controller, InverseSine_Controller};
 
   // DEFAULT CONSTRUCTOR
   Controller(void);
@@ -81,16 +81,15 @@ public:
   void reset_controller(void);
   void set_oscillation_analyzer(OscillationAnalyzer_OutputSignal*);
 
-
-  //void actuate_with_sine_controller(const unsigned int, const double, Flood::Vector<double>&);
-  //void actuate_with_neural_controller(const unsigned int, Flood::Vector<double>&);
-  //void actuate_with_simple_controller(const unsigned int, Flood::Vector<double>&);
-  //void actuate_with_hybrid_controller(const unsigned int, Flood::Vector<double>&);
   void actuate_module(const unsigned int, double);
   void actuate_all_modules(const Flood::Vector<double>&);
   bool read_servo_positions_with_time(void); // TODO: This should be implemented as a seperate thread.
   double calculate_servo_delta(const unsigned int, double);
   double calculate_servo_derivative_time(const unsigned int, vector<vector<ServoFeedback*> >&);
+  double sine_wave(double, double, double, double, double);
+
+  void set_mlp(Flood::MultilayerPerceptron* mlp_pointer) {mlp = mlp_pointer;}
+  Flood::MultilayerPerceptron* get_mlp() {return mlp;}
 
   void set_controller_type(const std::string&);
   std::string get_controller_type(void);
@@ -117,6 +116,8 @@ public:
   double get_oscillator_amplitude(void);
   void set_oscillator_offset(double);
   double get_oscillator_offset(void);
+  void set_oscillator_frequency(double);
+  double get_oscillator_frequency(void);
 
   void load_sine_control_parameters(void);
   void set_sine_amplitude(const double, const unsigned int, const unsigned int);
@@ -135,19 +136,11 @@ public:
 
   void changemode(int);
   int kbhit (void);
-  /*void record_servo_graph_simulated(int);
-  void record_servo_graph_real(int);*/
-
 
   //-- VIRTUAL FUNCTIONS
   virtual void set_default(void);
   virtual void init_controller(void);
-  /*virtual void init_local_variables(Flood::Vector<double>&,
-                            Flood::Vector<double>&,
-                            Flood::Vector<bool>&);*/
   virtual bool run_Controller(const std::string&, std::stringstream&, int, int, int) = 0;
-  //virtual bool run_Controller(const std::string&, std::stringstream&, int, int, int){}
-
 
 protected:
   Flood::MultilayerPerceptron *mlp;
@@ -167,13 +160,12 @@ protected:
   unsigned long servo_derivative_epsilon;  // BUG FIX: Was previously --> unsigned servo_derivative_epsilon;
   double oscillator_amplitude;
   double oscillator_offset;
+  double oscillator_frequency;
 
   vector<double> sine_amplitude;
   vector<double> sine_offset;
   vector<double> sine_phase;
   double sine_frequency;
-
-  //double Pi;
 };
 
 #endif

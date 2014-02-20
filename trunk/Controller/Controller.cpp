@@ -13,14 +13,7 @@
 /*                                                                                                              */
 /****************************************************************************************************************/
 
-//#include <cmath>
-//#include <vector>
-
 #include "Controller.h"
-
-
-//void changemode(int);
-//int  kbhit(void);
 
 using namespace std;
 
@@ -66,6 +59,7 @@ Controller::~Controller(void)
   for(unsigned int module=0; module<number_of_modules; module++)
   {
     delete servo_feedback[module];
+    std::cout << std::endl << "Deleted servo_feedback[" << module << "]" << std::endl;
   }
 }
 
@@ -112,453 +106,6 @@ void Controller::set_default(void)
 }
 
 
-/*void Controller::init_local_variables(Flood::Vector<double> &output,
-                                      Flood::Vector<double> &previous_cycle_output,
-                                      Flood::Vector<bool> &isFirstStep)
-{
-  if(start_angle_type == Zero)
-  {
-    for(unsigned int module=0; module<number_of_modules; module++)
-    {
-      output[module] = 0;
-    }
-  }
-  else if(start_angle_type == Random)
-  {
-    for(unsigned int module=0; module<number_of_modules; module++)
-    {
-      output[module] = calculate_random_uniform(servo_min,servo_max);
-    }
-  }
-  else if(start_angle_type == RandomEqual)
-  {
-    double random_value = calculate_random_uniform(servo_min,servo_max);
-    for(unsigned int module=0; module<number_of_modules; module++)
-    {
-      output[module] = random_value;
-    }
-  }
-  else if(start_angle_type == Predefined)
-  {
-    for(unsigned int module=0; module<number_of_modules; module++)
-    {
-      output[module] = predef_start_angle[module];
-    }
-  }
-  else if(start_angle_type == RunTime)
-  {
-    for(unsigned int module=0; module<number_of_modules; module++)
-    {
-       std::cout << std::endl << std::endl << "Enter start angle for module number " << module << ": " << std::endl;
-       std::cin >> output[module];
-    }
-  }
-  else
-  {
-    std::cerr << "Morphomotion Error: Controller class." << std::endl
-              << "void init_local_variables() method." << std::endl
-              << "Unknown start angle type: " << start_angle_type << "." <<std::endl;
-    exit(1);
-  }*/
-
-  /*if(controller_type == Simple_Controller || controller_type == Naive_Controller)
-  {
-    for(unsigned int module=0; module<number_of_modules; module++)
-    {
-      //-- Setting the motors to a the amplitude value.
-      output[module] = oscillator_amplitude + oscillator_offset;
-    }
-  }
-
-  for(unsigned int module=0; module<number_of_modules; module++)
-  {
-    previous_cycle_output[module] = 0;
-    isFirstStep[module] = true;
-  }
-}*/
-
-
-/*bool Controller::run_Controller(const std::string& type, std::stringstream& SS, int memberID, int generation, int eval_no)
-{
-  // Reset controller.
-  reset_controller();
-
-  if(controller_type == Sinusoidal_Controller || controller_type == Sine_Controller)
-  {
-    load_sine_control_parameters();
-  }
-  else if(controller_type == Naive_Controller)
-  {
-    set_oscillator_amplitude(mlp->get_independent_parameter(0));
-    set_oscillator_offset(mlp->get_independent_parameter(1));
-  }
-  else if(controller_type == Simple_Controller)
-  {
-    set_servo_derivative_threshold(mlp->get_independent_parameter(0));
-    set_servo_derivative_epsilon(mlp->get_independent_parameter(1));
-    set_oscillator_amplitude(mlp->get_independent_parameter(2));
-    set_oscillator_offset(mlp->get_independent_parameter(3));
-  }
-  else if(controller_type == Neural_Controller)
-  {
-   // Do Nothing.
-  }
-  else if(controller_type == Hybrid_Controller)
-  {
-    set_servo_derivative_threshold(mlp->get_independent_parameter(0));
-    set_servo_derivative_epsilon(mlp->get_independent_parameter(1));
-  }
-  else if(controller_type == Semi_Hybrid_Controller)
-  {
-    set_servo_derivative_threshold(mlp->get_independent_parameter(0));
-  }
-  else
-  {
-    std::cerr << "Morphomotion Error: Controller class." << std::endl
-              << "bool run_Controller(const std::string&, int, int, int) method."
-              << "Unknown Controller Type: " << controller_type << std::endl;
-    exit(1);
-  }
-
-  Flood::Vector<double> output(number_of_modules);
-  Flood::Vector<double> previous_cycle_output(number_of_modules);
-  Flood::Vector<bool> isFirstStep(number_of_modules);
-
-  // Related to Servo Derivative Resolution -- Based on time dependent Servo Feedback data.
-  vector<vector<ServoFeedback*> > servo_feedback_history;
-  servo_feedback_history.resize(number_of_modules);
-
-
-  //-- Initialise local variables.
-  init_local_variables(output,
-                       previous_cycle_output,
-                       isFirstStep);
-
-  double servo_delta = 0;
-  double servo_derivative;
-
-  unsigned long previous_read_elapsed_time = 0;
-  unsigned long evaluation_elapsed_time = 0;
-  unsigned long evaluation_window = (unsigned long)evaluation_period * 1000000; // Converted to microseconds;
-
-//--------------Debugger Relater--------------//
-  std::vector<unsigned long> oscillation_time(number_of_modules,0);
-  std::vector<int> time_diff_counter(number_of_modules,0);
-  //int time_diff_counter[number_of_modules];
-  //for(int i=0; i<number_of_modules; i++)
-  //{
-  //  time_diff_counter[i] = 0;
-  //}
-//--------------Debugger Relater--------------//
-
-  unsigned int key = 'H';
-  changemode(1);
-
-  do
-  {
-      do
-      {
-        if(controller_type == Sinusoidal_Controller)
-        {
-          if(isFirstStep[0])
-          {
-            // Set Sinusoidal Controller parameters here
-            robot_primary->set_sine_controller_parameters(sine_amplitude, sine_offset, sine_phase, sine_frequency);
-
-            isFirstStep[0] = false;
-          }
-
-          read_servo_positions_with_time();
-
-          //-- Without the following cleanup of the servo_feedback_history vector, it grows indefinately, and leads to memory-leak.
-          for(unsigned int module=0; module<number_of_modules; module++)
-          {
-            for(unsigned int n=0; n<servo_feedback_history[module].size(); n++)
-            {
-              delete servo_feedback_history[module][n];
-            }
-            servo_feedback_history[module].resize(0);
-          }
-        }
-        else if(controller_type == Sine_Controller)
-        {
-          if(!read_servo_positions_with_time())
-          {
-              std::cout << "  Communication break down. Redo evaluation." << std::endl;
-              robot_primary->reset_comm_link();
-
-              SS << "REDO" << " ";
-              return true;
-          }
-
-          double t = (double)robot_primary->get_elapsed_evaluation_time()/1000000.0;
-
-          for(unsigned int module=0; module<number_of_modules; module++)
-          {
-    //---------------------------------------------------------------- Debugger ----------------------------------------------------------/
-    #ifdef DEBUGGER
-              if(module==0)
-              {
-                std::cout << "Count: " << evaluation_elapsed_time/1000 << "  Output[" << module << "]: " << output[module] << "  Feedback Self: " << current_servo_angle[module] << "  Feed Back Diff: " << servo_delta << "  Servo Delta: " << servo_derivative;
-              }
-    #endif
-    //---------------------------------------------------------------- Debugger ----------------------------------------------------------/
-
-    //-------------------------------------------------------------- Activity Log --------------------------------------------------------/
-    #ifdef ACTIVITY_LOG
-              if(type == "evaluation")
-              {
-                std::cout << generation << " -->  " << evaluation_elapsed_time << ": Previous Output[" << module << "]: " << previous_cycle_output[module] << "  Actual Angle: " << servo_feedback[module]->get_servo_position() << "  Current Output[" << module << "]: " << output[module];
-              }
-    #endif
-    //-------------------------------------------------------------- Activity Log --------------------------------------------------------/
-
-              //-- Storing the output of the previous cycle.
-              previous_cycle_output[module] = output[module];
-
-              actuate_with_sine_controller(module, t, output);
-
-              //-- BUG FIX: Fixing the memory-leak bug.
-              for(unsigned int n=0; n<servo_feedback_history[module].size(); n++)
-              {
-                delete servo_feedback_history[module][n];
-              }
-
-              servo_feedback_history[module].resize(0);
-
-    #ifdef DEBUGGER
-              if(module==0)
-              {
-                std::cout << "  Next Output " << output[module] << std::endl;
-              }
-    #endif
-    #ifdef ACTIVITY_LOG
-              if(type == "evaluation")
-              {
-                std::cout << "  Next Output[" << module << "]: " << output[module] << std::endl;
-              }
-    #endif
-          }
-          actuate_all_modules(output);
-        }
-        else
-        {
-          read_servo_positions_with_time();
-
-          for(unsigned int module=0; module<number_of_modules; module++)
-          {
-            if(isFirstStep[module])
-            {
-              actuate_module(module, output[module]); // TODO: Not sure if this is needed indeed.
-              isFirstStep[module] = false;
-            }
-
-            servo_delta = calculate_servo_delta(module, output[module]);
-            servo_derivative = calculate_servo_derivative_time(module, servo_feedback_history);
-
-            if(servo_delta < servo_delta_threshold || servo_derivative < servo_derivative_threshold)
-            {
-
-    //---------------------------------------------------------------- Debugger ----------------------------------------------------------/
-    #ifdef DEBUGGER
-              if(module==0)
-              {
-                std::cout << "Count: " << evaluation_elapsed_time/1000 << "  Output[" << module << "]: " << output[module] << "  Feedback Self: " << current_servo_angle[module] << "  Feed Back Diff: " << servo_delta << "  Servo Delta: " << servo_derivative;
-              }
-    #endif
-    //---------------------------------------------------------------- Debugger ----------------------------------------------------------/
-
-    //-------------------------------------------------------------- Activity Log --------------------------------------------------------/
-    #ifdef ACTIVITY_LOG
-              if(type == "evaluation")
-              {
-                std::cout << generation << " -->  " << evaluation_elapsed_time/1000 << ": Previous Output[" << module << "]: " << previous_cycle_output[module] << "  Actual Angle: " << servo_feedback[module]->get_servo_position() << "  Current Output[" << module << "]: " << output[module];
-              }
-    #endif
-    //-------------------------------------------------------------- Activity Log --------------------------------------------------------/
-
-              //-- Storing the output of the previous cycle.
-              previous_cycle_output[module] = output[module];
-
-              if(controller_type == Neural_Controller)
-              {
-                actuate_with_neural_controller(module, output);
-              }
-              else if(controller_type == Naive_Controller)
-              {
-                actuate_with_simple_controller(module, output);
-              }
-              else if(controller_type == Simple_Controller)
-              {
-                actuate_with_simple_controller(module, output);
-              }
-              else if(controller_type == Hybrid_Controller)
-              {
-                actuate_with_hybrid_controller(module, output);
-              }
-              else if(controller_type == Semi_Hybrid_Controller)
-              {
-                actuate_with_hybrid_controller(module, output);
-              }
-
-              if(oscAnlz)
-              {
-                // Checking if the previous and the current neural outputs are on opposite directions from value 0.
-                if((previous_cycle_output[module] * output[module]) < 0.0) // Here we are assuming that the control signal to each module is always oscillatory. As well as that two subsequent neural outputs are always on opposite directions from the value 0.
-                {
-                  //oscAnlz->update_oscillation_short_history(module,output[module]); // TODO: Oscillation analyses is performed based on control signal generated by controller output. This should be changed by analysing an oscillation based on the actual feedback from the module.
-                  oscAnlz->update_oscillation_short_history(module,servo_feedback[module]->get_servo_position()); // Analysing oscillation based on propreoseptive feedback from the module's actuator.
-                }
-                else
-                {
-                }
-              }
-              else
-              {
-              }
-
-              //-- BUG FIX: Fixing the memory-leak bug.
-              for(unsigned int n=0; n<servo_feedback_history[module].size(); n++)
-              {
-                delete servo_feedback_history[module][n];
-              }
-
-              servo_feedback_history[module].resize(0);
-
-    #ifdef DEBUGGER
-              if(module==0)
-              {
-                std::cout << "  Next Output " << output[module] << "  Time Diff: " << oscillation_time[module]  << "  Counter: " << time_diff_counter[module] << std::endl;
-                time_diff_counter[module] = 0;
-                oscillation_time[module] = 0
-              }
-    #endif
-    #ifdef ACTIVITY_LOG
-              if(type == "evaluation")
-              {
-                std::cout << "  Next Output[" << module << "]: " << output[module] << "  Time Diff: " << oscillation_time[module] << "  Counter: " << time_diff_counter[module] << std::endl;
-                time_diff_counter[module] = 0;
-                oscillation_time[module] = 0;
-              }
-    #endif
-            }
-            else // This is for Debugger only
-            {
-              time_diff_counter[module]++;
-              oscillation_time[module] = oscillation_time[module] + (evaluation_elapsed_time - previous_read_elapsed_time);
-            }
-          }
-        }
-
-        robot_primary->step(type);
-        previous_read_elapsed_time = robot_primary->get_previous_read_evaluation_time();
-        evaluation_elapsed_time = robot_primary->get_elapsed_evaluation_time();
-
-        if(robot_secondary != NULL)
-        {
-          if(robot_secondary->get_robot_environment() == "SimulationOpenRave")
-          {
-            //-- Stepping through simulation as many time as needed to be in sync with the realtime evaluation of Y1.
-            do
-            {
-              robot_secondary->step(type);
-            }while(robot_secondary->get_elapsed_evaluation_time() <= evaluation_elapsed_time);
-          }
-          else if(robot_secondary->get_robot_type() == "Y1")
-          {
-            robot_secondary->step(type);
-          }
-        }
-
-        //-- Record trajectory
-        if(oscAnlz && oscAnlz->get_record_trajectory())
-        {
-          oscAnlz->write_trajectory();
-        }
-      }while(evaluation_elapsed_time < evaluation_window && !kbhit());
-
-      if(kbhit())
-      {
-          key = getchar();
-      }
-
-      if(key==q || key==Q)
-      {
-          SS << "CANCEL" << " ";
-          return false;
-      }
-      else if(key==SPACE)
-      {
-          do
-          {
-              while(!kbhit());
-              key = getchar();
-
-          }while(key!=SPACE);
-
-          key = 'q';
-
-          SS << "REDO" << " ";
-          return true;
-      }
-  }while(evaluation_elapsed_time < evaluation_window && (key != q || key != Q));
-
-  changemode(0);
-
-  if(controller_type == Sinusoidal_Controller)
-  {
-    //-- Stop Sinusoidal Controller
-    robot_primary->stop_sinusoidal_controller();
-  }
-
-#ifdef DEBUGGER
-  std::cout << std::endl << std::endl << std::endl << std::endl << std::endl << std::endl << std::endl;
-#endif
-
-  SS << "SUCCESS" << " ";
-
-  return true;
-}*/
-
-
-/*void Controller::actuate_with_sine_controller(const unsigned int module, const double t, Flood::Vector<double>& output)
-{
-  output[module] = sine_amplitude[module] * sin(2*M_PI*sine_frequency*t + ((sine_phase[module] * M_PI)/180.0)) + sine_offset[module];
-}*/
-
-
-/*void Controller::actuate_with_neural_controller(const unsigned int module, Flood::Vector<double>& output)
-{
-  Flood::Vector<double> nnOutput(mlp->get_outputs_number());
-  Flood::Vector<double> nnInput(mlp->get_inputs_number());
-
-  //-- Following input to the NN is the proprioceptive feedback from the module's actuator, which is scaled down to a value between +/-1.
-  nnInput[0] = servo_feedback[module]->get_servo_position()/servo_max;
-
-  //-- Calculate the NN output by passing the inputs
-  nnOutput = mlp->calculate_output(nnInput);
-
-  //-- Scale up the output to a value between +/- 90 degrees and save it in "Previous Actuation Value" vector 'output[]'
-  output[module] = nnOutput[0]*servo_max;
-
-  //-- Send actuation command to the corrsponding module in the robot configuration.
-  actuate_module(module, output[module]);
-}*/
-
-
-/*void Controller::actuate_with_hybrid_controller(const unsigned int module, Flood::Vector<double>& output)
-{
-  actuate_with_neural_controller(module, output);
-}*/
-
-
-/*void Controller::actuate_with_simple_controller(const unsigned int module, Flood::Vector<double>& output)
-{
-  output[module] = (-1.0 * (output[module] - oscillator_offset)) + oscillator_offset; // BUG FIX: -(Amplitude) + Offset
-  actuate_module(module, output[module]);
-}*/
-
-
 void Controller::actuate_module(const unsigned int module, double output)
 {
   //-- Send actuation command to the corrsponding module in the robot configuration.
@@ -594,7 +141,6 @@ bool Controller::read_servo_positions_with_time() // TODO: This should be implem
   bool got_position;
 
   got_position = robot_primary->get_all_moduleServo_position(servo_feedback);
-  //robot_primary->get_all_moduleServo_position_with_individual_time(servo_feedback);
 
 /**********************************************************TEMP FIX**************************************************************************/
 /*TODO: This is a temprory fix. Need to write servo value along with actual time [X-axis] into graph file.*/
@@ -647,6 +193,12 @@ double Controller::calculate_servo_derivative_time(const unsigned int module, ve
     }
   }
   return(servo_derivative);
+}
+
+
+double Controller::sine_wave(double amplitude, double offset, double frequency, double phase, double time)
+{
+    return(amplitude * sin(2*M_PI*frequency*time + ((phase * M_PI)/180.0)) + offset);
 }
 
 
@@ -916,6 +468,28 @@ double Controller::get_oscillator_offset(void)
 }
 
 
+void Controller::set_oscillator_frequency(double new_oscillator_frequency)
+{
+  if(new_oscillator_frequency > 0)
+  {
+    oscillator_frequency = new_oscillator_frequency;
+  }
+  else
+  {
+    std::cerr << "Morphomotion Error: Controller class." << std::endl
+              << "void set_oscillator_frequency(double) method."
+              << "Oscillator frequency must be greater than 0. Oscillator frequency: " << new_oscillator_frequency << std::endl;
+    exit(1);
+   }
+}
+
+
+double Controller::get_oscillator_frequency(void)
+{
+  return(oscillator_frequency);
+}
+
+
 void Controller::load_sine_control_parameters()
 {
   unsigned int independent_parameter_index = 0;
@@ -949,7 +523,7 @@ void Controller::load_sine_control_parameters()
 
 void Controller::set_sine_amplitude(const double new_sine_amplitude, const unsigned int module, const unsigned int independent_parameter_index)
 {
-  if(new_sine_amplitude > 0 && new_sine_amplitude <= 90)
+  if(new_sine_amplitude >= 0 && new_sine_amplitude <= 90)
   {
     sine_amplitude[module] = new_sine_amplitude;
   }
@@ -1087,6 +661,10 @@ void Controller::set_controller_type(const std::string& new_controller_type)
   {
     controller_type = Sine_Controller;
   }
+  else if(new_controller_type == "InverseSine_Controller")
+  {
+    controller_type = InverseSine_Controller;
+  }
   else if(new_controller_type == "Hybrid_Controller")
   {
     controller_type = Hybrid_Controller;
@@ -1124,6 +702,10 @@ std::string Controller::get_controller_type(void)
     case Sine_Controller:
     {
       return("Sine_Controller");
+    }
+    case InverseSine_Controller:
+    {
+      return("InverseSine_Controller");
     }
     case Hybrid_Controller:
     {

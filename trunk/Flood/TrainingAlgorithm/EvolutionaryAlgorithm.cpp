@@ -636,7 +636,6 @@ void EvolutionaryAlgorithm::set_default(void)
    if(objective_functional_pointer != NULL)
    {
       multilayer_perceptron_pointer = objective_functional_pointer->get_multilayer_perceptron_pointer();
-      //multilayer_perceptron_pointer = objective_functional_pointer->get_multilayer_perceptron_pointer();
    }
 
    int parameters_number = 0;
@@ -4042,8 +4041,8 @@ void EvolutionaryAlgorithm::perform_my_normal_mutation_with_ES(void)
                independent_parameter_name = multilayer_perceptron_pointer->get_independent_parameter_name(j-neural_parameters_number);
             }
 
-            //-- Omit mutation for indemendent parameter 'Sinusoidal_Frequency' and 'Sine_Frequency', since it ranges between 0 and 1.0
-            if(independent_parameter_name != "Sinusoidal_Frequency" && independent_parameter_name != "Sine_Frequency")
+            //-- Omit mutation for indemendent parameter 'Sine_Frequency' and 'Oscillator_Frequency', since it ranges between 0 and 1.0
+            if(independent_parameter_name != "Sine_Frequency" && independent_parameter_name != "Oscillator_Frequency")
             {
                do
                {
@@ -4098,7 +4097,9 @@ void EvolutionaryAlgorithm::perform_my_normal_mutation_with_ES(void)
             }
 
             //-- Omit mutation for indemendent parameter 'Sinusoidal_Frequency' and 'Sine_Frequency', since it ranges between 0 and 1.0
-            if(independent_parameter_name != "Sinusoidal_Frequency" && independent_parameter_name != "Sine_Frequency")
+            //if(independent_parameter_name != "Sinusoidal_Frequency" && independent_parameter_name != "Sine_Frequency")
+            //-- Omit mutation for indemendent parameter 'Sine_Frequency' and 'Oscillator_Frequency', since it ranges between 0 and 1.0
+            if(independent_parameter_name != "Sine_Frequency" && independent_parameter_name != "Oscillator_Frequency")
             {
                do
                {

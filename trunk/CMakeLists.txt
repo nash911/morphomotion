@@ -2,6 +2,8 @@
 
 cmake_minimum_required (VERSION 2.6.0)
 PROJECT( morphoMotion )
+set(CMAKE_VERBOSE_MAKEFILE true)
+
 find_package(OpenRAVE 0.8 REQUIRED)
 
 if( CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX )
@@ -39,7 +41,7 @@ MESSAGE("OpenCV_LIBS : ${OpenCV_LIBS}")
 
 ### include dirs
 INCLUDE_DIRECTORIES(
-Evolution Evaluation Robot SimulationOpenRave Y1ModularRobot Controller HybridController SineController SimpleController
+Evolution Evaluation Robot SimulationOpenRave Y1ModularRobot Controller HybridController SineController SimpleController InverseSineController
 Flood/Utilities Flood/MultilayerPerceptron Flood/ObjectiveFunctional Flood/TrainingAlgorithm
 ServoFeedback GraphFile FileHandler OscillationAnalyzer_OutputSignal VisualTracker SerialCommunication
 )
@@ -66,6 +68,7 @@ add_executable(Evolve
   Controller/Controller.cpp
   HybridController/HybridController.cpp
   SineController/SineController.cpp
+  InverseSineController/InverseSineController.cpp
   SimpleController/SimpleController.cpp
   ServoFeedback/ServoFeedback.cpp
   FileHandler/FileHandler.cpp
@@ -98,6 +101,7 @@ add_executable(Evaluate
   HybridController/HybridController.cpp
   SineController/SineController.cpp
   SimpleController/SimpleController.cpp
+  InverseSineController/InverseSineController.cpp
   ServoFeedback/ServoFeedback.cpp
   FileHandler/FileHandler.cpp
   GraphFile/GraphFile.cpp
@@ -129,6 +133,7 @@ add_executable(NeuralModelEvaluator
   HybridController/HybridController.cpp
   SineController/SineController.cpp
   SimpleController/SimpleController.cpp
+  InverseSineController/InverseSineController.cpp
   ServoFeedback/ServoFeedback.cpp
   FileHandler/FileHandler.cpp
   GraphFile/GraphFile.cpp
