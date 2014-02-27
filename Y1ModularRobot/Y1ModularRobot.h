@@ -31,7 +31,7 @@
 #define BAUD_RATE 115200
 
 //#define MAX_POLL_TRIALS 10  //-- For Wired-Communication between PC and Skymega
-#define MAX_POLL_TRIALS 14  //-- For XBEE-Communication between PC and Skymega
+#define MAX_POLL_TRIALS 16 //14  //-- For XBEE-Communication between PC and Skymega
 
 #define MAX_COMM_FAIL 4
 #define MAX_COMM_FAIL_CONSECUTIVE 2
@@ -40,6 +40,7 @@ using namespace std;
 
 class Y1ModularRobot: public Robot
 {
+
 
 public:
 

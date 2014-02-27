@@ -29,7 +29,7 @@
 #define BAUD_RATE 115200
 
 //#define MAX_POLL_TRIALS 10  //-- For Wired-Communication between PC and Skymega
-#define MAX_POLL_TRIALS 20  //-- For XBEE-Communication between PC and Skymega
+#define MAX_POLL_TRIALS 200  //-- For XBEE-Communication between PC and Skymega
 
 unsigned int set_serial_port(const std::string& new_serial_port, int baud_rate)
 {
@@ -81,7 +81,7 @@ unsigned int set_serial_port(const std::string& new_serial_port, int baud_rate)
   return serial_port;
 }
 
-int main(int argc, char* argv[])
+void send_reveive_loop(unsigned int serial_port)
 {
   unsigned int poll_counter = 0;
   int n;
@@ -89,20 +89,6 @@ int main(int argc, char* argv[])
   unsigned int i=0;
   bool foundEndBit = false;
   unsigned int poll_trail_fail_counter = 0;
-
-  unsigned int serial_port=0;
-
-  serial_port = set_serial_port(argv[1], BAUD_RATE);
-
-  if(serial_port == 0)
-  {
-    printf("Can not open comport\n");
-
-    return(0);
-  }
-
-  usleep(2000000);
-  printf("Serial port open and initialised!\n");
 
   while(i < 1000000)
   {
@@ -161,10 +147,135 @@ int main(int argc, char* argv[])
 
     message[message_size] = '\0'; //--Always put a "null" at the end of a string!
 
-    std::cout << "Message " << i << " --> Poll Counter = " << poll_counter << " --> " << message << std::endl;
+    //std::cout << "Message " << i << " --> Poll Counter = " << poll_counter << " --> " << message << std::endl;
+
+    std::cout << "Message " << i << " --> Poll Counter = " << poll_counter << " --> ";
+
+    for(unsigned int a=0; a<message_size; a++)
+    {
+        if(message[a] == '[')
+        {
+            a++;
+            while(message[a] != ']')
+            {
+                std::cout << message[a];
+                a++;
+            }
+            break;
+        }
+    }
+    std::cout << std::endl;
 
     i++;
   }
+}
+
+
+void broadcast_loop(unsigned int serial_port)
+{
+  unsigned int poll_counter = 0;
+  int n;
+  unsigned int i=0;
+  bool foundEndBit = false;
+  unsigned int poll_trail_fail_counter = 0;
+
+  while(i < 1000000)
+  {
+    //flush_cport(serial_port, 1);
+    unsigned char outBuf[20] = {'#','%','1','%','&','4','&','*','4','5','.','0','*','$'};  // To request current servo position of all modules [PC to Skymega].
+    //cprintf(serial_port, (char *)outBuf); // Send message requesting currnt servo position of all modules to Skymega.
+
+    poll_counter=0;
+    unsigned char message[50];
+    unsigned int message_size=0;
+
+    do
+    {
+      foundEndBit = false;
+      unsigned char inBuf[70] = {'x','x','x','x','x','x','x','x','x','x',
+                                 'x','x','x','x','x','x','x','x','x','x',
+                                 'x','x','x','x','x','x','x','x','x','x',
+                                 'x','x','x','x','x','x','x','x','x','x',
+                                 'x','x','x','x','x','x','x','x','x','x',
+                                 'x','x','x','x','x','x','x','x','x','x',
+                                 'x','x','x','x','x','x','x','x','x','x'};
+
+      n = PollComport(serial_port, inBuf, 4095);
+      inBuf[n] = '\0'; // always put a "null" at the end of a string!
+
+      for(unsigned int j=0; j<n; j++)
+      {
+        message[message_size++] = inBuf[j];
+      }
+
+      //std::cout << "n = " << n << " --> " << inBuf << std::endl;
+
+      if(inBuf[n-1] == '$')
+      {
+        foundEndBit = true;
+      }
+      poll_counter++;
+    }while(foundEndBit != true && poll_counter <= MAX_POLL_TRIALS);
+
+//---------------------------------------------------PERFORMNCE TEST---------------------------------------------------//
+    if(poll_counter > MAX_POLL_TRIALS)
+    {
+        poll_trail_fail_counter++;
+    }
+    else
+    {
+        poll_trail_fail_counter = 0;
+    }
+
+    if(poll_trail_fail_counter >= 3)
+    {
+        std::cout << std::endl << std::endl << "EXCEEDED POLL COUNTER! --> " << poll_counter << std::endl;
+        exit(0);
+    }
+//---------------------------------------------------PERFORMNCE TEST---------------------------------------------------//
+
+    message[message_size] = '\0'; //--Always put a "null" at the end of a string!
+
+    std::cout << "Message " << i << " --> Poll Counter = " << poll_counter << " --> " << message << std::endl;
+
+    /*std::cout << "Message " << i << " --> Poll Counter = " << poll_counter << " --> ";
+
+    for(unsigned int a=0; a<message_size; a++)
+    {
+        if(message[a] == '[')
+        {
+            a++;
+            while(message[a] != ']')
+            {
+                std::cout << message[a];
+                a++;
+            }
+            break;
+        }
+    }
+    std::cout << std::endl;*/
+
+    i++;
+  }
+}
+
+
+int main(int argc, char* argv[])
+{
+  unsigned int serial_port=0;
+
+  serial_port = set_serial_port(argv[1], BAUD_RATE);
+  if(serial_port == 0)
+  {
+    printf("Can not open comport\n");
+    return(0);
+  }
+
+  usleep(2000000);
+  printf("Serial port open and initialised!\n");
+
+  //send_reveive_loop(serial_port);
+  broadcast_loop(serial_port);
 
   return 1;
 }

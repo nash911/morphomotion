@@ -37,7 +37,7 @@
 
 #ifdef __linux__   /* Linux */
 
-#define POLL_TRIALS_MAX 15000
+#define POLL_TRIALS_MAX 17000 //15000
 
 int Cport[22],
     error;
