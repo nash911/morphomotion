@@ -31,7 +31,58 @@ void ServoFeedback::reset_value()
 {
   servo_position_read_time = 0;
   servo_position = 0;
+
+  read_time_history.clear();
+  position_history.clear();
 }
+
+
+void ServoFeedback::add_to_history(const unsigned long current_time_value, const double current_servo_position)
+{
+  if(current_time_value < servo_position_read_time)
+  {
+    std::cerr << "Morphomotion Error: ServoFeedback class." << std::endl
+              << "add_to_history(unsigned long, double)" << std::endl
+              << "New time value: " << current_time_value << " is less than previous time value: " << servo_position_read_time << std::endl;
+    exit(1);
+  }
+  else
+  {
+    if(read_time_history.size() > HISTORY_SIZE)
+    {
+      std::cerr << "Morphomotion Error: ServoFeedback class." << std::endl
+                << "add_to_history(unsigned long, double)" << std::endl
+                << "Size of vector read_time_history: " << read_time_history.size() << " is greated than HISTORY_SIZE: " << HISTORY_SIZE << std::endl;
+      exit(1);
+    }
+    else if(read_time_history.size() == HISTORY_SIZE)
+    {
+      //double velocity = (fabs(current_servo_position - position_history.back())/(double)(current_time_value - read_time_history.back())) * 1000.0;
+      //if(velocity <= VELOCITY_MAX)
+      {
+        read_time_history.erase(read_time_history.begin());
+        position_history.erase(position_history.begin());
+
+        read_time_history.push_back(current_time_value);
+        position_history.push_back(current_servo_position);
+
+        //std::cout << "Pass: " << velocity << std::endl; // TODO: Debugger
+      }
+      //else
+      {
+        //std::cout << "Fail: " << velocity << std::endl; // TODO: Debugger
+      }
+    }
+    else
+    {
+        read_time_history.push_back(current_time_value);
+        position_history.push_back(current_servo_position);
+    }
+
+    this->set_new_value(read_time_history.back(),position_history.back());
+  }
+}
+
 
 void ServoFeedback::set_new_value(const unsigned long current_time_value, const double current_servo_position)
 {
@@ -50,6 +101,7 @@ void ServoFeedback::set_new_value(const unsigned long current_time_value, const 
   }
 
 }
+
 
 void ServoFeedback::set_servo_position_read_time(const unsigned long current_time_value)
 {

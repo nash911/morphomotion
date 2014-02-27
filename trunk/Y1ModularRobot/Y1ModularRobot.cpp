@@ -25,7 +25,7 @@ Y1ModularRobot::Y1ModularRobot():Robot()
   set_default_parameters();
   
   //-- Create Visual Tracker
-  vis_track = new VisualTracker;
+  //vis_track = new VisualTracker;
 }
 
 
@@ -72,6 +72,10 @@ Y1ModularRobot::Y1ModularRobot(const std::string& new_serial_port):Robot()
 // DESTRUCTOR
 Y1ModularRobot::~Y1ModularRobot(void)
 {
+    if(vis_track != NULL)
+    {
+        delete vis_track;
+    }
 }
 
 
@@ -1040,12 +1044,15 @@ bool Y1ModularRobot::get_all_moduleServo_position_with_individual_time(vector<Se
           }
         }while(!message_got);
 
+        //std::cout << recvString << std::endl; //TODO: Debugger to be removed.
+
         message_decoded = decode_message_with_individual_time(recvString, servo_feedback_angle, servo_read_time);
       }while(!message_decoded);
 
       for(unsigned int module=0; module<number_of_modules; module++)
       {
-        servo_feedback[module]->set_new_value(elapsed_evaluation_time + servo_read_time[module], servo_feedback_angle[module]);
+        //servo_feedback[module]->set_new_value(elapsed_evaluation_time + servo_read_time[module], servo_feedback_angle[module]);
+        servo_feedback[module]->add_to_history(elapsed_evaluation_time + servo_read_time[module], servo_feedback_angle[module]);
       }
     }
     else

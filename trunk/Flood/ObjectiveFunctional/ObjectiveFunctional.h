@@ -152,7 +152,6 @@ public:
    /// This method returns the objective value of a multilayer perceptron.
 
    virtual double calculate_objective() = 0;
-   //virtual double calculate_objective(int,int) = 0; //--TODO: To be removed
    virtual double calculate_objective(int,int,int) = 0;
 
    virtual double calculate_regularization(void); 

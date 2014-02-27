@@ -393,7 +393,8 @@ bool SimulationOpenRave::get_all_moduleServo_position_with_time(vector<ServoFeed
     is << "getpos1" << " " << module << " ";
     pcontroller->SendCommand(os,is);
     os >> angle;
-    servo_feedback[module]->set_new_value(elapsed_evaluation_time, angle);
+    //servo_feedback[module]->set_new_value(elapsed_evaluation_time, angle);
+    servo_feedback[module]->add_to_history(elapsed_evaluation_time, angle);
   }
 
   return true;
