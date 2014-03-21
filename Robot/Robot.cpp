@@ -23,6 +23,9 @@ Robot::Robot()
   distance_travelled = 0;
   evaluation_method = Euclidean_Distance_Final;
   number_of_modules = 2;
+
+  receive_broadcast = false;
+  broadcast_thread = false;
 }
 
 
@@ -303,4 +306,28 @@ double Robot::get_distance_travelled(void)
               << "Unknown Evaluation Method: " << evaluation_method << std::endl;
     exit(1);
   }
+}
+
+
+void Robot::set_receive_broadcast(bool bool_value)
+{
+  receive_broadcast = bool_value;
+}
+
+
+bool Robot::get_receive_broadcast()
+{
+  return(receive_broadcast);
+}
+
+
+void Robot::set_broadcast_thread(bool bool_value)
+{
+  broadcast_thread = bool_value;
+}
+
+
+bool Robot::get_broadcast_thread()
+{
+  return(broadcast_thread);
 }

@@ -48,7 +48,8 @@ public:
   //-- VIRTUAL FUNCTIONS
   virtual void set_default(void);
   virtual void init_controller(void);
-  virtual bool run_Controller(const std::string&, std::stringstream&, int, int, int);
+  virtual void start_Controller(const std::string&, std::stringstream&, int);
+  virtual void run_Controller(const std::string&, std::stringstream&, int);
 
 private:
   vector<double> Yi;

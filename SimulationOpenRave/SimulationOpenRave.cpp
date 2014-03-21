@@ -256,19 +256,6 @@ void SimulationOpenRave::reset_robot(void)
   //-- Stop Simulation
   penv->StopSimulation();
 
-  //-- Set the servo of each module to zero.
-  /*for(unsigned int i=0; i<number_of_modules; i++)
-  {
-    set_moduleServo_position(i, 0);
-  }
-
-  // Wait for two seconds.
-  int two_seconds = (1/simu_resolution_microseconds)*2;
-  for (int ss=0; ss<two_seconds; ss++)
-  {
-    penv->StepSimulation(simu_resolution_microseconds);
-  }*/
-
   reset_modules();
 
   //-- Set the translation of the robot to the initial position.
@@ -379,7 +366,8 @@ double SimulationOpenRave::get_moduleServo_position(unsigned int module)
 
 bool SimulationOpenRave::get_all_moduleServo_position(vector<ServoFeedback*>& servo_feedback)
 {
-  return(get_all_moduleServo_position_with_time(servo_feedback));
+  //return(get_all_moduleServo_position_with_time(servo_feedback));
+  return(get_all_moduleServo_position_with_time_THREAD(servo_feedback));
 }
 
 
@@ -397,6 +385,29 @@ bool SimulationOpenRave::get_all_moduleServo_position_with_time(vector<ServoFeed
     servo_feedback[module]->add_to_history(elapsed_evaluation_time, angle);
   }
 
+  return true;
+}
+
+
+bool SimulationOpenRave::get_all_moduleServo_position_with_time_THREAD(vector<ServoFeedback*>& servo_feedback)
+{
+  while(receive_broadcast)
+  {
+    set_broadcast_thread(true);
+    stringstream os,is;
+    double angle = 12.3456; //-- This value set to 12.3456 as a way of detecting when a failuer to read module position occurs.
+
+    for(unsigned int module=0; module<number_of_modules; module++)
+    {
+      is << "getpos1" << " " << module << " ";
+      pcontroller->SendCommand(os,is);
+      os >> angle;
+      servo_feedback[module]->add_to_history(elapsed_evaluation_time, angle);
+    }
+    //std::cout << std::endl << elapsed_evaluation_time; // TODO: Debugger to be removed.
+  }
+
+  set_broadcast_thread(false);
   return true;
 }
 
