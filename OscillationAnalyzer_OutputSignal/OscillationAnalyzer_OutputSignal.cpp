@@ -45,6 +45,7 @@ OscillationAnalyzer_OutputSignal::OscillationAnalyzer_OutputSignal(Robot* robot_
   estimate_phase = false;
 
   record_servo = false;
+  record_ref = false;
   record_amplitude = false;
   record_offset = false;
   record_frequency = false;
@@ -67,50 +68,50 @@ OscillationAnalyzer_OutputSignal::~OscillationAnalyzer_OutputSignal(void)
 {
     if(servo_graph_file != NULL)
     {
-        delete[] servo_graph_file;
-        std::cout << std::endl << "servo_graph_file Deleted." << std::endl;
+        delete servo_graph_file;
+        //std::cout << std::endl << "servo_graph_file Deleted." << std::endl;
     }
 
     if(ref_graph_file != NULL)
     {
         delete ref_graph_file;
-        std::cout << std::endl << "ref_graph_file Deleted." << std::endl;
+        //std::cout << std::endl << "ref_graph_file Deleted." << std::endl;
     }
 
     if(amplitude_graph_file != NULL)
     {
         delete amplitude_graph_file;
-        std::cout << std::endl << "amplitude_graph_file Deleted." << std::endl;
+        //std::cout << std::endl << "amplitude_graph_file Deleted." << std::endl;
     }
 
     if(offset_graph_file != NULL)
     {
         delete offset_graph_file;
-        std::cout << std::endl << "offset_graph_file Deleted." << std::endl;
+        //std::cout << std::endl << "offset_graph_file Deleted." << std::endl;
     }
 
     if(frequency_graph_file != NULL)
     {
         delete frequency_graph_file;
-        std::cout << std::endl << "frequency_graph_file Deleted." << std::endl;
+        //std::cout << std::endl << "frequency_graph_file Deleted." << std::endl;
     }
 
     if(phase_180_graph_file != NULL)
     {
         delete phase_180_graph_file;
-        std::cout << std::endl << "phase_180_graph_file Deleted." << std::endl;
+        //std::cout << std::endl << "phase_180_graph_file Deleted." << std::endl;
     }
 
     if(phase_360_graph_file != NULL)
     {
         delete phase_360_graph_file;
-        std::cout << std::endl << "phase_360_graph_file Deleted." << std::endl;
+        //std::cout << std::endl << "phase_360_graph_file Deleted." << std::endl;
     }
 
     if(trajectory_graph_file != NULL)
     {
         delete trajectory_graph_file;
-        std::cout << std::endl << "trajectory_graph_file Deleted." << std::endl;
+        //std::cout << std::endl << "trajectory_graph_file Deleted." << std::endl;
     }
 }
 
@@ -258,7 +259,7 @@ void OscillationAnalyzer_OutputSignal::set_record_servo(const bool record_servo_
 
 void OscillationAnalyzer_OutputSignal::set_record_ref(const bool record_ref_bool_value)
 {
-  record_servo = record_ref_bool_value;
+  record_ref = record_ref_bool_value;
 
   if(record_ref_bool_value)
   {
