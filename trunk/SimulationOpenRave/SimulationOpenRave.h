@@ -52,6 +52,7 @@ public:
   void set_scene_file_name(const std::string);
   std::string get_scene_file_name(void);
   bool get_all_moduleServo_position_with_time(vector<ServoFeedback*>&);
+  bool get_all_moduleServo_position_with_time_THREAD(vector<ServoFeedback*>&);
   void init_elapsed_evaluation_time(void);
   void update_elapsed_evaluation_time(void);
   void set_simu_resolution_microseconds(double);

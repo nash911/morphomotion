@@ -159,7 +159,7 @@ int PollComport(int comport_number, unsigned char *buf, int size)
   if(size>4096)  size = 4096;
 #endif*/
 
-  size = 100;
+  //size = 100;
 
   do
   {
@@ -233,11 +233,12 @@ int IsCTSEnabled(int comport_number)
   else return(0);
 }
 
-void flush_cport(int comport_number, int comm_id)
+unsigned int flush_cport(int comport_number, int comm_id)
 {
   //printf("Flushing ComPort. \n");
   unsigned char inBuf[200];
   int n = 0;
+  unsigned int found_data = 0;
 
   do
   {
@@ -245,13 +246,15 @@ void flush_cport(int comport_number, int comm_id)
     if(n > 0)
     {
       printf("Communication ID: %d -- Found data while flushing \n", comm_id);
+      found_data = 1;
     }
     else
     {
       //printf("Found NO data while flushing \n", comm_id);
     }
   }while(n!=0);
-  return;
+
+  return found_data;
 }
 
 

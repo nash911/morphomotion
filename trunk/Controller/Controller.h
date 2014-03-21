@@ -22,7 +22,7 @@
 
 #include <cmath>
 #include <vector>
-
+#include <thread>
 
 #include <stdio.h>
 #include <termios.h>
@@ -42,7 +42,7 @@
 #define q 113
 #define SPACE 32
 
-#define ACTIVITY_LOG
+//#define ACTIVITY_LOG
 //#define DEBUGGER
 //#define EVERY_STEP_DEBUGGER
 
@@ -84,6 +84,7 @@ public:
   void actuate_module(const unsigned int, double);
   void actuate_all_modules(const Flood::Vector<double>&);
   bool read_servo_positions_with_time(void); // TODO: This should be implemented as a seperate thread.
+  void read_servo_positions_with_time_THREAD(void);
   double calculate_servo_delta(const unsigned int, double);
   double calculate_servo_derivative_time(const unsigned int, vector<vector<ServoFeedback*> >&);
   double sine_wave(double, double, double, double, double);
@@ -140,7 +141,8 @@ public:
   //-- VIRTUAL FUNCTIONS
   virtual void set_default(void);
   virtual void init_controller(void);
-  virtual bool run_Controller(const std::string&, std::stringstream&, int, int, int) = 0;
+  virtual void start_Controller(const std::string&, std::stringstream&, int) = 0;
+  virtual void run_Controller(const std::string&, std::stringstream&, int) = 0;
 
 protected:
   Flood::MultilayerPerceptron *mlp;

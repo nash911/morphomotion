@@ -70,6 +70,7 @@ void Controller::reset_controller()
   {
     servo_feedback[module]->reset_value();
   }
+  //oscAnlz = NULL;
 }
 
 
@@ -145,19 +146,26 @@ bool Controller::read_servo_positions_with_time() // TODO: This should be implem
 /**********************************************************TEMP FIX**************************************************************************/
 /*TODO: This is a temprory fix. Need to write servo value along with actual time [X-axis] into graph file.*/
 
-  std::vector<double> servo_positions;
-  for(unsigned int module=0; module<number_of_modules; module++)
-  {
-    servo_positions.push_back(servo_feedback[module]->get_servo_position());
-  }
   if(oscAnlz && oscAnlz->get_record_servo())
   {
+    std::vector<double> servo_positions;
+    for(unsigned int module=0; module<number_of_modules; module++)
+    {
+      servo_positions.push_back(servo_feedback[module]->get_servo_position());
+    }
     oscAnlz->write_servo(servo_positions);
   }
 /**********************************************************TEMP FIX**************************************************************************/
 
   return got_position;
 }
+
+
+void Controller::read_servo_positions_with_time_THREAD()
+{
+  robot_primary->get_all_moduleServo_position(servo_feedback);
+}
+
 
 double Controller::calculate_servo_delta(const unsigned int module, double last_output)
 {

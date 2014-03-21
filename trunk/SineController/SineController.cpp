@@ -57,10 +57,26 @@ void SineController::init_local_variables(Flood::Vector<double> &previous_cycle_
 }
 
 
-bool SineController::run_Controller(const std::string& type, std::stringstream& SS, int memberID, int generation, int eval_no)
+void SineController::start_Controller(const std::string& type, std::stringstream& SS, int generation) //--Thread Change
 {
-  // Reset controller.
+  //--Reset controller.
   reset_controller();
+
+  robot_primary->set_receive_broadcast(true);
+
+  std::thread ctrl(&SineController::run_Controller, this, type, std::ref(SS), generation);
+  std::thread read_broadcast(&SineController::read_servo_positions_with_time_THREAD, this);
+
+  ctrl.join();
+  read_broadcast.join();
+}
+
+
+
+void SineController::run_Controller(const std::string& type, std::stringstream& SS, int generation)
+{
+  //Reset controller.
+  //reset_controller(); //--Thread Change
 
   load_sine_control_parameters();
 
@@ -89,19 +105,30 @@ bool SineController::run_Controller(const std::string& type, std::stringstream& 
   {
       do
       {
-        if(!read_servo_positions_with_time())
+        /*if(!read_servo_positions_with_time())
         {
             std::cout << "  Communication break down. Redo evaluation." << std::endl;
             robot_primary->reset_comm_link();
 
             SS << "REDO" << " ";
-            return true;
-        }
+            return;
+        }*/ //--Thread Change
 
-        //--Record the reference position.
+        //--Record reference position.
         if(oscAnlz && oscAnlz->get_record_ref())
         {
           oscAnlz->write_ref(output);
+        }
+
+        //--Record current position.
+        if(oscAnlz && oscAnlz->get_record_servo() && robot_primary->get_robot_environment() == "Y1") //--Thread Change
+        {
+          std::vector<double> servo_positions;
+          for(unsigned int module=0; module<number_of_modules; module++)
+          {
+            servo_positions.push_back(servo_feedback[module]->get_servo_position());
+          }
+          oscAnlz->write_servo(servo_positions);
         }
 
         t = (double)robot_primary->get_elapsed_evaluation_time()/1000000.0;
@@ -119,9 +146,10 @@ bool SineController::run_Controller(const std::string& type, std::stringstream& 
 
 //-------------------------------------------------------------- Activity Log --------------------------------------------------------/
 #ifdef ACTIVITY_LOG
-            if(type == "evaluation")
+            //if(type == "evaluation")
+            if(type == "evaluation" && module == 0)
             {
-              std::cout << generation << " -->  " << evaluation_elapsed_time << ": Previous Output[" << module << "]: " << previous_cycle_output[module] << "  Actual Angle: " << servo_feedback[module]->get_servo_position() << "  Current Output[" << module << "]: " << output[module];
+              std::cout << generation << " -->  " << evaluation_elapsed_time << " : Previous Output[" << module << "]: " << previous_cycle_output[module] << "  Actual Angle: " << servo_feedback[module]->get_servo_position() << "  Current Output[" << module << "]: " << output[module];
             }
 #endif
 //-------------------------------------------------------------- Activity Log --------------------------------------------------------/
@@ -146,7 +174,8 @@ bool SineController::run_Controller(const std::string& type, std::stringstream& 
             }
 #endif
 #ifdef ACTIVITY_LOG
-            if(type == "evaluation")
+            //if(type == "evaluation")
+            if(type == "evaluation" && module == 0)
             {
               std::cout << "  Next Output[" << module << "]: " << output[module] << std::endl;
             }
@@ -189,7 +218,10 @@ bool SineController::run_Controller(const std::string& type, std::stringstream& 
       if(key==q || key==Q)
       {
           SS << "CANCEL" << " ";
-          return false;
+
+          robot_primary->set_receive_broadcast(false); //--Thread Change
+          while(robot_primary->get_broadcast_thread());
+          return;
       }
       else if(key==SPACE)
       {
@@ -201,12 +233,13 @@ bool SineController::run_Controller(const std::string& type, std::stringstream& 
           }while(key!=SPACE);
 
           key = 'q';
-
           SS << "REDO" << " ";
-          return true;
+
+          robot_primary->set_receive_broadcast(false); //--Thread Change
+          while(robot_primary->get_broadcast_thread());
+          return;
       }
   }while(evaluation_elapsed_time < evaluation_window && (key != q || key != Q));
-
   changemode(0);
 
 #ifdef DEBUGGER
@@ -215,7 +248,9 @@ bool SineController::run_Controller(const std::string& type, std::stringstream& 
 
   SS << "SUCCESS" << " ";
 
-  return true;
+  robot_primary->set_receive_broadcast(false); //--Thread Change
+  while(robot_primary->get_broadcast_thread());
+  return;
 }
 
 

@@ -17,13 +17,15 @@
 
 void changemode(int);
 int  kbhit(void);
+bool operator==(const std::vector<double>&, const std::vector<double>&);
+
 
 // DEFAULT CONSTRUCTOR
 Y1ModularRobot::Y1ModularRobot():Robot()
 {
   //-- Set default parameters.
   set_default_parameters();
-  
+
   //-- Create Visual Tracker
   //vis_track = new VisualTracker;
 }
@@ -43,10 +45,10 @@ Y1ModularRobot::Y1ModularRobot(const Robot* source_object):Robot()
 
   //-- Set default parameters.
   set_default_parameters();
-  
+
   //-- Create Visual Tracker
   vis_track = new VisualTracker;
-  
+
   this->set_robot_type(source_object->get_robot_type());
   this->set_evaluation_method(source_object->get_evaluation_method());
   this->set_number_of_modules(source_object->get_number_of_modules());
@@ -98,11 +100,39 @@ void Y1ModularRobot::copy(const Robot* source_object)
   this->set_robot_priority("Robot_Secondary");
 }
 
+
+bool contains(std::vector<char> V, char c)
+{
+  for(unsigned int i=0; i<V.size(); i++)
+  {
+    if(V[i] == c)
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+std::string toString(std::vector<char> V)
+{
+  std::stringstream ss;
+
+  for(unsigned int i=0; i<V.size(); i++)
+  {
+      ss << V[i];
+  }
+  return ss.str();
+}
+
+
 void Y1ModularRobot::set_default_parameters(void)
 {
   vis_track = NULL;
   serial_port = 0;
   this->set_robot_environment("Y1");
+  previous_elapsed_evaluation_time = 0;
 }
 
 
@@ -229,17 +259,18 @@ bool Y1ModularRobot::get_message_with_time(char* inString)
 
   do
   {
-    unsigned char inBuf[90] = {'x','x','x','x','x','x','x','x','x','x',
-                               'x','x','x','x','x','x','x','x','x','x',
-                               'x','x','x','x','x','x','x','x','x','x',
-                               'x','x','x','x','x','x','x','x','x','x',
-                               'x','x','x','x','x','x','x','x','x','x',
-                               'x','x','x','x','x','x','x','x','x','x',
-                               'x','x','x','x','x','x','x','x','x','x',
-                               'x','x','x','x','x','x','x','x','x','x',
-                               'x','x','x','x','x','x','x','x','x','x'};
+    unsigned char inBuf[100] = {'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x'};
 
-    n = PollComport(serial_port, inBuf, 4095);
+    n = PollComport(serial_port, inBuf, 100);
 
     if(n > 0)
     {
@@ -264,6 +295,77 @@ bool Y1ModularRobot::get_message_with_time(char* inString)
   inString[inString_size] = '\0'; // always put a "null" at the end of a string!
 
   //std::cout << " --> Poll Counter = " << poll_trials << " --> " << inString << std::endl; // TODO: Debuggerto be removed
+
+  return(string_captured);
+}
+
+
+//-- Compatible with Arduino code --> servo_controller_charArray_V10.pde
+bool Y1ModularRobot::get_message_with_time_THREAD(std::vector<char>& inString)
+{
+  unsigned int inString_size = 0;
+  bool string_captured = false;
+  int i, n=0;
+  unsigned int poll_trials = 0;
+
+  do
+  {
+    unsigned char inBuf[150] = {'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x'};
+    n = PollComport(serial_port, inBuf, 150);
+
+    if(n > 0)
+    {
+      for(unsigned int j=0; j<n; j++)
+      {
+        inString.push_back(inBuf[j]);
+      }
+
+      if(contains(inString,'#') && contains(inString,'$'))
+      {
+        string_captured = true;
+        break;
+      }
+    }
+    poll_trials++;
+  }while(!string_captured && poll_trials < MAX_POLL_TRIALS);
+
+  //std::cout << " --> Poll Counter = " << poll_trials << " --> " << toString(inString) << std::endl; // TODO: Debuggerto be removed
+  //std::cout << " --> Poll Counter = " << poll_trials << " --> " << toString(inString) << " "; // TODO: Debuggerto be removed
+
+  /*std::cout << " ";
+  for(unsigned int i=0; i<inString.size(); i++)
+  {
+      if(inString[i] == '[')
+      {
+          for(unsigned int j=i+1; j<inString.size(); j++)
+          {
+              if(inString[j] == ']')
+              {
+                  break;
+              }
+              std::cout << inString[j];
+          }
+      }
+      else if(inString[i] == ']')
+      {
+          break;
+      }
+  }
+  std::cout << " " << std::endl;*/
 
   return(string_captured);
 }
@@ -411,8 +513,8 @@ bool Y1ModularRobot::decode_message_with_time(const char inString[], vector<doub
           {
             switch(ch)
             {
-              case '2': { mType = Request_ServoTime; break;}
-              case '4': { mType = Request_Time; break;}
+              case '2': { mType = Requested_ServoTime; break;}
+              case '4': { mType = Requested_Time; break;}
               default: {  std::cerr << std::endl
                                     << "MorphoMotion Error: Y1ModularRobot class." << std::endl
                                     << "bool decode_message_with_time(const char[], vector<double>&) method." << std::endl
@@ -529,11 +631,11 @@ bool Y1ModularRobot::decode_message_with_time(const char inString[], vector<doub
     return(false);
   }
 
-  if(mType == Request_Time)
+  if(mType == Requested_Time)
   {
     init_elapsed_evaluation_time(time_value);
   }
-  else if(mType == Request_ServoTime)
+  else if(mType == Requested_ServoTime)
   {
     set_elapsed_evaluation_time(time_value);
 
@@ -548,7 +650,7 @@ bool Y1ModularRobot::decode_message_with_time(const char inString[], vector<doub
 
 
 //-- Compatible with Arduino code --> servo_controller_charArray_V6.pde
-bool Y1ModularRobot::decode_message_with_individual_time(const char inString[], vector<double>& servo_feedback_angle, vector<long>& servo_read_time)
+bool Y1ModularRobot::decode_message_with_individual_time(const char inString[], unsigned long& time, vector<double>& servo_feedback_angle, vector<long>& servo_read_time)
 {
   char ch = 'X';
   unsigned int n = 0;
@@ -579,11 +681,11 @@ bool Y1ModularRobot::decode_message_with_individual_time(const char inString[], 
           {
             switch(ch)
             {
-              case '2': { mType = Request_ServoTime; break;}
-              case '4': { mType = Request_Time; break;}
+              case '2': { mType = Requested_ServoTime; break;}
+              case '4': { mType = Requested_Time; break;}
               default: {  std::cerr << std::endl
                                     << "MorphoMotion Error: Y1ModularRobot class." << std::endl
-                                    << "bool decode_message_with_time(const char[], vector<double>&) method." << std::endl
+                                    << "bool decode_message_with_individual_time(const char[], vector<double>&) method." << std::endl
                                     << "Unknown Message Type: " << ch << std::endl;
                           return(false);  }
             }
@@ -608,7 +710,7 @@ bool Y1ModularRobot::decode_message_with_individual_time(const char inString[], 
               case '4': { servo_address = 4; break; }
               default:  { std::cerr << std::endl
                                     << "MorphoMotion Error: Y1ModularRobot class." << std::endl
-                                    << "bool decode_message_with_time(const char[], vector<double>&) method." << std::endl
+                                    << "bool decode_message_with_individual_time(const char[], vector<double>&) method." << std::endl
                                     << "Invalid Servo Address: " << ch << std::endl;
                           return(false);  }
              }
@@ -639,7 +741,7 @@ bool Y1ModularRobot::decode_message_with_individual_time(const char inString[], 
               case '9': { time_data.push_back(9); break; }
               default:  { std::cerr << std::endl
                                     << "MorphoMotion Error: Y1ModularRobot class." << std::endl
-                                    << "bool decode_message_with_time(const char[], vector<double>&) method." << std::endl
+                                    << "bool decode_message_with_individual_time(const char[], vector<double>&) method." << std::endl
                                     << "Invalid Time value: " << ch << std::endl;
                           return(false); }
             }
@@ -692,18 +794,19 @@ bool Y1ModularRobot::decode_message_with_individual_time(const char inString[], 
   {
     std::cerr << std::endl
               << "MorphoMotion Error: Y1ModularRobot class." << std::endl
-              << "bool decode_message_with_time(const char[], vector<double>&) method." << std::endl
+              << "bool decode_message_with_individual_time(const char[], vector<double>&) method." << std::endl
               << "Unknown Message Frame Start Tag: " << ch << std::endl;
     return(false);
   }
 
-  if(mType == Request_Time)
+  if(mType == Requested_Time)
   {
     init_elapsed_evaluation_time(time_value);
   }
-  else if(mType == Request_ServoTime)
+  else if(mType == Requested_ServoTime)
   {
-    set_elapsed_evaluation_time(time_value);
+    //set_elapsed_evaluation_time(time_value);
+    time = time_value;
 
     for(module = 0; module < number_of_modules; module++)
     {
@@ -714,6 +817,175 @@ bool Y1ModularRobot::decode_message_with_individual_time(const char inString[], 
 
   return(true);
 }
+
+
+//-- Compatible with Arduino code --> servo_controller_charArray_V6.pde
+/*bool Y1ModularRobot::decode_message_with_individual_time_THREAD(const char inString[], unsigned long& time, vector<double>& servo_feedback_angle, vector<long>& servo_read_time)
+{
+  char ch = 'X';
+  unsigned int n = 0;
+  unsigned int module = 0;
+
+  Y1ModularRobot::MessageType mType = None;
+  int servo_address = 0;
+  double data[4][2];
+  int base10Exp = 2; //-- This parameter has to be the same both here and in Arduino code [int OutputStringStream_All(int, unsigned char*)].
+  unsigned long time_value=0;
+
+  ch = inString[n++];
+
+  // Message frame begin byte
+  if(ch == '#')
+  {
+    do
+    {
+      ch = inString[n++];
+
+      // Message-Type
+      if(ch == '%')
+      {
+        do
+        {
+          ch = inString[n++];
+          if(ch != '%')
+          {
+            switch(ch)
+            {
+              case '2': { mType = Requested_ServoTime; break;}
+              case '4': { mType = Requested_Time; break;}
+              default: {  std::cerr << std::endl
+                                    << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                                    << "bool decode_message_with_individual_time_THREAD(const char[], vector<double>&) method." << std::endl
+                                    << "Unknown Message Type: " << ch << std::endl;
+                          return(false);  }
+            }
+          }
+        }while(ch != '%'); // Message-Type end byte
+      }
+
+      // Servo address
+      else if(ch == '&')
+      {
+        do
+        {
+          ch = inString[n++];
+          if(ch != '&')
+          {
+            switch(ch)
+            {
+              case '0': { servo_address = 0; break; }
+              case '1': { servo_address = 1; break; }
+              case '2': { servo_address = 2; break; }
+              case '3': { servo_address = 3; break; }
+              case '4': { servo_address = 4; break; }
+              default:  { std::cerr << std::endl
+                                    << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                                    << "bool decode_message_with_individual_time_THREAD(const char[], vector<double>&) method." << std::endl
+                                    << "Invalid Servo Address: " << ch << std::endl;
+                          return(false);  }
+             }
+          }
+        }while(ch != '&'); //Servo address end byte
+      }
+
+      // Time
+      else if(ch == '[')
+      {
+        std::vector<unsigned int> time_data;
+        do
+        {
+          ch = inString[n++];
+          if(ch != ']')
+          {
+            switch(ch)
+            {
+              case '0': { time_data.push_back(0); break; }
+              case '1': { time_data.push_back(1); break; }
+              case '2': { time_data.push_back(2); break; }
+              case '3': { time_data.push_back(3); break; }
+              case '4': { time_data.push_back(4); break; }
+              case '5': { time_data.push_back(5); break; }
+              case '6': { time_data.push_back(6); break; }
+              case '7': { time_data.push_back(7); break; }
+              case '8': { time_data.push_back(8); break; }
+              case '9': { time_data.push_back(9); break; }
+              default:  { std::cerr << std::endl
+                                    << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                                    << "bool decode_message_with_individual_time_THREAD(const char[], vector<double>&) method." << std::endl
+                                    << "Invalid Time value: " << ch << std::endl;
+                          return(false); }
+            }
+          }
+        }while(ch != ']'); // Time end byte
+
+        for(unsigned int i=0; i<time_data.size(); i++)
+        {
+            time_value = time_value + (time_data[i]*pow(10,(time_data.size()-(i+1))));
+        }
+      }
+
+      // Actual data begin byte
+      else if(ch == '*')
+      {
+        do
+        {
+          ch = inString[n++];
+          if(ch == '<')
+          {
+            if(ch != '*')
+            {
+              stringstream SS;
+              do
+              {
+                ch = inString[n++];
+                if(ch == '/')
+                {
+                  SS << " ";
+                }
+                else if(ch == '>');
+                else
+                {
+                  SS << ch;
+                }
+              }while(ch != '>');
+
+              SS >> data[module][0];
+              SS >> data[module][1];
+              //std::cout << "Data Stream: " << SS.str() << std::endl;
+              module++;
+            }
+          }
+        }while(ch != '*'); // Actual data end byte
+      }
+
+    }while(ch != '$'); // End of message frame byte
+  }
+  else
+  {
+    std::cerr << std::endl
+              << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+              << "bool decode_message_with_individual_time_THREAD(const char[], vector<double>&) method." << std::endl
+              << "Unknown Message Frame Start Tag: " << ch << std::endl;
+    return(false);
+  }
+
+  if(mType == Requested_Time)
+  {
+    init_elapsed_evaluation_time(time_value);
+  }
+  else if(mType == Requested_ServoTime)
+  {
+    time = time_value;
+
+    for(module = 0; module < number_of_modules; module++)
+    {
+      servo_feedback_angle[module] = data[module][0]/pow(10, base10Exp);
+      servo_read_time[module] = data[module][1];
+    }
+  }
+
+  return(true);
+}*/
 
 
 std::vector<double> Y1ModularRobot::get_robot_XY(const std::string& phase)
@@ -728,7 +1000,7 @@ std::vector<double> Y1ModularRobot::get_robot_XY(const std::string& phase)
 
   unsigned int key = 'H';
   changemode(1);
-	
+
   if(vis_track!=NULL)
   {
     unsigned int vtCounter = 0;
@@ -767,7 +1039,7 @@ std::vector<double> Y1ModularRobot::get_robot_XY(const std::string& phase)
       vtCounter++;
     }while(!got_robot_position_success); //&& vtCounter < 1);
   }
-  
+
   robot_XY[0] = x;
   robot_XY[1] = y;
 
@@ -781,11 +1053,9 @@ void Y1ModularRobot::reset_robot(void)
   //-- Set the translation of the robot to the initial position.
   //TODO: Reset the robot to (0,0) according to image coordinate.
 
-  //-- Set the servo of each module to zero.
-  /*for(unsigned int module=0; module<number_of_modules; module++)
-  {
-    set_moduleServo_position(module, 0);
-  }*/
+  turn_off_broadcast(5000);
+
+  previous_control_signal.resize(number_of_modules,0);
 
   reset_modules();
 
@@ -863,9 +1133,9 @@ void Y1ModularRobot::set_moduleServo_position(unsigned int module, double servo_
   outSS << "#%0%&" << module << "&*<";
   for(unsigned int n=0; n<module; n++)
   {
-		outSS << "><";
-	}
-	outSS << servo_angle << ">*$";
+        outSS << "><";
+    }
+    outSS << servo_angle << ">*$";
 /***********************************************Temp Solution *******************************************************/
 
   for(unsigned int i=0;i<outSS.str().size();i++)
@@ -896,41 +1166,53 @@ void Y1ModularRobot::set_moduleServo_position(unsigned int module, double servo_
 
 void Y1ModularRobot::set_all_moduleServo_position(const vector<double>& servo_angle)
 {
-  stringstream outSS;
-  unsigned char outBuf[100];
-  unsigned int outBufSize = 0;
-
-  outSS << "#%0%&" << 4 << "&*";
-  for(unsigned int module=0; module<number_of_modules; module++)
+  if(!(previous_control_signal == servo_angle))
   {
-    //outSS << "><";
+    previous_control_signal = servo_angle;
+
+    stringstream outSS;
+    unsigned char outBuf[100];
+
+    outSS << "#%0%&" << 4 << "&*";
+    for(unsigned int module=0; module<number_of_modules; module++)
+    {
       outSS << "<" << servo_angle[module] << ">";
-  }
+    }
     outSS << "*$";
 
-  for(unsigned int i=0;i<outSS.str().size();i++)
-  {
-    outBuf[i] = outSS.str()[i];
-  }
+    for(unsigned int i=0;i<outSS.str().size();i++)
+    {
+      outBuf[i] = outSS.str()[i];
+    }
 
-  if(serial_port)
-  {
-    if(!SendBuf(serial_port, outBuf, outSS.str().size()))
+    if(serial_port)
+    {
+      if(!SendBuf(serial_port, outBuf, outSS.str().size()))
+      {
+        std::cerr << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                  << "void set_all_moduleServo_position(const vector<double>&) method." << std::endl
+                  << "SendBuf Failed!" << std::endl;
+
+        exit(1);
+      }
+      else
+      {
+        //std::cout << " Message Sent! " << std::endl; // TODO: Debugger to be removed.
+      }
+    }
+    else
     {
       std::cerr << "MorphoMotion Error: Y1ModularRobot class." << std::endl
                 << "void set_all_moduleServo_position(const vector<double>&) method." << std::endl
-                << "SendBuf Failed!" << std::endl;
+                << "No Serial Port: " << serial_port << "." <<std::endl;
 
       exit(1);
     }
   }
   else
   {
-    std::cerr << "MorphoMotion Error: Y1ModularRobot class." << std::endl
-              << "void set_all_moduleServo_position(const vector<double>&) method." << std::endl
-              << "No Serial Port: " << serial_port << "." <<std::endl;
-
-    exit(1);
+    //std::cout << "Message NOT Sent." << std::endl; // TODO: Debugger to be removed.
+    //std::cout << endl;
   }
 }
 
@@ -943,7 +1225,8 @@ double Y1ModularRobot::get_moduleServo_position(unsigned int module)
 
 bool Y1ModularRobot::get_all_moduleServo_position(vector<ServoFeedback*>& servo_feedback)
 {
-  return(get_all_moduleServo_position_with_individual_time(servo_feedback));
+  //return(get_all_moduleServo_position_with_individual_time(servo_feedback));
+  return(get_all_moduleServo_position_with_individual_time_THREAD(servo_feedback));
 }
 
 
@@ -1004,9 +1287,11 @@ bool Y1ModularRobot::get_all_moduleServo_position_with_time(vector<ServoFeedback
 //-- Compatible with Arduino code --> servo_controller_charArray_V7.pde
 bool Y1ModularRobot::get_all_moduleServo_position_with_individual_time(vector<ServoFeedback*>& servo_feedback)
 {
+    unsigned long time;
+
     std::vector<double> servo_feedback_angle;
     servo_feedback_angle.resize(number_of_modules);
-    
+
     std::vector<long> servo_read_time;
     servo_read_time.resize(number_of_modules);
 
@@ -1046,7 +1331,7 @@ bool Y1ModularRobot::get_all_moduleServo_position_with_individual_time(vector<Se
 
         //std::cout << recvString << std::endl; //TODO: Debugger to be removed.
 
-        message_decoded = decode_message_with_individual_time(recvString, servo_feedback_angle, servo_read_time);
+        message_decoded = decode_message_with_individual_time(recvString, time, servo_feedback_angle, servo_read_time);
       }while(!message_decoded);
 
       for(unsigned int module=0; module<number_of_modules; module++)
@@ -1054,6 +1339,7 @@ bool Y1ModularRobot::get_all_moduleServo_position_with_individual_time(vector<Se
         //servo_feedback[module]->set_new_value(elapsed_evaluation_time + servo_read_time[module], servo_feedback_angle[module]);
         servo_feedback[module]->add_to_history(elapsed_evaluation_time + servo_read_time[module], servo_feedback_angle[module]);
       }
+      set_elapsed_evaluation_time(time);
     }
     else
     {
@@ -1067,23 +1353,148 @@ bool Y1ModularRobot::get_all_moduleServo_position_with_individual_time(vector<Se
     return true;
 }
 
+
+//-- To get servo position via serial communication with the controller board [Skymega], along with individual time value, implemented as a speperate thread.
+//-- Compatible with Arduino code --> servo_controller_charArray_V10.pde
+bool Y1ModularRobot::get_all_moduleServo_position_with_individual_time_THREAD(vector<ServoFeedback*>& servo_feedback)
+{
+    std::vector<char> inString;
+
+    unsigned long time = 0;
+
+    std::vector<double> servo_feedback_angle;
+    servo_feedback_angle.resize(number_of_modules);
+
+    std::vector<long> servo_read_time;
+    servo_read_time.resize(number_of_modules);
+
+    bool message_got = false;
+    bool message_decoded = false;
+    char c;
+
+    unsigned int comm_fail_consec_counter=0;
+
+    if(serial_port)
+    {
+      if(receive_broadcast)
+      {
+        //--Turn On Broadcast
+        unsigned char Broad_On[8] = {'#','%','5','%','&','4','&','$'};  // To request Turn_On_Broadcast.
+        cprintf(serial_port, (char *)Broad_On); // Send message requesting Turn_On_Broadcast.
+      }
+
+      while(receive_broadcast)
+      {
+        set_broadcast_thread(true);
+
+        //std::vector<char> inString; //--BUG
+        message_got = get_message_with_time_THREAD(inString);
+        if(message_got)
+        {
+          do
+          {
+            char recvString[100];
+            unsigned int recvString_size=0;
+
+            do
+            {
+              c = inString[0];
+              inString.erase(inString.begin());
+            }while(c != '#' && inString.size()>0);
+            recvString[recvString_size++] = c;
+
+            do
+            {
+              c = inString[0];
+              inString.erase(inString.begin());
+              recvString[recvString_size++] = c;
+            }while(c != '$');
+            recvString[recvString_size] = '\0'; //--Always put a "null" at the end of a string!
+
+            //message_decoded = decode_message_with_individual_time_THREAD(recvString, time, servo_feedback_angle, servo_read_time);
+            message_decoded = decode_message_with_individual_time(recvString, time, servo_feedback_angle, servo_read_time);
+
+            if(message_decoded)
+            {
+              for(unsigned int module=0; module<number_of_modules; module++)
+              {
+                servo_feedback[module]->add_to_history(elapsed_evaluation_time + servo_read_time[module], servo_feedback_angle[module]);
+              }
+              set_elapsed_evaluation_time(time);
+            }
+          }while(contains(inString,'#') && contains(inString,'$'));
+        }
+        else
+        {
+          comm_fail_counter++;
+          comm_fail_consec_counter++;
+        }
+
+        if(comm_fail_counter>=MAX_COMM_FAIL || comm_fail_consec_counter>=MAX_COMM_FAIL_CONSECUTIVE)
+        {
+          return false;
+        }
+      }
+
+      if(!receive_broadcast)
+      {
+        turn_off_broadcast(7000);
+        /*unsigned char Broad_Off[8] = {'#','%','6','%','&','4','&','$'};  // To request Turn_Off_Broadcast.
+        //--Flush out serial port
+        do
+        {
+          //--Turn Off Broadcast
+          cprintf(serial_port, (char *)Broad_Off); // Send message requesting Turn_Off_Broadcast.
+
+          usleep(7000);
+        }while(flush_cport(serial_port, 1));*/
+      }
+    }
+    else
+    {
+      std::cerr << std::endl
+                << "Flood Error: SimEnv application." << std::endl
+                << "void get_all_moduleServo_position_with_individual_time_THREAD(vector<ServoFeedback*>&) method." << std::endl
+                << "Serial port not open." << std::endl;
+      exit(1);
+    }
+
+    set_broadcast_thread(false);
+    return true;
+}
+
+
 unsigned int Y1ModularRobot::get_current_time(void)
 {
+    unsigned long time = 0;
+
     std::vector<double> servo_feedback_angle;
+    servo_feedback_angle.resize(number_of_modules);
+
+    std::vector<long> servo_read_time;
+    servo_read_time.resize(number_of_modules);
+
     unsigned int trial_counter=0;
 
     if(serial_port)
     {
-      unsigned char outBuf[20] = {'#','%','3','%','&','4','&','$'};  //-- To request current time [PC to Skymega]. // TODO: 'To' address [&4&] should not be manditory. This should be changed in Arduino code as well.
+      std::stringstream outSS;
+      unsigned char outBuf[10]; //= {'#','%','3','%','&','4','&','$'};
       bool message_got = false;
       bool message_decoded = false;
+
+      outSS << "#%3%&4&$"; //-- To request current time [PC to Skymega]. // TODO: 'To' address [&4&] should not be manditory. This should be changed in Arduino code as well.
+      for(unsigned int i=0; i<outSS.str().size(); i++)
+      {
+        outBuf[i] = outSS.str()[i];
+      }
 
       do
       {
         char recvString[40];
         do
         {
-          cprintf(serial_port, (char *)outBuf); //-- Send message requesting currnt servo position of all modules to Skymega.
+          SendBuf(serial_port, outBuf, outSS.str().size()); //-- Sending message requesting current time from Skymega.
           trial_counter++;
 
           char inString[40];
@@ -1098,7 +1509,8 @@ unsigned int Y1ModularRobot::get_current_time(void)
           }
         }while(!message_got);
 
-        message_decoded = decode_message_with_time(recvString, servo_feedback_angle);
+        //message_decoded = decode_message_with_individual_time_THREAD(recvString, time, servo_feedback_angle, servo_read_time);
+        message_decoded = decode_message_with_individual_time(recvString, time, servo_feedback_angle, servo_read_time);
       }while(!message_decoded);
     }
     else
@@ -1126,6 +1538,8 @@ void Y1ModularRobot::set_elapsed_evaluation_time(unsigned long new_elapsed_evalu
 {
   previous_read_evaluation_time = elapsed_evaluation_time;
   elapsed_evaluation_time = new_elapsed_evaluation_time - initial_evaluation_time;
+
+  std::cout << elapsed_evaluation_time << std::endl; // TODO: Debugger to be removed.
 }
 
 
@@ -1178,13 +1592,31 @@ double Y1ModularRobot::get_robot_Y(void)
 
 void Y1ModularRobot::step(const std::string& type)
 {
-  //-- TODO
+  //-- Wait until elapsed_evaluation_time has been updated.
+  while(elapsed_evaluation_time == previous_elapsed_evaluation_time)
+  {
+    std::cout << "";
+  }
+
+  previous_elapsed_evaluation_time = elapsed_evaluation_time;
 }
 
 
 double Y1ModularRobot::euclidean_distance(const std::vector<double> pos_1, const std::vector<double> pos_2)
 {
     return( sqrt(((pos_1[0] - pos_2[0])*(pos_1[0] - pos_2[0])) + ((pos_1[1] - pos_2[1])*(pos_1[1] - pos_2[1]))));
+}
+
+
+void Y1ModularRobot::turn_off_broadcast(unsigned long usleep_time)
+{
+  unsigned char Broad_Off[8] = {'#','%','6','%','&','4','&','$'};  // To request Turn_Off_Broadcast.
+
+  do
+  {
+    cprintf(serial_port, (char *)Broad_Off); //--Send message requesting Turn_Off_Broadcast.
+    usleep(usleep_time);
+  }while(flush_cport(serial_port, 1));
 }
 
 
@@ -1217,5 +1649,29 @@ int kbhit (void)
 
   select(STDIN_FILENO+1, &rdfs, NULL, NULL, &tv);
   return FD_ISSET(STDIN_FILENO, &rdfs);
+}
 
+
+bool operator==(const std::vector<double>& lhs, const std::vector<double>& rhs)
+{
+  if(lhs.size() != rhs.size())
+  {
+    std::cerr << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+              << "operator==(const std::vector<double>&, const std::vector<double>&) method." << std::endl
+              << "Size of vectors lhs: " << lhs.size() << " is NOT equal to size of vector rhs: " << rhs.size() << std::endl;
+
+    exit(1);
+  }
+  else
+  {
+    for(unsigned int i=0; i<lhs.size(); i++)
+    {
+      if(int(lhs[i]) != int(rhs[i]))
+      {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }

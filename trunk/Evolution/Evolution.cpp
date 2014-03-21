@@ -104,7 +104,8 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
         robot->reset_robot();
 
         //-- Run controller.
-        controller->run_Controller("evolution", SS, individual, generation, i);
+        //controller->run_Controller("evolution", SS, generation);
+        controller->start_Controller("evolution", SS, generation);
 
         SS >> result;
     }while(result == "REDO");

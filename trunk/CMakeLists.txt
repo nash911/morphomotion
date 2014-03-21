@@ -39,6 +39,9 @@ link_directories(${OpenRAVE_LIBRARY_DIRS} ${Boost_LIBRARY_DIRS})
 FIND_PACKAGE( OpenCV REQUIRED )
 MESSAGE("OpenCV_LIBS : ${OpenCV_LIBS}")
 
+ADD_DEFINITIONS(-std=c++0x)
+ADD_DEFINITIONS(-pthread)
+
 ### include dirs
 INCLUDE_DIRECTORIES(
 Evolution Evaluation Robot SimulationOpenRave Y1ModularRobot Controller HybridController SineController SimpleController InverseSineController
@@ -84,7 +87,7 @@ add_executable(Evolve
 set_target_properties(Evolve PROPERTIES COMPILE_FLAGS "${OPENRAVE_CXXFLAGS}")
 set_target_properties(Evolve PROPERTIES LINK_FLAGS "${OPENRAVE_LINK_FLAGS}")
 # target_link_libraries(Evolve ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} ${OpenCV_LIBS} VisualTracker)
-target_link_libraries(Evolve ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} ${OpenCV_LIBS})
+target_link_libraries(Evolve ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} ${OpenCV_LIBS} -std=c++0x -pthread)
 
 
 add_executable(Evaluate
@@ -116,7 +119,7 @@ add_executable(Evaluate
 set_target_properties(Evaluate PROPERTIES COMPILE_FLAGS "${OPENRAVE_CXXFLAGS}")
 set_target_properties(Evaluate PROPERTIES LINK_FLAGS "${OPENRAVE_LINK_FLAGS}")
 # target_link_libraries(Evaluate ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} ${OpenCV_LIBS} VisualTracker)
-target_link_libraries(Evaluate ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} ${OpenCV_LIBS})
+target_link_libraries(Evaluate ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} ${OpenCV_LIBS} -std=c++0x -pthread -g)
 
 
 ### Neural Model Evaluator
@@ -142,7 +145,7 @@ add_executable(NeuralModelEvaluator
 
 set_target_properties(NeuralModelEvaluator PROPERTIES COMPILE_FLAGS "${OPENRAVE_CXXFLAGS}")
 set_target_properties(NeuralModelEvaluator PROPERTIES LINK_FLAGS "${OPENRAVE_LINK_FLAGS}")
-target_link_libraries(NeuralModelEvaluator ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY})
+target_link_libraries(NeuralModelEvaluator ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} -std=c++0x -pthread)
 
 ### Serial Communication Evaluator
 add_executable(SerialCommunicationEvaluator
@@ -150,7 +153,7 @@ add_executable(SerialCommunicationEvaluator
   SerialCommunication/SerialCommunication.c
 )
 
-TARGET_LINK_LIBRARIES(SerialCommunicationEvaluator)
+TARGET_LINK_LIBRARIES(SerialCommunicationEvaluator -std=c++0x -pthread)
 
 
 ### VisualTracker Evaluator

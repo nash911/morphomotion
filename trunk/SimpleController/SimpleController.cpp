@@ -63,11 +63,23 @@ void SimpleController::init_local_variables(Flood::Vector<double> &output,
 }
 
 
-bool SimpleController::run_Controller(const std::string& type, std::stringstream& SS, int memberID, int generation, int eval_no)
+void SimpleController::start_Controller(const std::string& type, std::stringstream& SS, int generation)
 {
-    // Reset controller.
-    reset_controller();
+  //--Reset controller.
+  reset_controller();
 
+  robot_primary->set_receive_broadcast(true);
+
+  std::thread ctrl(&SimpleController::run_Controller, this, type, std::ref(SS), generation);
+  std::thread read_broadcast(&SimpleController::read_servo_positions_with_time_THREAD, this);
+
+  ctrl.join();
+  read_broadcast.join();
+}
+
+
+void SimpleController::run_Controller(const std::string& type, std::stringstream& SS, int generation)
+{
     set_servo_derivative_threshold(mlp->get_independent_parameter(0));
     set_servo_derivative_epsilon(mlp->get_independent_parameter(1));
     set_oscillator_amplitude(mlp->get_independent_parameter(2));
@@ -104,7 +116,22 @@ bool SimpleController::run_Controller(const std::string& type, std::stringstream
     {
         do
         {
-          read_servo_positions_with_time();
+          //--Record reference position.
+          if(oscAnlz && oscAnlz->get_record_ref())
+          {
+            oscAnlz->write_ref(output);
+          }
+
+          //--Record current position.
+          if(oscAnlz && oscAnlz->get_record_servo() && robot_primary->get_robot_environment() == "Y1")
+          {
+            std::vector<double> servo_positions;
+            for(unsigned int module=0; module<number_of_modules; module++)
+            {
+              servo_positions.push_back(servo_feedback[module]->get_servo_position());
+            }
+            oscAnlz->write_servo(servo_positions);
+          }
 
           for(unsigned int module=0; module<number_of_modules; module++)
           {
@@ -220,7 +247,10 @@ bool SimpleController::run_Controller(const std::string& type, std::stringstream
       if(key==q || key==Q)
       {
         SS << "CANCEL" << " ";
-        return false;
+
+        robot_primary->set_receive_broadcast(false); //--Thread Change
+        while(robot_primary->get_broadcast_thread());
+        return;
       }
       else if(key==SPACE)
       {
@@ -233,10 +263,12 @@ bool SimpleController::run_Controller(const std::string& type, std::stringstream
         key = 'q';
 
         SS << "REDO" << " ";
-        return true;
+
+        robot_primary->set_receive_broadcast(false);
+        while(robot_primary->get_broadcast_thread());
+        return;
       }
   }while(evaluation_elapsed_time < evaluation_window && (key != q || key != Q));
-
   changemode(0);
 
   #ifdef DEBUGGER
@@ -245,7 +277,9 @@ bool SimpleController::run_Controller(const std::string& type, std::stringstream
 
     SS << "SUCCESS" << " ";
 
-    return true;
+    robot_primary->set_receive_broadcast(false);
+    while(robot_primary->get_broadcast_thread());
+    return;
 }
 
 

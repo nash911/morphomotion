@@ -63,6 +63,10 @@ public:
   void set_number_of_modules(unsigned int);
   unsigned int get_number_of_modules(void) const;
   double get_distance_travelled(void);
+  void set_receive_broadcast(bool);
+  bool get_receive_broadcast();
+  void set_broadcast_thread(bool);
+  bool get_broadcast_thread();
   
   //-- VIRTUAL FUNCTIONS
   virtual void copy(const Robot*) = 0;
@@ -89,11 +93,15 @@ protected:
   RobotType robot_type;
   EvaluationMethod evaluation_method;
 
+  std::vector<double> previous_control_signal;
   unsigned int number_of_modules;
   unsigned long initial_evaluation_time;
   unsigned long previous_read_evaluation_time;
   unsigned long elapsed_evaluation_time; //--microseconds
   double distance_travelled;
+
+  bool receive_broadcast;
+  bool broadcast_thread;
 };
 
 #endif

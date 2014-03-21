@@ -18,6 +18,7 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+//#include <thread>
 
 #include "Robot.h"
 #include "SimulationOpenRave.h"
@@ -32,8 +33,8 @@
 
 #define BAUD_RATE 115200
 
-//#define ROBOT_PRIMARY_OPENRAVE
-#define ROBOT_PRIMARY_Y1
+#define ROBOT_PRIMARY_OPENRAVE
+//#define ROBOT_PRIMARY_Y1
 
 //#define ROBOT_SECONDARY
 
@@ -332,7 +333,8 @@ int main(int argc, char* argv[])
 
       std::stringstream SS;
 
-      controller->run_Controller("evaluation", SS, 1, best_individual_fitness_index+1, 1);
+      //controller->run_Controller("evaluation", SS, best_individual_fitness_index+1);
+      controller->start_Controller("evaluation", SS, best_individual_fitness_index+1);
 
       std::cout << "    (" << best_individual_fitness_index+1 << ") " << "Simulated Robot: Distance travelled = " << robot_primary->get_distance_travelled() << std::endl;
 
@@ -343,12 +345,12 @@ int main(int argc, char* argv[])
 
       std::cout << "  Select individual to be evaluated number:  " << std::endl;
 
-      std::cin >> n;
+      //std::cin >> n;
     }
   }
   else
   {
-    for(int i=population_size-1; i>=0; i--)
+    for(unsigned int i=population_size-1; i>=0; i--)
     //for(unsigned int i=0; i<=population_size-1; i++)
     {
       robot_primary->reset_robot();
@@ -377,7 +379,7 @@ int main(int argc, char* argv[])
       /*individual[0] = 0;
       individual[1] = 0;
       individual[2] = 0;
-      individual[3] = 80;
+      individual[3] = 0;
 
       //--Offset
       individual[4] = 0;
@@ -392,13 +394,13 @@ int main(int argc, char* argv[])
       individual[11] = 0;
 
       //--Frequency
-      individual[12] = 0.75;*/
+      individual[12] = 0.9999;*/
       //-------------------------To Be Removed-----------------------------//
 
       //-------------------------To Be Removed-----------------------------//
       //--Amplitude
-      individual[0] = 0;
-      individual[1] = 0;
+      /*individual[0] = 60;
+      individual[1] = 60;
 
       //--Offset
       individual[2] = 0;
@@ -406,15 +408,15 @@ int main(int argc, char* argv[])
 
       //--Phase
       individual[4] = 0;
-      individual[5] = 0;
+      individual[5] = 90;
 
       //--Frequency
-      individual[6] = 0.75;
+      individual[6] = 0.99;*/
       //-------------------------To Be Removed-----------------------------//
 
       mlp.set_parameters(individual);
 
-      std::cout << std::endl << individual << std::endl << std::endl;
+      std::cout << std::endl << individual << std::endl << std::endl; // TODO: Debugger to be removed.
 
       OscillationAnalyzer_OutputSignal oscAnlz(robot_primary);
 
@@ -429,7 +431,8 @@ int main(int argc, char* argv[])
 
       std::stringstream SS;
 
-      controller->run_Controller("evaluation", SS, 1, i, 1);
+      //controller->run_Controller("evaluation", SS, i);
+      controller->start_Controller("evaluation", SS, i);
 
       robot_primary->reset_modules();
       std::cout << "    (" << i+1 << ") " << robot_primary->get_robot_environment() << ": Distance travelled = " << robot_primary->get_distance_travelled() << std::endl;
