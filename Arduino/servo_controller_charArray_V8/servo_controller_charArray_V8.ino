@@ -1,8 +1,11 @@
 // Move the servo to a specified value 
 // by Avinash Ranganath <nash911@gmx.com> 
 
-/* V6 -- Inherited from V5 -- Added new message types: 3 --> Requesting time [PC to Skymega].
-                                                       4 --> Message containing current time [Skymega to PC]. */
+/* V8 -- Inherited from V7 -- 1. Adding individual Θ for each module
+                              2. Bug fix: In function int OutputStringStream_All(int, unsigned char*): (time_main - time_individualServo_read[module]) ...
+                                          ... changed to (time_individualServo_read[module] - time_main) 
+                              3. Bug fix: In function int OutputStringStream_All(int, unsigned char*): int (time_main - time_individua ...
+                                          ... (unsigned int) (time_main - time_individua ...*/
 
 #include <stdio.h>
 #include <Servo.h> 
@@ -16,39 +19,80 @@
 #define ANGLE_MAX 90.0
 #define ANGLE_MIN -90.0
 
-Hacked_servo myservo[4];
+//--Module ID-All
+#define THETA0 -45.033886
+#define THETA1 0.65493
+
+/*
+//--Module ID-1
+#define THETA0_0 -45.819169
+#define THETA1_0 0.64441
+
+//--Module ID-2
+#define THETA0_1 -45.812751
+#define THETA1_1 0.651827
+
+//--Module ID-3
+#define THETA0_2 0.0
+#define THETA1_2 0.0
+
+//--Module ID-4
+#define THETA0_3 -45.731538
+#define THETA1_3 0.661175
+*/
+
+
+//--Module ID-6
+#define THETA0_0 -45.435066
+#define THETA1_0 0.660404
+
+//--Module ID-7
+#define THETA0_1 -45.107922
+#define THETA1_1 0.68851
+
+//--Module ID-4
+#define THETA0_2 -45.731538
+#define THETA1_2 0.661175
+
+//--Module ID-5
+#define THETA0_3 -45.916238
+#define THETA1_3 0.643767
+
+
+Hacked_servo myservo[NO_OF_SERVOS];
 
 double myservo_previous_input[NO_OF_SERVOS];
 
-/*double theta_0 = -46.301508;
-double theta_1 = 0.627103;*/
-
-/*double S1_theta_0 = -46.369200;
-double S1_theta_1 = 0.623388;
-
-double S2_theta_0 = -46.322743;
-double S2_theta_1 = 0.631292;*/
-
-double theta_0 = -45.731538;
-double theta_1 = 0.661175;
-
-
 void setup() 
 { 
-  myservo[0].attach(8,A0); // attaches the servo object 0 to pin A0 and 8 on ports 1 and 2 respectiverly.
-  myservo[1].attach(9,A1); // attaches the servo object 1 to pin A1 and 9 on ports 3 and 4 respectiverly.
-  myservo[2].attach(10,A2); // attaches the servo object 1 to pin A1 and 9 on ports 3 and 4 respectiverly.
-  myservo[3].attach(11,A3); // attaches the servo object 1 to pin A1 and 9 on ports 3 and 4 respectiverly.
+  if(NO_OF_SERVOS >= 1)
+  {
+    myservo[0].attach(8,A0); // attaches the servo object 0 to pin A0 and 8 on ports 1 and 2 respectiverly.
+  }
+  
+  if(NO_OF_SERVOS >= 2)
+  {
+    myservo[1].attach(9,A1); // attaches the servo object 1 to pin A1 and 9 on ports 3 and 4 respectiverly.
+  }
+  
+  if(NO_OF_SERVOS >= 3)
+  {
+    myservo[2].attach(10,A2); // attaches the servo object 2 to pin A2 and 10 on ports 5 and 6 respectiverly.
+  }
+  
+  if(NO_OF_SERVOS >= 4)
+  {
+    myservo[3].attach(11,A3); // attaches the servo object 3 to pin A3 and 11 on ports 7 and 8 respectiverly.
+  }
   
   for(int servo=0; servo<NO_OF_SERVOS; servo++)
   {
     myservo_previous_input[servo] = 0;
   }
   // start serial port at 115200 bps:
-  //Serial.begin(38400);
   //Serial.begin(57600);
-  Serial.begin(111111);  // Baud Rate on the rest [PC, Xbee_Source, Xbee_Dest] should be 115200 kbps. Reason explained here
-  //Serial.begin(115200);
+  //Serial.begin(111111);  // Baud Rate on the rest [PC, Xbee_Source, Xbee_Dest] should be 115200 kbps. Reason explained here
+  Serial.begin(115200);
 } 
 
 
@@ -371,26 +415,23 @@ String OutputStringStream(int from, double rawData)
 {
   String serialOut;
   int base10Exp = 2;
-  
-  double S1_theta_0 = -46.369200;
-  double S1_theta_1 = 0.623388;
-
-  double S2_theta_0 = -46.322743;
-  double S2_theta_1 = 0.631292;
-  
-  double predictedAngle;
+  double predictedAngle = 0;
   
   if(from==0)
   {
-    predictedAngle = (S1_theta_0 + (rawData * S1_theta_1)) - 90;
+    predictedAngle = (THETA0_0 + (rawData * THETA1_0)) - 90;
   }
   else if(from==1)
   {
-    predictedAngle = (S2_theta_0 + (rawData * S2_theta_1)) - 90;
+    predictedAngle = (THETA0_1 + (rawData * THETA1_1)) - 90;
   }
-  else
+  else if(from==2)
   {
-    predictedAngle = (theta_0 + (rawData * theta_1)) - 90;
+    predictedAngle = (THETA0_2 + (rawData * THETA1_2)) - 90;
+  }
+  else if(from==3)
+  {
+   predictedAngle = (THETA0_3 + (rawData * THETA1_3)) - 90;
   }
   
   long longData = predictedAngle * pow(10, base10Exp);
@@ -409,18 +450,28 @@ int OutputStringStream_All(int from, unsigned char* charBuf)
 {
   String fromString;
   String timeString;
-  int base10Exp = 2;  // TODO: This parameter can be fixed both here and the PC code, and the message frame can be reduced by 8 bytes.
+  int base10Exp = 2;  //-- This parameter has to be the same both here and the PC code [bool Y1ModularRobot::decode_message_with_individual_time(const char, vector<double>&)].
   unsigned int charBufLength = 0;
-  unsigned long time=0;
+  unsigned long time_main = 0;
+  unsigned long time_individualServo_read[NO_OF_SERVOS];
   double rawData[NO_OF_SERVOS];
   double predictedAngle = 0;
-  unsigned int n, i;
-  
-  /*double S0_theta_0 = -46.494264;
-  double S0_theta_1 = 0.624130;
+  unsigned int module, i;
 
-  double S1_theta_0 = -46.373543;
-  double S1_theta_1 = 0.631597;*/
+  //-- Modules {1, 2, 3, 4}
+  /*double theta0[NO_OF_SERVOS];
+  double theta1[NO_OF_SERVOS];
+  
+  theta0[0] = -45.819169; //--Module ID-1
+  theta0[1] = -45.812751; //--Module ID-2
+  theta0[2] = 0.0; //--Module ID-3
+  theta0[3] = -45.731538; //--Module ID-4
+  
+  theta1[0] = 0.64441; //--Module ID-1
+  theta1[1] = 0.651827; //--Module ID-2
+  theta1[2] = 0.0; //--Module ID-3
+  theta1[3] = 0.661175; //--Module ID-4
+  */
   
   charBuf[charBufLength++] = '#';
   
@@ -437,18 +488,18 @@ int OutputStringStream_All(int from, unsigned char* charBuf)
   charBuf[charBufLength++] = '&';
   
   //-- Read Time (Milliseconds).
-  time = micros();
+  time_main = micros();
   
   //-- Read Servo positions.
-  for(n=0; n<NO_OF_SERVOS; n++)
+  for(module=0; module<NO_OF_SERVOS; module++)
   {
-    rawData[n] = myservo[n].readPos_raw();
+    time_individualServo_read[module] = micros();
+    rawData[module] = myservo[module].readPos_raw();
   }
 
 //----------------TIME-(MILLISECONDS)-RELATED----------------//
   charBuf[charBufLength++] = '[';
-  //time = micros(); // This have been moved up.
-  timeString = timeString + time;
+  timeString = timeString + time_main;
   for(i=0; i<timeString.length(); i++)
   {
     charBuf[charBufLength++] = timeString[i];
@@ -457,11 +508,44 @@ int OutputStringStream_All(int from, unsigned char* charBuf)
 //----------------TIME-(MILLISECONDS)-RELATED----------------//
   
   charBuf[charBufLength++] = '*';
-  for(unsigned int n=0;n<4;n++)
+  for(module=0; module<NO_OF_SERVOS; module++)
   {
     charBuf[charBufLength++] = '<';
+    
+    if(module == 0)
+    {
+      predictedAngle = (THETA0_0 + (rawData[module] * THETA1_0)) - 90;
+    }
+    else if(module == 1)
+    {
+      predictedAngle = (THETA0_1 + (rawData[module] * THETA1_1)) - 90;
+    }
+    else if(module == 2)
+    {
+      predictedAngle = (THETA0_2 + (rawData[module] * THETA1_2)) - 90;
+    }
+    else if(module == 3)
+    {
+      predictedAngle = (THETA0_3 + (rawData[module] * THETA1_3)) - 90;
+    }
+    
         
-    predictedAngle = (theta_0 + (rawData[n] * theta_1)) - 90; // TODO: This is the correct code, and must be uncommented.
+    /*if(module == 0)
+    {
+      predictedAngle = (theta0[module] + (rawData[module] * theta1[module])) - 90;
+    }
+    else if(module == 1)
+    {
+      predictedAngle = (theta0[module] + (rawData[module] * theta1[module])) - 90;
+    }
+    else if(module == 2)
+    {
+      predictedAngle = (theta0[module] + (rawData[module] * theta1[module])) - 90;
+    }
+    else if(module == 3)
+    {
+      predictedAngle = (theta0[module] + (rawData[module] * theta1[module])) - 90;
+    }*/
     
     if(predictedAngle > ANGLE_MAX)
     {
@@ -475,7 +559,8 @@ int OutputStringStream_All(int from, unsigned char* charBuf)
     long longServoData = predictedAngle * pow(10, base10Exp);
     
     String dataString;
-    dataString = dataString + longServoData + '/' + base10Exp;
+    //dataString = dataString + longServoData + '/' + int(time_main - time_individualServo_read[module]);  //BUG: Fixed in the below line
+    dataString = dataString + longServoData + '/' + (unsigned int)(time_individualServo_read[module] - time_main);
     for(i=0;i<dataString.length();i++)
     {
       charBuf[charBufLength++] = dataString[i];
@@ -495,7 +580,7 @@ int OutputStringStream_Time(unsigned char* charBuf)
 {
   String timeString;
   unsigned int charBufLength = 0;
-  unsigned long time=0;
+  unsigned long time_main=0;
   unsigned int i;
     
   charBuf[charBufLength++] = '#';
@@ -505,11 +590,11 @@ int OutputStringStream_Time(unsigned char* charBuf)
   charBuf[charBufLength++] = '%';
     
   //-- Read Time (Milliseconds).
-  time = micros();
+  time_main = micros();
 
 //----------------TIME-(MILLISECONDS)-RELATED----------------//
   charBuf[charBufLength++] = '[';
-  timeString = timeString + time;
+  timeString = timeString + time_main;
   for(i=0; i<timeString.length(); i++)
   {
     charBuf[charBufLength++] = timeString[i];
