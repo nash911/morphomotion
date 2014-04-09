@@ -31,14 +31,20 @@
 #include "FileHandler.h"
 #include "OscillationAnalyzer_OutputSignal.h"
 
-#define BAUD_RATE 115200
+//#define BAUD_RATE 115200
 
 #define ROBOT_PRIMARY_OPENRAVE
 //#define ROBOT_PRIMARY_Y1
 
 //#define ROBOT_SECONDARY
 
-#define EVALUATION_PERIOD 30
+#define EVALUATION_PERIOD 50
+
+#ifdef ROBOT_PRIMARY_OPENRAVE
+    #define AVERAGE_BROADCAST_PERIOD 0.0025
+#else
+    #define AVERAGE_BROADCAST_PERIOD 0.01
+#endif
 
 int main(int argc, char* argv[])
 {
@@ -110,7 +116,6 @@ int main(int argc, char* argv[])
               << "Unknown controller type: " << controller_type << std::endl;
     exit(1);
   }
-
 
   // Elite population gene
   Flood::Matrix<double> population;
@@ -247,7 +252,24 @@ int main(int argc, char* argv[])
     simuOR_robot.init_simu_env(controller->get_controller_type());
   }
 
-  controller->init_controller();
+  //controller->init_controller();
+  if(robot_primary->get_robot_environment() == "SimulationOpenRave")
+  {
+    controller->init_controller(simuOR_robot.get_simu_resolution_microseconds());
+    controller->set_EKF_dt(simuOR_robot.get_simu_resolution_microseconds());
+  }
+  else if(robot_primary->get_robot_environment() == "Y1")
+  {
+    controller->init_controller(AVERAGE_BROADCAST_PERIOD);
+  }
+  else
+  {
+    std::cerr << "MorphoMotion Error: EvaluateController." << std::endl
+              << "int main(int, char*) method." << std::endl
+              << "Unknown robot environment: " << robot_primary->get_robot_environment() << std::endl;
+    exit(1);
+  }
+
   population.subtract_row(0);
 
   robot_primary->set_evaluation_method("Euclidean_Distance_Final");
@@ -324,12 +346,13 @@ int main(int argc, char* argv[])
 
       controller->set_oscillation_analyzer(&oscAnlz);
       oscAnlz.set_record_servo(true);
+      oscAnlz.set_record_servo_raw(true);
       oscAnlz.set_record_ref(true);
       oscAnlz.set_record_amplitude(true);
       oscAnlz.set_record_offset(true);
       oscAnlz.set_record_frequency(true);
       oscAnlz.set_record_phase(true);
-      oscAnlz.set_record_trajectory(true);
+      //oscAnlz.set_record_trajectory(true);
 
       std::stringstream SS;
 
@@ -345,13 +368,13 @@ int main(int argc, char* argv[])
 
       std::cout << "  Select individual to be evaluated number:  " << std::endl;
 
-      //std::cin >> n;
+      std::cin >> n;
     }
   }
   else
   {
-    for(unsigned int i=population_size-1; i>=0; i--)
-    //for(unsigned int i=0; i<=population_size-1; i++)
+    //for(unsigned int i=population_size-1; i>=0; i)
+    for(unsigned int i=0; i<=population_size-1; i++)
     {
       robot_primary->reset_robot();
 
@@ -394,7 +417,7 @@ int main(int argc, char* argv[])
       individual[11] = 0;
 
       //--Frequency
-      individual[12] = 0.9999;*/
+      individual[12] = 0.99999999;*/
       //-------------------------To Be Removed-----------------------------//
 
       //-------------------------To Be Removed-----------------------------//
@@ -411,7 +434,7 @@ int main(int argc, char* argv[])
       individual[5] = 90;
 
       //--Frequency
-      individual[6] = 0.99;*/
+      individual[6] = 0.9999;*/
       //-------------------------To Be Removed-----------------------------//
 
       mlp.set_parameters(individual);
@@ -422,12 +445,13 @@ int main(int argc, char* argv[])
 
       controller->set_oscillation_analyzer(&oscAnlz);
       oscAnlz.set_record_servo(true);
+      oscAnlz.set_record_servo_raw(true);
       oscAnlz.set_record_ref(true);
       oscAnlz.set_record_amplitude(true);
       oscAnlz.set_record_offset(true);
       oscAnlz.set_record_frequency(true);
       oscAnlz.set_record_phase(true);
-      oscAnlz.set_record_trajectory(true);
+      //oscAnlz.set_record_trajectory(true);
 
       std::stringstream SS;
 
@@ -446,6 +470,8 @@ int main(int argc, char* argv[])
 
       unsigned int x;
       std::cin >> x;
+
+      //usleep(1000000);
     }
   }
 

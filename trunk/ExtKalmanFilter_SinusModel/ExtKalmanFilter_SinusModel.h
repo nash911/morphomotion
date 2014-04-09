@@ -2,7 +2,7 @@
 /*                                                                                                              */
 /*   Morphomotion: A project researching on how morphology influences locomotion in robots.                     */
 /*                                                                                                              */
-/*   I N V E R S E S I N E   C O N T R O L L E R   C L A S S   H E A D E R                                      */
+/*   E X T E N D E D   K A L M A N   F I L T E R   S I N U S O I D A L   M O D E L   C L A S S   H E A D E R    */
 /*                                                                                                              */
 /*   Avinash Ranganath                                                                                          */
 /*   Robotics Lab, Department of Systems Engineering and Automation                                             */
@@ -12,50 +12,40 @@
 /*   http://roboticslab.uc3m.es/roboticslab/persona.php?id_pers=104                                             */
 /*                                                                                                              */
 /****************************************************************************************************************/
+#ifndef EXTKALMANFILTER_SINUSMODEL_H
+#define EXTKALMANFILTER_SINUSMODEL_H
 
+#include<iostream>
+#include<math.h>
+#include "armadillo"
 
-#ifndef INVERSESINECONTROLLER_H
-#define INVERSESINECONTROLLER_H
+using namespace arma;
 
-#include "Controller.h"
-
-class InverseSineController: public Controller
+class ExtKalmanFilter_SinusModel
 {
+private:
+    mat X; //--Estimated state
+    mat H; //--Measurement matrix (i.e., mapping measurements onto state)
+    mat F; //--State transition matrix (i.e., transition between states)
+    mat Q; //--Process variance matrix (i.e., error due to process)
+    mat P; //--State variance matrix (i.e., error of estimation)
+    mat I; //--Identity matrix
+    mat K; //--Kalman gain (Weight)
+
+    double qf; //--Process variance (i.e., error due to process)
+    double r; //--Measurement variance (i.e., error from measurements)
+
+    double omega;
+    double dt;
 
 public:
-
-  // DEFAULT CONSTRUCTOR
-  InverseSineController(void);
-
-  // CONSTRUCTOR WITH MLP and ROBOT OBJECT
-  InverseSineController(Flood::MultilayerPerceptron*, Robot*);
-
-  // CONSTRUCTOR WITH MLP and PRIMARY and SECONDARY ROBOT OBJECTS
-  InverseSineController(Flood::MultilayerPerceptron*, Robot*, Robot*);
-
-  // METHODS
-  void init_local_variables(Flood::Vector<double>&,
-                            Flood::Vector<double>&,
-                            vector<bool>&);
-  void actuate_with_inverse_sine_controller(const unsigned int, const double, Flood::Vector<double>&);
-  void update_tPrime_and_Yi(unsigned int);
-  double calculate_actual_diff(double, double);
-  double calculate_tPrime(double, double);
-  double inverse_sinewave_function(double, double);
-  double getCurrentVelocityDirection(double);
-
-
-  //-- VIRTUAL FUNCTIONS
-  virtual void set_default(void);
-  virtual void init_controller(const double);
-  virtual void start_Controller(const std::string&, std::stringstream&, int);
-  virtual void run_Controller(const std::string&, std::stringstream&, int);
-
-private:
-  vector<double> Yi;
-  vector<double> tPrime;
-  vector<double> iteration_start_time;
-
+    ExtKalmanFilter_SinusModel(const double);
+    void reset_parameters();
+    double predict_and_update(const double, const double);
+    void set_dt(const double);
+    void set_omega(const double);
+    void set_r(const double);
+    void set_qf(const double);
 };
 
 #endif

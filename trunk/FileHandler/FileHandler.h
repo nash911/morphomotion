@@ -74,6 +74,7 @@ public:
   void load_Robot_parameters(std::fstream&, Robot*);
   void load_SimEnv_parameters(std::fstream&, SimulationOpenRave*);
   void load_Controller_parameters(std::fstream&, Controller*);
+  void load_ExtendedKalmanFilter_parameters(std::fstream&, Controller*);
   void load_NN_parameters(std::fstream&, Flood::MultilayerPerceptron*);
   void load_independent_parameters(std::fstream&, Flood::MultilayerPerceptron*);
   void load_genes(std::fstream&, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, std::vector<std::string>*);

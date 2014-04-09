@@ -101,7 +101,7 @@ void Y1ModularRobot::copy(const Robot* source_object)
 }
 
 
-bool contains(std::vector<char> V, char c)
+/*bool contains(std::vector<char> V, char c)
 {
   for(unsigned int i=0; i<V.size(); i++)
   {
@@ -112,6 +112,22 @@ bool contains(std::vector<char> V, char c)
   }
 
   return false;
+}*/
+
+
+unsigned int contains(std::vector<char> V, char c)
+{
+  unsigned int position = 0;
+
+  for(unsigned int i=0; i<V.size(); i++)
+  {
+    if(V[i] == c)
+    {
+      return i+1;
+    }
+  }
+
+  return position;
 }
 
 
@@ -127,12 +143,41 @@ std::string toString(std::vector<char> V)
 }
 
 
+long long timeval_diff(struct timeval *difference,
+                       struct timeval *end_time,
+                       struct timeval *start_time
+                      )
+{
+  struct timeval temp_diff;
+
+  if(difference==NULL)
+  {
+    difference=&temp_diff;
+  }
+
+  difference->tv_sec =end_time->tv_sec -start_time->tv_sec ;
+  difference->tv_usec=end_time->tv_usec-start_time->tv_usec;
+
+  /* Using while instead of if below makes the code slightly more robust. */
+
+  while(difference->tv_usec<0)
+  {
+    difference->tv_usec+=1000000;
+    difference->tv_sec -=1;
+  }
+
+  return 1000000LL*difference->tv_sec+
+                   difference->tv_usec;
+}
+
+
 void Y1ModularRobot::set_default_parameters(void)
 {
   vis_track = NULL;
   serial_port = 0;
   this->set_robot_environment("Y1");
   previous_elapsed_evaluation_time = 0;
+  updating_elapsed_evaluation_time = false;
 }
 
 
@@ -294,7 +339,7 @@ bool Y1ModularRobot::get_message_with_time(char* inString)
 
   inString[inString_size] = '\0'; // always put a "null" at the end of a string!
 
-  //std::cout << " --> Poll Counter = " << poll_trials << " --> " << inString << std::endl; // TODO: Debuggerto be removed
+  //std::cout << " Time --> " << inString << std::endl; // TODO: Debuggerto be removed
 
   return(string_captured);
 }
@@ -310,7 +355,12 @@ bool Y1ModularRobot::get_message_with_time_THREAD(std::vector<char>& inString)
 
   do
   {
-    unsigned char inBuf[150] = {'x','x','x','x','x','x','x','x','x','x',
+    unsigned char inBuf[200] = {'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
+                                'x','x','x','x','x','x','x','x','x','x',
                                 'x','x','x','x','x','x','x','x','x','x',
                                 'x','x','x','x','x','x','x','x','x','x',
                                 'x','x','x','x','x','x','x','x','x','x',
@@ -325,7 +375,7 @@ bool Y1ModularRobot::get_message_with_time_THREAD(std::vector<char>& inString)
                                 'x','x','x','x','x','x','x','x','x','x',
                                 'x','x','x','x','x','x','x','x','x','x',
                                 'x','x','x','x','x','x','x','x','x','x'};
-    n = PollComport(serial_port, inBuf, 150);
+    n = PollComport(serial_port, inBuf, 200);
 
     if(n > 0)
     {
@@ -343,8 +393,12 @@ bool Y1ModularRobot::get_message_with_time_THREAD(std::vector<char>& inString)
     poll_trials++;
   }while(!string_captured && poll_trials < MAX_POLL_TRIALS);
 
+  if(poll_trials >= MAX_POLL_TRIALS)
+  {
+      std::cout << "Reached MAX_POLL_TRIALS in get_message_with_time_THREAD(std::vector<char>&)." << std::endl; // TODO: Debuggerto be removed
+  }
+
   //std::cout << " --> Poll Counter = " << poll_trials << " --> " << toString(inString) << std::endl; // TODO: Debuggerto be removed
-  //std::cout << " --> Poll Counter = " << poll_trials << " --> " << toString(inString) << " "; // TODO: Debuggerto be removed
 
   /*std::cout << " ";
   for(unsigned int i=0; i<inString.size(); i++)
@@ -683,10 +737,13 @@ bool Y1ModularRobot::decode_message_with_individual_time(const char inString[], 
             {
               case '2': { mType = Requested_ServoTime; break;}
               case '4': { mType = Requested_Time; break;}
-              default: {  std::cerr << std::endl
+              default: {
+#ifdef COMMUNICATION_DEBUGGER
+                          std::cerr << std::endl
                                     << "MorphoMotion Error: Y1ModularRobot class." << std::endl
                                     << "bool decode_message_with_individual_time(const char[], vector<double>&) method." << std::endl
                                     << "Unknown Message Type: " << ch << std::endl;
+#endif
                           return(false);  }
             }
           }
@@ -708,10 +765,13 @@ bool Y1ModularRobot::decode_message_with_individual_time(const char inString[], 
               case '2': { servo_address = 2; break; }
               case '3': { servo_address = 3; break; }
               case '4': { servo_address = 4; break; }
-              default:  { std::cerr << std::endl
+              default:  {
+#ifdef COMMUNICATION_DEBUGGER
+                          std::cerr << std::endl
                                     << "MorphoMotion Error: Y1ModularRobot class." << std::endl
                                     << "bool decode_message_with_individual_time(const char[], vector<double>&) method." << std::endl
                                     << "Invalid Servo Address: " << ch << std::endl;
+#endif
                           return(false);  }
              }
           }
@@ -739,10 +799,13 @@ bool Y1ModularRobot::decode_message_with_individual_time(const char inString[], 
               case '7': { time_data.push_back(7); break; }
               case '8': { time_data.push_back(8); break; }
               case '9': { time_data.push_back(9); break; }
-              default:  { std::cerr << std::endl
+              default:  {
+#ifdef COMMUNICATION_DEBUGGER
+                          std::cerr << std::endl
                                     << "MorphoMotion Error: Y1ModularRobot class." << std::endl
                                     << "bool decode_message_with_individual_time(const char[], vector<double>&) method." << std::endl
                                     << "Invalid Time value: " << ch << std::endl;
+#endif
                           return(false); }
             }
           }
@@ -792,16 +855,21 @@ bool Y1ModularRobot::decode_message_with_individual_time(const char inString[], 
   }
   else
   {
+#ifdef COMMUNICATION_DEBUGGER
     std::cerr << std::endl
               << "MorphoMotion Error: Y1ModularRobot class." << std::endl
               << "bool decode_message_with_individual_time(const char[], vector<double>&) method." << std::endl
               << "Unknown Message Frame Start Tag: " << ch << std::endl;
+#endif
     return(false);
   }
 
   if(mType == Requested_Time)
   {
-    init_elapsed_evaluation_time(time_value);
+    if(!init_elapsed_evaluation_time(time_value))
+    {
+      return false;
+    }
   }
   else if(mType == Requested_ServoTime)
   {
@@ -813,6 +881,474 @@ bool Y1ModularRobot::decode_message_with_individual_time(const char inString[], 
       servo_feedback_angle[module] = data[module][0]/pow(10, base10Exp);
       servo_read_time[module] = data[module][1];
     }
+  }
+
+  return(true);
+}
+
+
+//-- Compatible with Arduino code --> servo_controller_charArray_V11.pde
+Y1ModularRobot::MessageType Y1ModularRobot::decode_message_with_ackn(const char inString[])
+{
+  char ch = 'X';
+  unsigned int n = 0;
+  Y1ModularRobot::MessageType mType = None;
+
+  ch = inString[n++];
+
+  // Message frame begin byte
+  if(ch == '#')
+  {
+    do
+    {
+      ch = inString[n++];
+
+      // Message-Type
+      if(ch == '%')
+      {
+        do
+        {
+          ch = inString[n++];
+          if(ch != '%')
+          {
+            switch(ch)
+            {
+              case '2': { mType = Requested_ServoTime; break;}
+              case '4': { mType = Requested_Time; break;}
+              case '7': { mType = Turn_On_Broadcast_Ackn; break;}
+              case '8': { mType = Turn_Off_Broadcast_Ackn; break;}
+              default: {
+#ifdef COMMUNICATION_DEBUGGER
+                          std::cout << inString << std::endl;
+                          std::cerr << std::endl
+                                    << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                                    << "Y1ModularRobot::MessageType Y1ModularRobot::decode_message_with_ackn(const char[]) method." << std::endl
+                                    << "Unknown Message Type: " << ch << std::endl;
+#endif
+                          return(None);  }
+            }
+          }
+        }while(ch != '%' && ch != '$'); // Message-Type end byte
+      }
+    }while(ch != '$'); // End of message frame byte
+  }
+  else
+  {
+#ifdef COMMUNICATION_DEBUGGER
+    std::cout << inString << std::endl;
+    std::cerr << std::endl
+              << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+              << "Y1ModularRobot::MessageType Y1ModularRobot::decode_message_with_ackn(const char[]) method." << std::endl
+              << "Unknown Message Frame Start Tag: " << ch << std::endl;
+#endif
+    return(None);
+  }
+
+  return(mType);
+}
+
+
+//-- Compatible with Arduino code --> servo_controller_charArray_V10.pde
+bool Y1ModularRobot::decode_message_with_individual_time_V2(const char inString[], unsigned long& time, vector<double>& servo_feedback_angle, vector<long>& servo_read_time)
+{
+  char ch = 'X';
+  unsigned int n = 0;
+  unsigned int module = 0;
+
+  Y1ModularRobot::MessageType mType = None;
+  int servo_address = -1;
+  std::vector<double> data;
+  std::vector<unsigned int> data_time;
+  std::vector<bool> data_available;
+  std::vector<bool> data_time_available;
+  int base10Exp = 2; //-- This parameter has to be the same both here and in Arduino code [int OutputStringStream_All(int, unsigned char*)].
+  unsigned long time_value=0;
+  bool time_available = false;
+
+  ch = inString[n++];
+  double D;
+  unsigned int UI;
+
+  //std::cout << inString << std::endl;
+
+  // Message frame begin byte
+  if(ch == '#')
+  {
+    do
+    {
+      ch = inString[n++];
+
+      // Message-Type
+      if(ch == '%')
+      {
+        do
+        {
+          ch = inString[n++];
+          if(ch != '%')
+          {
+            switch(ch)
+            {
+              case '2': { mType = Requested_ServoTime; break;}
+              case '4': { mType = Requested_Time; break;}
+              default: {
+#ifdef COMMUNICATION_DEBUGGER
+                          std::cout << inString << std::endl;
+                          std::cerr << std::endl
+                                    << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                                    << "bool decode_message_with_individual_time_V2(const char[], vector<double>&) method." << std::endl
+                                    << "Unknown Message Type: " << ch << std::endl;
+#endif
+                          return(false);
+                        }
+            }
+          }
+        }while(ch != '%' && ch != '$'); // Message-Type end byte OR End of message frame byte
+      }
+
+      // Servo address
+      else if(ch == '&')
+      {
+        do
+        {
+          ch = inString[n++];
+          if(ch != '&')
+          {
+            switch(ch)
+            {
+              case '0': { servo_address = 0; break; }
+              case '1': { servo_address = 1; break; }
+              case '2': { servo_address = 2; break; }
+              case '3': { servo_address = 3; break; }
+              case '4': { servo_address = 4; break; }
+              default:  {
+#ifdef COMMUNICATION_DEBUGGER
+                          std::cout << inString << std::endl;
+                          std::cerr << std::endl
+                                    << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                                    << "bool decode_message_with_individual_time_V2(const char[], vector<double>&) method." << std::endl
+                                    << "Invalid Servo Address: " << ch << std::endl;
+#endif
+                          return(false);  }
+             }
+          }
+        }while(ch != '&' && ch != '$'); //Servo address end byte OR End of message frame byte
+      }
+
+      // Time
+      else if(ch == '[')
+      {
+        std::vector<unsigned int> time_data;
+        do
+        {
+          ch = inString[n++];
+          if(ch != ']')
+          {
+            switch(ch)
+            {
+              case '0': { time_data.push_back(0); break; }
+              case '1': { time_data.push_back(1); break; }
+              case '2': { time_data.push_back(2); break; }
+              case '3': { time_data.push_back(3); break; }
+              case '4': { time_data.push_back(4); break; }
+              case '5': { time_data.push_back(5); break; }
+              case '6': { time_data.push_back(6); break; }
+              case '7': { time_data.push_back(7); break; }
+              case '8': { time_data.push_back(8); break; }
+              case '9': { time_data.push_back(9); break; }
+              default:  {
+#ifdef COMMUNICATION_DEBUGGER
+                          std::cout << inString << std::endl;
+                          std::cerr << std::endl
+                                    << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                                    << "bool decode_message_with_individual_time_V2(const char[], vector<double>&) method." << std::endl
+                                    << "Invalid Time value: " << ch << std::endl;
+#endif
+                          return(false); }
+            }
+          }
+          else if(ch == ']')
+          {
+            if(time_data.size() > 0)
+            {
+              time_available = true;
+            }
+          }
+        }while(ch != ']'  && ch != '$'); // Time end byte OR End of message frame byte
+
+        if(time_available)
+        {
+          for(unsigned int i=0; i<time_data.size(); i++)
+          {
+            time_value = time_value + (time_data[i]*pow(10,(time_data.size()-(i+1))));
+          }
+        }
+        else
+        {
+#ifdef COMMUNICATION_DEBUGGER
+            std::cout << inString << std::endl;
+            std::cerr << std::endl
+                    << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                    << "bool decode_message_with_individual_time_V2(const char[], vector<double>&) method." << std::endl
+                    << "Time not available." << std::endl;
+#endif
+          return(false);
+        }
+      }
+
+      // Actual data begin byte
+      else if(ch == '*')
+      {
+        do
+        {
+          ch = inString[n++];
+          if(ch == '<')
+          {
+            data_time_available.push_back(false);
+            data_available.push_back(false);
+
+            stringstream SS;
+            do
+            {
+              ch = inString[n++];
+              if(ch == '/')
+              {
+                if(!data_time_available[module])
+                {
+                  SS << " ";
+                  data_time_available[module] = true;
+                }
+                else
+                {
+#ifdef COMMUNICATION_DEBUGGER
+                  std::cout << inString << std::endl;
+                  std::cerr << std::endl
+                            << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                            << "bool decode_message_with_individual_time_V2(const char[], vector<double>&) method." << std::endl
+                            << "Double '/' found in Module: " << module+1 << " data." << std::endl;
+#endif
+                  return(false);
+                }
+              }
+              else if(ch == '>')
+              {
+                data_available[module] = true;
+              }
+              else if(ch == '-' || (ch >= '0' && ch <= '9'))
+              {
+                SS << ch;
+              }
+              else
+              {
+#ifdef COMMUNICATION_DEBUGGER
+                std::cout << inString << std::endl;
+                std::cerr << std::endl
+                          << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                          << "bool decode_message_with_individual_time_V2(const char[], vector<double>&) method." << std::endl
+                          << "Unknown data Byte: " << ch << " in Module: " << module+1 << std::endl;
+#endif
+                return(false);
+              }
+            }while(ch != '>'  && ch != '$'); // Single data end byte OR End of message frame byte
+
+            if(data_available[module])
+            {
+              SS >> D;
+              data.push_back(D);
+            }
+            else
+            {
+              data.push_back(0);
+#ifdef COMMUNICATION_DEBUGGER
+              std::cout << inString << std::endl;
+              std::cerr << std::endl
+                        << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                        << "bool decode_message_with_individual_time_V2(const char[], vector<double>&) method." << std::endl
+                        << "Data not available for Module: " << module+1 << std::endl;
+#endif
+              return(false);
+            }
+
+            if(data_time_available[module])
+            {
+              SS >> UI;
+              data_time.push_back(UI);
+            }
+            else
+            {
+              data_time.push_back(0);
+            }
+
+            module++;
+            if(module >= 5)
+            {
+#ifdef COMMUNICATION_DEBUGGER
+              std::cout << inString << std::endl;
+              std::cerr << std::endl
+                        << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                        << "bool decode_message_with_individual_time_V2(const char[], vector<double>&) method." << std::endl
+                        << "Data frame overflow." << std::endl;
+#endif
+              return(false);
+            }
+          }
+
+          else if(ch != '*' || ch != '$'); // Do nothing
+
+          else
+          {
+#ifdef COMMUNICATION_DEBUGGER
+            std::cout << inString << std::endl;
+            std::cerr << std::endl
+                      << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                      << "bool decode_message_with_individual_time_V2(const char[], vector<double>&) method." << std::endl
+                      << "Unknown Data start tag in Module: " << module+1 << std::endl;
+#endif
+            return(false);
+          }
+        }while(ch != '*'  && ch != '$'); // Data frame end byte OR End of message frame byte
+      }
+
+      else if(ch == '$');
+
+      else
+      {
+#ifdef COMMUNICATION_DEBUGGER
+        std::cout << inString << std::endl;
+        std::cerr << std::endl
+                  << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                  << "bool decode_message_with_individual_time_V2(const char[], vector<double>&) method." << std::endl
+                  << "Unknown Byte: " << ch << std::endl;
+#endif
+        return(false);
+      }
+
+    }while(ch != '$'); // End of message frame byte
+  }
+  else
+  {
+#ifdef COMMUNICATION_DEBUGGER
+    std::cout << inString << std::endl;
+    std::cerr << std::endl
+              << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+              << "bool decode_message_with_individual_time_V2(const char[], vector<double>&) method." << std::endl
+              << "Unknown Message Frame Start Tag: " << ch << std::endl;
+#endif
+    return(false);
+  }
+
+  if(mType == Requested_Time)
+  {
+    if(time_available)
+    {
+      init_elapsed_evaluation_time(time_value);
+    }
+  }
+  else if(mType == Requested_ServoTime)
+  {
+    if(servo_address == -1)
+    {
+#ifdef COMMUNICATION_DEBUGGER
+      std::cout << inString << std::endl;
+      std::cerr << std::endl
+                << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                << "bool decode_message_with_individual_time_V2(const char[], vector<double>&) method." << std::endl
+                << "Servo Address not available." << std::endl;
+#endif
+      return(false);
+    }
+    else if(servo_address == 4)
+    {
+      if(data.size() != 4 || data_time.size() != 4)
+      {
+#ifdef COMMUNICATION_DEBUGGER
+        std::cout << inString << std::endl;
+        std::cerr << std::endl
+                  << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                  << "bool decode_message_with_individual_time_V2(const char[], vector<double>&) method." << std::endl
+                  << "Invalid number of data. Data: " << data.size() << "    Data_Time: " << data_time.size() << std::endl;
+#endif
+        return(false);
+      }
+    }
+
+    if(time_available)
+    {
+      if(time_value - get_initial_evaluation_time() <= get_elapsed_evaluation_time())
+      {
+#ifdef COMMUNICATION_DEBUGGER
+        std::cout << inString << std::endl;
+        std::cerr << std::endl
+                  << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                  << "bool decode_message_with_individual_time_V2(const char[], vector<double>&) method." << std::endl
+                  << "New Time value: " << time_value << " is LESS than or EQUAL to previous time value: " << get_initial_evaluation_time() + get_elapsed_evaluation_time() << std::endl;
+#endif
+        return(false);
+      }
+      /*else if(time_value - get_initial_evaluation_time() - get_elapsed_evaluation_time() >= 100000)
+      {
+#ifdef COMMUNICATION_DEBUGGER
+        std::cout << inString << std::endl;
+        std::cerr << std::endl
+                  << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                  << "bool decode_message_with_individual_time_V2(const char[], vector<double>&) method." << std::endl
+                  << "New Time value: " << time_value << " is Much GREATER that the elapsed evaluation time." << std::endl;
+#endif
+        return(false);
+      }*/
+      else
+      {
+        time = time_value;
+      }
+    }
+    else
+    {
+#ifdef COMMUNICATION_DEBUGGER
+      std::cout << inString << std::endl;
+      std::cerr << std::endl
+                << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                << "bool decode_message_with_individual_time_V2(const char[], vector<double>&) method." << std::endl
+                << "Time value NOT available." << std::endl;
+#endif
+      return(false);
+    }
+
+    for(module = 1; module < data_time.size() ; module++)
+    {
+      if(data_time[module-1] > data_time[module])
+      {
+#ifdef COMMUNICATION_DEBUGGER
+        std::cout << inString << std::endl;
+        std::cerr << std::endl
+                  << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+                  << "bool decode_message_with_individual_time_V2(const char[], vector<double>&) method." << std::endl
+                  << "Data Time of Module: " << module << " is greater than Data Time of Module: " << module+1 << std::endl;
+#endif
+        return(false);
+      }
+    }
+
+    for(module = 0; module < number_of_modules; module++)
+    {
+      servo_feedback_angle[module] = 0;
+      servo_read_time[module] = 0;
+    }
+
+    for(module = 0; module < number_of_modules && module < data.size(); module++)
+    {
+      servo_feedback_angle[module] = data[module]/pow(10, base10Exp);
+      servo_read_time[module] = data_time[module];
+    }
+  }
+  else
+  {
+#ifdef COMMUNICATION_DEBUGGER
+    std::cout << inString << std::endl;
+    std::cerr << std::endl
+              << "MorphoMotion Error: Y1ModularRobot class." << std::endl
+              << "bool decode_message_with_individual_time_V2(const char[], vector<double>&) method." << std::endl
+              << "Message Type not available." << std::endl;
+#endif
+    return(false);
   }
 
   return(true);
@@ -1053,7 +1589,7 @@ void Y1ModularRobot::reset_robot(void)
   //-- Set the translation of the robot to the initial position.
   //TODO: Reset the robot to (0,0) according to image coordinate.
 
-  turn_off_broadcast(5000);
+  turn_off_broadcast(10000);
 
   previous_control_signal.resize(number_of_modules,0);
 
@@ -1166,7 +1702,7 @@ void Y1ModularRobot::set_moduleServo_position(unsigned int module, double servo_
 
 void Y1ModularRobot::set_all_moduleServo_position(const vector<double>& servo_angle)
 {
-  if(!(previous_control_signal == servo_angle))
+  //if(!(previous_control_signal == servo_angle))
   {
     previous_control_signal = servo_angle;
 
@@ -1209,11 +1745,6 @@ void Y1ModularRobot::set_all_moduleServo_position(const vector<double>& servo_an
       exit(1);
     }
   }
-  else
-  {
-    //std::cout << "Message NOT Sent." << std::endl; // TODO: Debugger to be removed.
-    //std::cout << endl;
-  }
 }
 
 
@@ -1225,8 +1756,8 @@ double Y1ModularRobot::get_moduleServo_position(unsigned int module)
 
 bool Y1ModularRobot::get_all_moduleServo_position(vector<ServoFeedback*>& servo_feedback)
 {
-  //return(get_all_moduleServo_position_with_individual_time(servo_feedback));
-  return(get_all_moduleServo_position_with_individual_time_THREAD(servo_feedback));
+  get_all_moduleServo_position_with_individual_time_THREAD(servo_feedback);
+  return true;
 }
 
 
@@ -1337,7 +1868,8 @@ bool Y1ModularRobot::get_all_moduleServo_position_with_individual_time(vector<Se
       for(unsigned int module=0; module<number_of_modules; module++)
       {
         //servo_feedback[module]->set_new_value(elapsed_evaluation_time + servo_read_time[module], servo_feedback_angle[module]);
-        servo_feedback[module]->add_to_history(elapsed_evaluation_time + servo_read_time[module], servo_feedback_angle[module]);
+        servo_feedback[module]->set_new_value((time - get_initial_evaluation_time()) + servo_read_time[module], servo_feedback_angle[module]);
+        //servo_feedback[module]->add_to_history(elapsed_evaluation_time + servo_read_time[module], servo_feedback_angle[module]);
       }
       set_elapsed_evaluation_time(time);
     }
@@ -1356,7 +1888,7 @@ bool Y1ModularRobot::get_all_moduleServo_position_with_individual_time(vector<Se
 
 //-- To get servo position via serial communication with the controller board [Skymega], along with individual time value, implemented as a speperate thread.
 //-- Compatible with Arduino code --> servo_controller_charArray_V10.pde
-bool Y1ModularRobot::get_all_moduleServo_position_with_individual_time_THREAD(vector<ServoFeedback*>& servo_feedback)
+void Y1ModularRobot::get_all_moduleServo_position_with_individual_time_THREAD(vector<ServoFeedback*>& servo_feedback)
 {
     std::vector<char> inString;
 
@@ -1379,8 +1911,9 @@ bool Y1ModularRobot::get_all_moduleServo_position_with_individual_time_THREAD(ve
       if(receive_broadcast)
       {
         //--Turn On Broadcast
-        unsigned char Broad_On[8] = {'#','%','5','%','&','4','&','$'};  // To request Turn_On_Broadcast.
-        cprintf(serial_port, (char *)Broad_On); // Send message requesting Turn_On_Broadcast.
+        //unsigned char Broad_On[8] = {'#','%','5','%','&','4','&','$'};  // To request Turn_On_Broadcast.
+        //cprintf(serial_port, (char *)Broad_On); // Send message requesting Turn_On_Broadcast.
+        turn_on_broadcast();
       }
 
       while(receive_broadcast)
@@ -1400,29 +1933,41 @@ bool Y1ModularRobot::get_all_moduleServo_position_with_individual_time_THREAD(ve
             {
               c = inString[0];
               inString.erase(inString.begin());
-            }while(c != '#' && inString.size()>0);
+            }while(c != '#' && inString.size() > 0);
             recvString[recvString_size++] = c;
 
-            do
+            if(contains(inString,'$'))
             {
-              c = inString[0];
-              inString.erase(inString.begin());
-              recvString[recvString_size++] = c;
-            }while(c != '$');
-            recvString[recvString_size] = '\0'; //--Always put a "null" at the end of a string!
 
-            //message_decoded = decode_message_with_individual_time_THREAD(recvString, time, servo_feedback_angle, servo_read_time);
-            message_decoded = decode_message_with_individual_time(recvString, time, servo_feedback_angle, servo_read_time);
+                do
+                {
+                  c = inString[0];
+                  inString.erase(inString.begin());
+                  recvString[recvString_size++] = c;
+                }while(c != '$' && inString.size() > 0);
+                recvString[recvString_size] = '\0'; //--Always put a "null" at the end of a string!
 
-            if(message_decoded)
-            {
-              for(unsigned int module=0; module<number_of_modules; module++)
-              {
-                servo_feedback[module]->add_to_history(elapsed_evaluation_time + servo_read_time[module], servo_feedback_angle[module]);
-              }
-              set_elapsed_evaluation_time(time);
+                //message_decoded = decode_message_with_individual_time(recvString, time, servo_feedback_angle, servo_read_time);
+                message_decoded = decode_message_with_individual_time_V2(recvString, time, servo_feedback_angle, servo_read_time);
+
+                if(message_decoded)
+                {
+                  //std::cout << (double)(time - get_initial_evaluation_time())/1000000.0 << " "; //TODO: Debugger to be removed
+                  //std::cout << (time - get_initial_evaluation_time()) << " "; //TODO: Debugger to be removed
+                  for(unsigned int module=0; module<number_of_modules; module++)
+                  {
+                    servo_feedback[module]->set_new_value((time - get_initial_evaluation_time()) + servo_read_time[module], servo_feedback_angle[module]);
+                    //servo_feedback[module]->set_new_value((time - get_initial_evaluation_time()), servo_feedback_angle[module]);
+                  }
+                  //std::cout << std::endl; //TODO: Debugger to be removed
+                  set_elapsed_evaluation_time(time);
+                }
             }
-          }while(contains(inString,'#') && contains(inString,'$'));
+            else
+            {
+              inString.insert(inString.begin(),'#');
+            }
+          }while(contains(inString,'#') && contains(inString,'$') && receive_broadcast);
         }
         else
         {
@@ -1432,22 +1977,14 @@ bool Y1ModularRobot::get_all_moduleServo_position_with_individual_time_THREAD(ve
 
         if(comm_fail_counter>=MAX_COMM_FAIL || comm_fail_consec_counter>=MAX_COMM_FAIL_CONSECUTIVE)
         {
-          return false;
+          //return false;
+            std::cout << std::endl << "Comm Failed: Comm fail counter reached MAX." << std::endl;
         }
       }
 
       if(!receive_broadcast)
       {
-        turn_off_broadcast(7000);
-        /*unsigned char Broad_Off[8] = {'#','%','6','%','&','4','&','$'};  // To request Turn_Off_Broadcast.
-        //--Flush out serial port
-        do
-        {
-          //--Turn Off Broadcast
-          cprintf(serial_port, (char *)Broad_Off); // Send message requesting Turn_Off_Broadcast.
-
-          usleep(7000);
-        }while(flush_cport(serial_port, 1));*/
+        turn_off_broadcast(10000);
       }
     }
     else
@@ -1460,7 +1997,6 @@ bool Y1ModularRobot::get_all_moduleServo_position_with_individual_time_THREAD(ve
     }
 
     set_broadcast_thread(false);
-    return true;
 }
 
 
@@ -1509,7 +2045,6 @@ unsigned int Y1ModularRobot::get_current_time(void)
           }
         }while(!message_got);
 
-        //message_decoded = decode_message_with_individual_time_THREAD(recvString, time, servo_feedback_angle, servo_read_time);
         message_decoded = decode_message_with_individual_time(recvString, time, servo_feedback_angle, servo_read_time);
       }while(!message_decoded);
     }
@@ -1526,25 +2061,68 @@ unsigned int Y1ModularRobot::get_current_time(void)
 }
 
 
-void Y1ModularRobot::init_elapsed_evaluation_time(unsigned long new_initial_evaluation_time)
+bool Y1ModularRobot::init_elapsed_evaluation_time(unsigned long new_initial_evaluation_time)
 {
-  previous_read_evaluation_time = 0;
-  elapsed_evaluation_time = 0;
-  initial_evaluation_time = new_initial_evaluation_time;
+  if(new_initial_evaluation_time >= 4230000000)
+  {
+    std::cout << "Skymega time about to rollover. Sleeping for 10 seconds..." << std::endl;
+    usleep(10000000);
+    return false;
+  }
+  else
+  {
+    previous_read_evaluation_time = 0;
+    elapsed_evaluation_time = 0;
+    initial_evaluation_time = new_initial_evaluation_time;
+  }
+  return true;
 }
 
 
 void Y1ModularRobot::set_elapsed_evaluation_time(unsigned long new_elapsed_evaluation_time)
 {
+  //unsigned long counter = 0;
+  long long time_diff;
+  struct timeval start_time;
+  struct timeval now;
+
+  gettimeofday(&start_time, NULL);
+
+  //--Wait until the current processing is completed before updating the time.
+  /*while(get_processing_flag())
+  {
+    //counter++;
+
+    //-- Get current time
+    gettimeofday(&now, NULL);
+    time_diff = timeval_diff(NULL, &now, &start_time);
+
+    //if(time_diff >= 1000000) //--In milliseconds.
+    if(time_diff >= 15000) //--In milliseconds.
+    {
+      set_receive_broadcast(false);
+      set_processing_flag(false);
+
+      std::cout << "WAIT TIME expired in Communication Thread: " << time_diff << std::endl;
+      return;
+    }
+  }*/
+
+  updating_elapsed_evaluation_time = true;
+  set_processing_flag(true);
+
   previous_read_evaluation_time = elapsed_evaluation_time;
   elapsed_evaluation_time = new_elapsed_evaluation_time - initial_evaluation_time;
 
-  std::cout << elapsed_evaluation_time << std::endl; // TODO: Debugger to be removed.
+  updating_elapsed_evaluation_time = false;
+
+  //std::cout << elapsed_evaluation_time << std::endl; // TODO: Debugger to be removed.
 }
 
 
 unsigned long Y1ModularRobot::get_elapsed_evaluation_time(void)
 {
+  //while(updating_elapsed_evaluation_time);
   return(elapsed_evaluation_time);
 }
 
@@ -1592,19 +2170,93 @@ double Y1ModularRobot::get_robot_Y(void)
 
 void Y1ModularRobot::step(const std::string& type)
 {
+  set_processing_flag(false);
+
   //-- Wait until elapsed_evaluation_time has been updated.
-  while(elapsed_evaluation_time == previous_elapsed_evaluation_time)
+  while(previous_elapsed_evaluation_time == get_elapsed_evaluation_time())
   {
-    std::cout << "";
+    //std::cout << std::endl;
+    //elap = get_elapsed_evaluation_time();
+    //std::cout << previous_elapsed_evaluation_time << "--" << get_elapsed_evaluation_time() << ">>";
   }
 
-  previous_elapsed_evaluation_time = elapsed_evaluation_time;
+  previous_elapsed_evaluation_time = get_elapsed_evaluation_time();
 }
 
 
 double Y1ModularRobot::euclidean_distance(const std::vector<double> pos_1, const std::vector<double> pos_2)
 {
     return( sqrt(((pos_1[0] - pos_2[0])*(pos_1[0] - pos_2[0])) + ((pos_1[1] - pos_2[1])*(pos_1[1] - pos_2[1]))));
+}
+
+
+void Y1ModularRobot::turn_on_broadcast(void)
+{
+    if(serial_port)
+    {
+      std::stringstream outSS;
+      unsigned char outBuf[10];
+      bool message_got = false;
+      bool message_decode = false;
+
+      outSS << "#%5%&4&$"; //--To request Turn_On_Broadcast.
+      for(unsigned int i=0; i<outSS.str().size(); i++)
+      {
+        outBuf[i] = outSS.str()[i];
+      }
+
+      do
+      {
+        char recvString[40];
+        do
+        {
+          SendBuf(serial_port, outBuf, outSS.str().size()); //-- Sending message requesting Turn_On_Broadcast.
+
+          std::vector<char> inString;
+          unsigned int recvString_size=0;
+          char c;
+
+          message_got = get_message_with_time_THREAD(inString);
+          if(message_got)
+          {
+            do
+            {
+              c = inString[0];
+              inString.erase(inString.begin());
+            }while(c != '#' && inString.size() > 0);
+            recvString[recvString_size++] = c;
+
+            if(contains(inString,'$'))
+            {
+              do
+              {
+                c = inString[0];
+                inString.erase(inString.begin());
+                recvString[recvString_size++] = c;
+              }while(c != '$' && inString.size() > 0);
+              recvString[recvString_size] = '\0'; //--Always put a "null" at the end of a string!
+            }
+          }
+        }while(!message_got);
+
+        if(decode_message_with_ackn(recvString) == Turn_On_Broadcast_Ackn)
+        {
+            message_decode = true;
+        }
+        else
+        {
+            message_decode = false;
+        }
+      }while(!message_decode);
+    }
+    else
+    {
+      std::cerr << std::endl
+                << "Flood Error: SimEnv application." << std::endl
+                << "void get_current_time(void) method." << std::endl
+                << "Serial port not open." << std::endl;
+      exit(1);
+    }
 }
 
 
@@ -1616,7 +2268,7 @@ void Y1ModularRobot::turn_off_broadcast(unsigned long usleep_time)
   {
     cprintf(serial_port, (char *)Broad_Off); //--Send message requesting Turn_Off_Broadcast.
     usleep(usleep_time);
-  }while(flush_cport(serial_port, 1));
+  }while(clear_cport(serial_port));
 }
 
 

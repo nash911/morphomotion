@@ -21,6 +21,9 @@
 #include "Robot.h"
 #include "VisualTracker.h"
 #include "SerialCommunication.h"
+#include <sys/time.h>
+
+#define COMMUNICATION_DEBUGGER
 
 #define Q 81
 #define q 113
@@ -44,7 +47,7 @@ class Y1ModularRobot: public Robot
 
 public:
 
-  enum MessageType{Requested_ServoTime, Requested_Time, None};
+  enum MessageType{Requested_ServoTime, Requested_Time, Turn_On_Broadcast_Ackn, Turn_Off_Broadcast_Ackn, None};
 
   //-- DEFAULT CONSTRUCTOR
   Y1ModularRobot();
@@ -62,22 +65,24 @@ public:
   void set_default_parameters(void);
   bool set_serial_port(const std::string&, int);
   void set_elapsed_evaluation_time(unsigned long);
-  void init_elapsed_evaluation_time(unsigned long);
+  bool init_elapsed_evaluation_time(unsigned long);
   bool get_all_moduleServo_position_with_time(vector<ServoFeedback*>&); //-- Compatible with Arduino code --> servo_controller_charArray_V6.pde
   bool get_all_moduleServo_position_with_individual_time(vector<ServoFeedback*>&); //-- Compatible with Arduino code --> servo_controller_charArray_V7.pde
-  bool get_all_moduleServo_position_with_individual_time_THREAD(vector<ServoFeedback*>&); //-- Compatible with Arduino code --> servo_controller_charArray_V10.pde
+  void get_all_moduleServo_position_with_individual_time_THREAD(vector<ServoFeedback*>&); //-- Compatible with Arduino code --> servo_controller_charArray_V10.pde
   bool get_message(char*);
   bool get_message_with_time(char*); //-- Compatible with Arduino code --> servo_controller_charArray_V6.pde
   bool get_message_with_time_THREAD(std::vector<char>&); //-- Compatible with Arduino code --> servo_controller_charArray_V10.pde
   bool decode_message(const char[], vector<double>&);
   bool decode_message_with_time(const char[], vector<double>&); //-- Compatible with Arduino code --> servo_controller_charArray_V6.pde
   bool decode_message_with_individual_time(const char[], unsigned long&, vector<double>&, vector<long>&); //-- Compatible with Arduino code --> servo_controller_charArray_V7.pde
+  bool decode_message_with_individual_time_V2(const char[], unsigned long&, vector<double>&, vector<long>&); //-- Compatible with Arduino code --> servo_controller_charArray_V10.pde
+  Y1ModularRobot::MessageType decode_message_with_ackn(const char inString[]);
   //bool decode_message_with_individual_time_THREAD(const char[], unsigned long&, vector<double>&, vector<long>&); //-- Compatible with Arduino code --> servo_controller_charArray_V10.pde
   unsigned int get_current_time(void);
   std::vector<double> get_robot_XY(const std::string&);
   double euclidean_distance(const std::vector<double> pos_1, const std::vector<double> pos_2);
+  void turn_on_broadcast(void);
   void turn_off_broadcast(unsigned long);
-  //void turn_on_broadcast(void);
 
   //-- INHERITED METHODS
   void copy(const Robot*);
@@ -105,6 +110,8 @@ private:
   unsigned long previous_elapsed_evaluation_time; //--microseconds
 
   unsigned int comm_fail_counter;
+
+  bool updating_elapsed_evaluation_time;
 };
 
 #endif

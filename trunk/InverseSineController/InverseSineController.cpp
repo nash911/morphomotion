@@ -30,9 +30,9 @@ InverseSineController::InverseSineController(Flood::MultilayerPerceptron* mlp_po
 }
 
 
-void InverseSineController::init_controller()
+void InverseSineController::init_controller(const double delta_time)
 {
-  Controller::init_controller();
+  Controller::init_controller(delta_time);
 
   Yi.resize(number_of_modules);
   tPrime.resize(number_of_modules);
@@ -92,6 +92,21 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
   set_oscillator_offset(mlp->get_independent_parameter(3));
   set_oscillator_frequency(mlp->get_independent_parameter(4));
 
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    servo_feedback[module]->get_ExtKalmanFilter()->set_omega(oscillator_frequency);
+    if(robot_primary->get_robot_environment() == "Y1")
+    {
+      servo_feedback[module]->get_ExtKalmanFilter()->set_dt(get_EKF_dt());
+    }
+    else
+    {
+      //--The 'dt` parameter for EKF is as set in the main function [In either EvolveController.cpp or EvaluateController.cpp]
+    }
+    servo_feedback[module]->get_ExtKalmanFilter()->set_r(get_EKF_r());
+    servo_feedback[module]->get_ExtKalmanFilter()->set_qf(get_EKF_qf());
+  }
+
   Flood::Vector<double> output(number_of_modules);
   Flood::Vector<double> previous_cycle_output(number_of_modules);
   vector<bool> passedZero(number_of_modules);
@@ -125,21 +140,35 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
   {
       do
       {
-        //--Record reference position.
-        if(oscAnlz && oscAnlz->get_record_ref())
+        if(oscAnlz)
         {
-          oscAnlz->write_ref(output);
-        }
+            //--Record reference position.
+            if(oscAnlz->get_record_ref())
+            {
+              oscAnlz->write_ref(output);
+            }
 
-        //--Record current position.
-        if(oscAnlz && oscAnlz->get_record_servo() && robot_primary->get_robot_environment() == "Y1")
-        {
-          std::vector<double> servo_positions;
-          for(unsigned int module=0; module<number_of_modules; module++)
-          {
-            servo_positions.push_back(servo_feedback[module]->get_servo_position());
-          }
-          oscAnlz->write_servo(servo_positions);
+            //--Record current Filtered position.
+            if(oscAnlz->get_record_servo()) //--Thread Change
+            {
+              std::vector<double> servo_positions;
+              for(unsigned int module=0; module<number_of_modules; module++)
+              {
+                servo_positions.push_back(servo_feedback[module]->get_servo_position());
+              }
+              oscAnlz->write_servo(servo_positions);
+            }
+
+            //--Record current Raw position.
+            if(oscAnlz->get_record_servo_raw()) //--Thread Change
+            {
+              std::vector<double> servo_raw_positions;
+              for(unsigned int module=0; module<number_of_modules; module++)
+              {
+                servo_raw_positions.push_back(servo_feedback[module]->get_servo_raw_position());
+              }
+              oscAnlz->write_servo_raw(servo_raw_positions);
+            }
         }
 
         for(unsigned int module=0; module<number_of_modules; module++)
@@ -203,7 +232,7 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
                   std::cout << "                          ";
               }
 
-              std::cout << std::endl << generation << " -->  " << (double)evaluation_elapsed_time/1000000 << ": Previous Output[" << module << "]: " << previous_cycle_output[module] << "  Actual Angle: " << servo_feedback[module]->get_servo_position() << "  Current Output[" << module << "]: " << Yi[module];
+              std::cout << std::endl << generation << " -->  " << (double)evaluation_elapsed_time/1000000.0 << ": Previous Output[" << module << "]: " << previous_cycle_output[module] << "  Actual Angle: " << servo_feedback[module]->get_servo_position() << "  Current Output[" << module << "]: " << Yi[module];
             }
     #endif
     //-------------------------------------------------------------- Activity Log --------------------------------------------------------/
@@ -289,7 +318,7 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
         {
           oscAnlz->write_trajectory();
         }
-      }while(evaluation_elapsed_time < evaluation_window && !kbhit());
+      }while(evaluation_elapsed_time < evaluation_window && !kbhit() && robot_primary->get_receive_broadcast());
 
       if(kbhit())
       {
@@ -298,9 +327,11 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
 
       if(key==q || key==Q)
       {
+          //SS.flush();
           SS << "CANCEL" << " ";
 
-          robot_primary->set_receive_broadcast(false); //--Thread Change
+          robot_primary->set_processing_flag(false);
+          robot_primary->set_receive_broadcast(false);
           while(robot_primary->get_broadcast_thread());
           return;
       }
@@ -315,21 +346,25 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
 
           key = 'q';
 
+          //SS.flush();
           SS << "REDO" << " ";
 
+          robot_primary->set_processing_flag(false);
           robot_primary->set_receive_broadcast(false);
           while(robot_primary->get_broadcast_thread());
           return;
       }
-  }while(evaluation_elapsed_time < evaluation_window && (key != q || key != Q));
+  }while(evaluation_elapsed_time < evaluation_window && (key != q || key != Q)  && robot_primary->get_receive_broadcast());
   changemode(0);
 
 #ifdef DEBUGGER
   std::cout << std::endl << std::endl << std::endl << std::endl << std::endl << std::endl << std::endl;
 #endif
 
+  //SS.flush();
   SS << "SUCCESS" << " ";
 
+  robot_primary->set_processing_flag(false);
   robot_primary->set_receive_broadcast(false);
   while(robot_primary->get_broadcast_thread());
   return;
@@ -339,6 +374,16 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
 void InverseSineController::actuate_with_inverse_sine_controller(const unsigned int module, const double tPrime, Flood::Vector<double>& output)
 {
   output[module] = sine_wave(oscillator_amplitude, oscillator_offset, oscillator_frequency, 0, tPrime);
+
+  //--Make sure that the next control signal is a value between the servo range.
+  if(output[module] > get_servo_max())
+  {
+    output[module] = get_servo_max();
+  }
+  else if(output[module] < get_servo_min())
+  {
+    output[module] = get_servo_min();
+  }
 }
 
 

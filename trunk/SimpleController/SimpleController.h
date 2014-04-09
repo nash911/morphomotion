@@ -40,7 +40,7 @@ public:
 
   //-- VIRTUAL FUNCTIONS
   virtual void set_default(void);
-  virtual void init_controller(void);
+  virtual void init_controller(const double);
   virtual void start_Controller(const std::string&, std::stringstream&, int);
   virtual void run_Controller(const std::string&, std::stringstream&, int);
 };

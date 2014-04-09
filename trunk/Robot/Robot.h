@@ -39,13 +39,14 @@ class Robot
 
 public:
 
-  enum RobotType{CubeN_ServoFeedBack, Tripod, Quadpod, Ybot4_ServoFeedBack, Lizard, Bunny, Bunny_StiffSpine, Lizard_3D};
+  enum RobotType{CubeN_ServoFeedBack, Tripod, Quadpod, Ybot4_ServoFeedBack, Lizard, Bunny,
+                 Bunny_StiffSpine, Lizard_3D, MultiDof_7_tripod, MultiDof_9_quad, MultiDof_11_4};
   enum RobotPriority{Robot_Primary, Robot_Secondary};
   enum RobotEnvironment{SimulationOpenRave, Y1};
   enum EvaluationMethod{Euclidean_Distance_Final, Euclidean_Distance_Cumulative};
 
   //-- DEFAULT CONSTRUCTOR
-  Robot(void);
+  Robot();
 
 
   //-- DESTRUCTOR
@@ -62,11 +63,14 @@ public:
   std::string get_evaluation_method(void) const;
   void set_number_of_modules(unsigned int);
   unsigned int get_number_of_modules(void) const;
+  unsigned long get_initial_evaluation_time(void);
   double get_distance_travelled(void);
   void set_receive_broadcast(bool);
   bool get_receive_broadcast();
   void set_broadcast_thread(bool);
   bool get_broadcast_thread();
+  bool get_processing_flag(void);
+  void set_processing_flag(bool);
   
   //-- VIRTUAL FUNCTIONS
   virtual void copy(const Robot*) = 0;
@@ -87,6 +91,8 @@ public:
   virtual double get_robot_Y(void) = 0;
   virtual void step(const std::string&) = 0;
 
+  //unsigned long counter;
+
 protected:
   RobotEnvironment robot_environment;
   RobotPriority robot_priority;
@@ -102,6 +108,8 @@ protected:
 
   bool receive_broadcast;
   bool broadcast_thread;
+
+  bool processing_flag;
 };
 
 #endif

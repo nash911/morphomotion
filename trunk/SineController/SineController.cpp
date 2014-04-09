@@ -30,9 +30,9 @@ SineController::SineController(Flood::MultilayerPerceptron* mlp_pointer, Robot* 
 }
 
 
-void SineController::init_controller()
+void SineController::init_controller(const double delta_time)
 {
-  Controller::init_controller();
+  Controller::init_controller(delta_time);
 
   //-- Set the size of Sinusoidal Controller parameters vector
   sine_amplitude.resize(number_of_modules);
@@ -47,12 +47,13 @@ void SineController::set_default(void)
 }
 
 
-void SineController::init_local_variables(Flood::Vector<double> &previous_cycle_output, Flood::Vector<bool> &isFirstStep)
+//void SineController::init_local_variables(Flood::Vector<double> &previous_cycle_output, Flood::Vector<bool> &isFirstStep)
+void SineController::init_local_variables(Flood::Vector<double> &previous_cycle_output)
 {
   for(unsigned int module=0; module<number_of_modules; module++)
   {
     previous_cycle_output[module] = 0;
-    isFirstStep[module] = true;
+    //isFirstStep[module] = true;
   }
 }
 
@@ -80,9 +81,24 @@ void SineController::run_Controller(const std::string& type, std::stringstream& 
 
   load_sine_control_parameters();
 
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    servo_feedback[module]->get_ExtKalmanFilter()->set_omega(sine_frequency);
+    if(robot_primary->get_robot_environment() == "Y1")
+    {
+      servo_feedback[module]->get_ExtKalmanFilter()->set_dt(get_EKF_dt());
+    }
+    else
+    {
+      //--The 'dt` parameter for EKF is as set in the main function [In either EvolveController.cpp or EvaluateController.cpp]
+    }
+    servo_feedback[module]->get_ExtKalmanFilter()->set_r(get_EKF_r());
+    //servo_feedback[module]->get_ExtKalmanFilter()->set_qf(0.000001); //--For estimating ICF.
+    servo_feedback[module]->get_ExtKalmanFilter()->set_qf(get_EKF_qf());
+  }
+
   Flood::Vector<double> output(number_of_modules);
   Flood::Vector<double> previous_cycle_output(number_of_modules);
-  Flood::Vector<bool> isFirstStep(number_of_modules);
 
   // Related to Servo Derivative Resolution -- Based on time dependent Servo Feedback data.
   vector<vector<ServoFeedback*> > servo_feedback_history;
@@ -90,9 +106,9 @@ void SineController::run_Controller(const std::string& type, std::stringstream& 
 
 
   //-- Initialise local variables.
-  init_local_variables(previous_cycle_output, isFirstStep);
+  init_local_variables(previous_cycle_output);
 
-  double t;
+  double t=0;
 
   unsigned long previous_read_elapsed_time = 0;
   unsigned long evaluation_elapsed_time = 0;
@@ -114,21 +130,35 @@ void SineController::run_Controller(const std::string& type, std::stringstream& 
             return;
         }*/ //--Thread Change
 
-        //--Record reference position.
-        if(oscAnlz && oscAnlz->get_record_ref())
+        if(oscAnlz)
         {
-          oscAnlz->write_ref(output);
-        }
+            //--Record reference position.
+            if(oscAnlz->get_record_ref())
+            {
+              oscAnlz->write_ref(output);
+            }
 
-        //--Record current position.
-        if(oscAnlz && oscAnlz->get_record_servo() && robot_primary->get_robot_environment() == "Y1") //--Thread Change
-        {
-          std::vector<double> servo_positions;
-          for(unsigned int module=0; module<number_of_modules; module++)
-          {
-            servo_positions.push_back(servo_feedback[module]->get_servo_position());
-          }
-          oscAnlz->write_servo(servo_positions);
+            //--Record current Filtered position.
+            if(oscAnlz->get_record_servo()) //--Thread Change
+            {
+              std::vector<double> servo_positions;
+              for(unsigned int module=0; module<number_of_modules; module++)
+              {
+                servo_positions.push_back(servo_feedback[module]->get_servo_position());
+              }
+              oscAnlz->write_servo(servo_positions);
+            }
+
+            //--Record current Raw position.
+            if(oscAnlz->get_record_servo_raw()) //--Thread Change
+            {
+              std::vector<double> servo_raw_positions;
+              for(unsigned int module=0; module<number_of_modules; module++)
+              {
+                servo_raw_positions.push_back(servo_feedback[module]->get_servo_raw_position());
+              }
+              oscAnlz->write_servo_raw(servo_raw_positions);
+            }
         }
 
         t = (double)robot_primary->get_elapsed_evaluation_time()/1000000.0;
@@ -146,8 +176,8 @@ void SineController::run_Controller(const std::string& type, std::stringstream& 
 
 //-------------------------------------------------------------- Activity Log --------------------------------------------------------/
 #ifdef ACTIVITY_LOG
-            //if(type == "evaluation")
-            if(type == "evaluation" && module == 0)
+            if(type == "evaluation")
+            //if(type == "evaluation" && module == 0)
             {
               std::cout << generation << " -->  " << evaluation_elapsed_time << " : Previous Output[" << module << "]: " << previous_cycle_output[module] << "  Actual Angle: " << servo_feedback[module]->get_servo_position() << "  Current Output[" << module << "]: " << output[module];
             }
@@ -174,8 +204,8 @@ void SineController::run_Controller(const std::string& type, std::stringstream& 
             }
 #endif
 #ifdef ACTIVITY_LOG
-            //if(type == "evaluation")
-            if(type == "evaluation" && module == 0)
+            if(type == "evaluation")
+            //if(type == "evaluation" && module == 0)
             {
               std::cout << "  Next Output[" << module << "]: " << output[module] << std::endl;
             }
@@ -208,20 +238,24 @@ void SineController::run_Controller(const std::string& type, std::stringstream& 
         {
           oscAnlz->write_trajectory();
         }
-      }while(evaluation_elapsed_time < evaluation_window && !kbhit());
+
+        //std::cout << "Exiting the NESTED While() Loop." << std::endl; //--TODO: Debugger to be removed.
+      }while(evaluation_elapsed_time < evaluation_window && !kbhit() && robot_primary->get_receive_broadcast());  //--Thread Change
 
       if(kbhit())
       {
-          key = getchar();
+        key = getchar();
       }
 
       if(key==q || key==Q)
       {
-          SS << "CANCEL" << " ";
+        //SS.flush(); //--Thread Change
+        SS << "CANCEL" << " ";
 
-          robot_primary->set_receive_broadcast(false); //--Thread Change
-          while(robot_primary->get_broadcast_thread());
-          return;
+        robot_primary->set_processing_flag(false); //--Thread Change
+        robot_primary->set_receive_broadcast(false); //--Thread Change
+        while(robot_primary->get_broadcast_thread())
+        return;
       }
       else if(key==SPACE)
       {
@@ -229,33 +263,48 @@ void SineController::run_Controller(const std::string& type, std::stringstream& 
           {
               while(!kbhit());
               key = getchar();
-
+              std::cout << "Waiting for a key." << std::endl;
           }while(key!=SPACE);
 
           key = 'q';
+
+          //SS.flush(); //--Thread Change
           SS << "REDO" << " ";
 
+          robot_primary->set_processing_flag(false); //--Thread Change
           robot_primary->set_receive_broadcast(false); //--Thread Change
-          while(robot_primary->get_broadcast_thread());
+          while(robot_primary->get_broadcast_thread())
           return;
       }
-  }while(evaluation_elapsed_time < evaluation_window && (key != q || key != Q));
+      //std::cout << "Exiting the MAIN While()." << std::endl; //--TODO: Debugger to be removed.
+  }while(evaluation_elapsed_time < evaluation_window && (key != q || key != Q)  && robot_primary->get_receive_broadcast());  //--Thread Change
   changemode(0);
 
 #ifdef DEBUGGER
   std::cout << std::endl << std::endl << std::endl << std::endl << std::endl << std::endl << std::endl;
 #endif
 
+  //SS.flush(); //--Thread Change
   SS << "SUCCESS" << " ";
 
+  robot_primary->set_processing_flag(false); //--Thread Change
   robot_primary->set_receive_broadcast(false); //--Thread Change
-  while(robot_primary->get_broadcast_thread());
+  while(robot_primary->get_broadcast_thread()) //--Thread Change
   return;
 }
 
 
 void SineController::actuate_with_sine_controller(const unsigned int module, const double t, Flood::Vector<double>& output)
 {
-  //output[module] = sine_amplitude[module] * sin(2*M_PI*sine_frequency*t + ((sine_phase[module] * M_PI)/180.0)) + sine_offset[module];
   output[module] = sine_wave(sine_amplitude[module], sine_offset[module], sine_frequency, sine_phase[module], t);
+
+  //--Make sure that the next control signal is a value between the servo range.
+  if(output[module] > get_servo_max())
+  {
+    output[module] = get_servo_max();
+  }
+  else if(output[module] < get_servo_min())
+  {
+    output[module] = get_servo_min();
+  }
 }

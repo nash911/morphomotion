@@ -45,6 +45,7 @@ OscillationAnalyzer_OutputSignal::OscillationAnalyzer_OutputSignal(Robot* robot_
   estimate_phase = false;
 
   record_servo = false;
+  record_servo_raw = false;
   record_ref = false;
   record_amplitude = false;
   record_offset = false;
@@ -53,6 +54,7 @@ OscillationAnalyzer_OutputSignal::OscillationAnalyzer_OutputSignal(Robot* robot_
   record_trajectory = false;
 
   servo_graph_file = NULL;
+  servo_raw_graph_file = NULL;
   ref_graph_file = NULL;
   amplitude_graph_file = NULL;
   offset_graph_file = NULL;
@@ -69,49 +71,46 @@ OscillationAnalyzer_OutputSignal::~OscillationAnalyzer_OutputSignal(void)
     if(servo_graph_file != NULL)
     {
         delete servo_graph_file;
-        //std::cout << std::endl << "servo_graph_file Deleted." << std::endl;
+    }
+
+    if(servo_raw_graph_file != NULL)
+    {
+        delete servo_raw_graph_file;
     }
 
     if(ref_graph_file != NULL)
     {
         delete ref_graph_file;
-        //std::cout << std::endl << "ref_graph_file Deleted." << std::endl;
     }
 
     if(amplitude_graph_file != NULL)
     {
         delete amplitude_graph_file;
-        //std::cout << std::endl << "amplitude_graph_file Deleted." << std::endl;
     }
 
     if(offset_graph_file != NULL)
     {
         delete offset_graph_file;
-        //std::cout << std::endl << "offset_graph_file Deleted." << std::endl;
     }
 
     if(frequency_graph_file != NULL)
     {
         delete frequency_graph_file;
-        //std::cout << std::endl << "frequency_graph_file Deleted." << std::endl;
     }
 
     if(phase_180_graph_file != NULL)
     {
         delete phase_180_graph_file;
-        //std::cout << std::endl << "phase_180_graph_file Deleted." << std::endl;
     }
 
     if(phase_360_graph_file != NULL)
     {
         delete phase_360_graph_file;
-        //std::cout << std::endl << "phase_360_graph_file Deleted." << std::endl;
     }
 
     if(trajectory_graph_file != NULL)
     {
         delete trajectory_graph_file;
-        //std::cout << std::endl << "trajectory_graph_file Deleted." << std::endl;
     }
 }
 
@@ -215,6 +214,12 @@ bool OscillationAnalyzer_OutputSignal::get_record_servo(void)
 }
 
 
+bool OscillationAnalyzer_OutputSignal::get_record_servo_raw(void)
+{
+  return(record_servo_raw);
+}
+
+
 bool OscillationAnalyzer_OutputSignal::get_record_ref(void)
 {
   return(record_ref);
@@ -253,6 +258,18 @@ void OscillationAnalyzer_OutputSignal::set_record_servo(const bool record_servo_
   {
     remove("../Evaluation_Files/servo.dat");
     servo_graph_file = new GraphFile("../Evaluation_Files/servo.dat");
+  }
+}
+
+
+void OscillationAnalyzer_OutputSignal::set_record_servo_raw(const bool record_servo_raw_bool_value)
+{
+  record_servo_raw = record_servo_raw_bool_value;
+
+  if(record_servo_raw_bool_value)
+  {
+    remove("../Evaluation_Files/servo_raw.dat");
+    servo_raw_graph_file = new GraphFile("../Evaluation_Files/servo_raw.dat");
   }
 }
 
@@ -352,7 +369,7 @@ void OscillationAnalyzer_OutputSignal::write_servo(std::vector<double>& servo_po
   unsigned int number_of_modules = robot->get_number_of_modules();
 
   ss << number_of_modules+1 << " ";
-  ss << robot->get_elapsed_evaluation_time()/1000 << " "; // X-axis in micro seconds.
+  ss << (double)robot->get_elapsed_evaluation_time()/1000.0 << " "; // X-axis in micro seconds.
 
   for(unsigned int module=0; module<number_of_modules; module++)
   {
@@ -362,13 +379,29 @@ void OscillationAnalyzer_OutputSignal::write_servo(std::vector<double>& servo_po
 }
 
 
+void OscillationAnalyzer_OutputSignal::write_servo_raw(std::vector<double>& servo_raw_positions)
+{
+  std::stringstream ss;
+  unsigned int number_of_modules = robot->get_number_of_modules();
+
+  ss << number_of_modules+1 << " ";
+  ss << (double)robot->get_elapsed_evaluation_time()/1000.0 << " "; // X-axis in micro seconds.
+
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    ss << servo_raw_positions[module] << " ";
+  }
+  servo_raw_graph_file->write(ss);
+}
+
+
 void OscillationAnalyzer_OutputSignal::write_ref(Flood::Vector<double>& ref_positions)
 {
   std::stringstream ss;
   unsigned int number_of_modules = robot->get_number_of_modules();
 
   ss << number_of_modules+1 << " ";
-  ss << robot->get_elapsed_evaluation_time()/1000 << " "; // X-axis in micro seconds.
+  ss << (double)robot->get_elapsed_evaluation_time()/1000.0 << " "; // X-axis in micro seconds.
 
   for(unsigned int module=0; module<number_of_modules; module++)
   {

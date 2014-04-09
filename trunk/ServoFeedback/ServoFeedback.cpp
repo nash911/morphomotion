@@ -19,11 +19,28 @@ ServoFeedback::ServoFeedback()
 {
   servo_position_read_time = 0;
   servo_position = 0;
+  servo_raw_position = 0;
+
+  EKF = NULL;
+}
+
+
+ServoFeedback::ServoFeedback(const double delta_time)
+{
+  servo_position_read_time = 0;
+  servo_position = 0;
+  servo_raw_position = 0;
+
+  EKF = new ExtKalmanFilter_SinusModel(delta_time);
 }
 
 
 ServoFeedback::~ServoFeedback(void)
 {
+  if(EKF != NULL)
+  {
+    delete EKF;
+  }
 }
 
 
@@ -31,13 +48,14 @@ void ServoFeedback::reset_value()
 {
   servo_position_read_time = 0;
   servo_position = 0;
+  servo_raw_position = 0;
 
-  read_time_history.clear();
-  position_history.clear();
+  //read_time_history.clear();
+  //position_history.clear();
 }
 
 
-void ServoFeedback::add_to_history(const unsigned long current_time_value, const double current_servo_position)
+/*void ServoFeedback::add_to_history(const unsigned long current_time_value, const double current_servo_position)
 {
   if(current_time_value < servo_position_read_time)
   {
@@ -81,7 +99,7 @@ void ServoFeedback::add_to_history(const unsigned long current_time_value, const
 
     this->set_new_value(read_time_history.back(),position_history.back());
   }
-}
+}*/
 
 
 void ServoFeedback::set_new_value(const unsigned long current_time_value, const double current_servo_position)
@@ -111,7 +129,20 @@ void ServoFeedback::set_servo_position_read_time(const unsigned long current_tim
 
 void ServoFeedback::set_servo_position(const double current_servo_position)
 {
-  servo_position = current_servo_position;
+  if(EKF == NULL)
+  {
+    servo_raw_position = current_servo_position;
+    servo_position = current_servo_position;
+  }
+  else
+  {
+    servo_raw_position = current_servo_position;
+    servo_position = EKF->predict_and_update(current_servo_position, (double)servo_position_read_time/1000000.0);
+    //servo_position = current_servo_position;
+
+    //std::cout << servo_raw_position << " " << servo_position << " "; //TODO: Debugger to be removed.
+  }
+
 }
 
 
@@ -124,4 +155,16 @@ unsigned long ServoFeedback::get_servo_position_read_time(void)
 double ServoFeedback::get_servo_position(void)
 {
   return(servo_position);
+}
+
+
+double ServoFeedback::get_servo_raw_position(void)
+{
+  return(servo_raw_position);
+}
+
+
+ExtKalmanFilter_SinusModel* ServoFeedback::get_ExtKalmanFilter()
+{
+  return EKF;
 }
