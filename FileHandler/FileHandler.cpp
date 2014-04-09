@@ -112,10 +112,10 @@ FileHandler::FileHandler(std::string note,
   myFile << std::endl << "<Controller>" << std::endl;
   myFile << "\t<ControllerType>" << std::endl << "\t   " << controller->get_controller_type() << std::endl << "\t</ControllerType>" << std::endl;
   myFile << std::endl << "\t<EvaluationPeriod>" << std::endl << "\t   " << controller->get_evaluation_period() << std::endl << "\t</EvaluationPeriod>" << std::endl;
+  myFile << std::endl << "\t<ServoMax>" << std::endl << "\t   " << controller->get_servo_max() << std::endl << "\t</ServoMax>" << std::endl;
+  myFile << std::endl << "\t<ServoMin>" << std::endl << "\t   " << controller->get_servo_min() << std::endl << "\t</ServoMin>" << std::endl;
   if(controller->get_controller_type() != "Sine_Controller" && controller->get_controller_type() != "InverseSine_Controller")
   {
-    myFile << std::endl << "\t<ServoMax>" << std::endl << "\t   " << controller->get_servo_max() << std::endl << "\t</ServoMax>" << std::endl;
-    myFile << std::endl << "\t<ServoMin>" << std::endl << "\t   " << controller->get_servo_min() << std::endl << "\t</ServoMin>" << std::endl;
     myFile << std::endl << "\t<StartAngleType>" << std::endl << "\t   " << controller->get_start_angle_type() << std::endl << "\t</StartAngleType>" << std::endl;
     myFile << std::endl << "\t<ServoDeltaThreshold>" << std::endl << "\t   " << controller->get_servo_delta_threshold() << std::endl << "\t</ServoDeltaThreshold>" << std::endl;
   }
@@ -128,6 +128,12 @@ FileHandler::FileHandler(std::string note,
     myFile << std::endl << "\t<ServoDerivativeEpsilon>" << std::endl << "\t   " << controller->get_servo_derivative_epsilon() << std::endl << "\t</ServoDerivativeEpsilon>" << std::endl;
   }
   myFile << "</Controller>" << std::endl;
+
+  myFile << std::endl << "<ExtendedKalmanFilter>" << std::endl;
+  myFile << "\t<dt>" << std::endl << "\t   " << controller->get_EKF_dt() << std::endl << "\t</dt>" << std::endl;
+  myFile << std::endl << "\t<r>" << std::endl << "\t   " << controller->get_EKF_r() << std::endl << "\t</r>" << std::endl;
+  myFile << std::endl << "\t<qf>" << std::endl << "\t   " << controller->get_EKF_qf() << std::endl << "\t</qf>" << std::endl;
+  myFile << "</ExtendedKalmanFilter>" << std::endl;
 
   if(mlp->get_inputs_number() > 0)
   {
@@ -279,14 +285,19 @@ FileHandler::FileHandler(char* filename, Robot *robot, SimulationOpenRave *simuE
       load_Robot_parameters(file, robot);
     }
 
-    if(word == "<SimulationEnvironment>")
+    else if(word == "<SimulationEnvironment>")
     {
       load_SimEnv_parameters(file, simuEnv);
     }
 
-    if(word == "<Controller>")
+    else if(word == "<Controller>")
     {
       load_Controller_parameters(file, controller);
+    }
+
+    else if(word == "<ExtendedKalmanFilter>")
+    {
+      load_ExtendedKalmanFilter_parameters(file, controller);
     }
 
     else if(word == "<NeuralNetwork>")
@@ -372,7 +383,7 @@ FileHandler::FileHandler(char* gene_filename, Robot *robot, SimulationOpenRave *
       load_Robot_parameters(gene_file, robot);
     }
 
-    if(word == "<SimulationEnvironment>")
+    else if(word == "<SimulationEnvironment>")
     {
       if(simuEnv)
       {
@@ -380,9 +391,14 @@ FileHandler::FileHandler(char* gene_filename, Robot *robot, SimulationOpenRave *
       }
     }
 
-    if(word == "<Controller>")
+    else if(word == "<Controller>")
     {
       load_Controller_parameters(gene_file, controller);
+    }
+
+    else if(word == "<ExtendedKalmanFilter>")
+    {
+      load_ExtendedKalmanFilter_parameters(gene_file, controller);
     }
 
     else if(word == "<NeuralNetwork>")
@@ -485,7 +501,7 @@ FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Robot *rob
       load_Robot_parameters(gene_file, robot);
     }
 
-    if(word == "<SimulationEnvironment>")
+    else if(word == "<SimulationEnvironment>")
     {
       if(simuEnv)
       {
@@ -493,9 +509,14 @@ FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Robot *rob
       }
     }
 
-    if(word == "<Controller>")
+    else if(word == "<Controller>")
     {
       load_Controller_parameters(gene_file, controller);
+    }
+
+    else if(word == "<ExtendedKalmanFilter>")
+    {
+      load_ExtendedKalmanFilter_parameters(gene_file, controller);
     }
 
     else if(word == "<NeuralNetwork>")
@@ -1003,6 +1024,71 @@ void FileHandler::load_Controller_parameters(std::fstream& file, Controller *con
       }
     }
   }while(word != "</Controller>");
+}
+
+
+void FileHandler::load_ExtendedKalmanFilter_parameters(std::fstream& file, Controller *controller)
+{
+  std::string word;
+
+  do
+  {
+    file >> word;
+
+    if(word == "<dt>")
+    {
+      double new_dt;
+      file >> new_dt;
+      controller->set_EKF_dt(new_dt);
+
+      file >> word;
+
+      if(word != "</dt>")
+      {
+        std::cerr << "Morphomotion Error: FileHandler Class." << std::endl
+                  << "void load_ExtendedKalmanFilter_parameters(std::fstream&, Controller*) method." << std::endl
+                  << "Unknown dt end tag: " << word << std::endl;
+
+        exit(1);
+      }
+    }
+
+    else if(word == "<r>")
+    {
+      double new_r;
+      file >> new_r;
+      controller->set_EKF_r(new_r);
+
+      file >> word;
+
+      if(word != "</r>")
+      {
+        std::cerr << "Morphomotion Error: FileHandler Class." << std::endl
+                  << "void load_ExtendedKalmanFilter_parameters(std::fstream&, Controller*) method." << std::endl
+                  << "Unknown dt end tag: " << word << std::endl;
+
+        exit(1);
+      }
+    }
+
+    else if(word == "<qf>")
+    {
+      double new_qf;
+      file >> new_qf;
+      controller->set_EKF_qf(new_qf);
+
+      file >> word;
+
+      if(word != "</qf>")
+      {
+        std::cerr << "Morphomotion Error: FileHandler Class." << std::endl
+                  << "void load_ExtendedKalmanFilter_parameters(std::fstream&, Controller*) method." << std::endl
+                  << "Unknown dt end tag: " << word << std::endl;
+
+        exit(1);
+      }
+    }
+  }while(word != "</ExtendedKalmanFilter>");
 }
 
 

@@ -19,6 +19,15 @@ using namespace OpenRAVE;
 
 ViewerBasePtr viewer;
 
+double calculate_random_uniform(double minimum, double maximum)
+{
+  double random = (double)rand()/(RAND_MAX+1.0);
+
+  double random_uniform = minimum + (maximum-minimum)*random;
+
+  return(random_uniform);
+}
+
 void SetViewer(EnvironmentBasePtr penv, const string& viewername)
 {
   viewer = RaveCreateViewer(penv,viewername);
@@ -381,8 +390,8 @@ bool SimulationOpenRave::get_all_moduleServo_position_with_time(vector<ServoFeed
     is << "getpos1" << " " << module << " ";
     pcontroller->SendCommand(os,is);
     os >> angle;
-    //servo_feedback[module]->set_new_value(elapsed_evaluation_time, angle);
-    servo_feedback[module]->add_to_history(elapsed_evaluation_time, angle);
+    servo_feedback[module]->set_new_value(elapsed_evaluation_time, angle);
+    //servo_feedback[module]->add_to_history(elapsed_evaluation_time, angle);
   }
 
   return true;
@@ -402,7 +411,9 @@ bool SimulationOpenRave::get_all_moduleServo_position_with_time_THREAD(vector<Se
       is << "getpos1" << " " << module << " ";
       pcontroller->SendCommand(os,is);
       os >> angle;
-      servo_feedback[module]->add_to_history(elapsed_evaluation_time, angle);
+      //angle = angle + calculate_random_uniform(-10.0, 10.0); // TODO: To be removed
+      //servo_feedback[module]->add_to_history(elapsed_evaluation_time, angle);
+      servo_feedback[module]->set_new_value(elapsed_evaluation_time, angle);
     }
     //std::cout << std::endl << elapsed_evaluation_time; // TODO: Debugger to be removed.
   }
@@ -497,3 +508,4 @@ void SimulationOpenRave::step(const std::string& type)
     update_elapsed_evaluation_time();
   }
 }
+

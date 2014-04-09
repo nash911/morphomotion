@@ -69,6 +69,7 @@ void Controller::reset_controller()
   for(unsigned int module=0; module<number_of_modules; module++) // Note: this has been moved to void init_local_variables(....)
   {
     servo_feedback[module]->reset_value();
+    servo_feedback[module]->get_ExtKalmanFilter()->reset_parameters();
   }
   //oscAnlz = NULL;
 }
@@ -80,7 +81,7 @@ void Controller::set_oscillation_analyzer(OscillationAnalyzer_OutputSignal* oscA
 }
 
 
-void Controller::init_controller()
+void Controller::init_controller(const double delta_time)
 {
   number_of_modules = robot_primary->get_number_of_modules();
 
@@ -88,7 +89,7 @@ void Controller::init_controller()
   servo_feedback.resize(number_of_modules);
   for(unsigned int module=0; module<number_of_modules; module++)
   {
-    servo_feedback[module] = new ServoFeedback;
+    servo_feedback[module] = new ServoFeedback(delta_time);
   }
 }
 
@@ -104,6 +105,10 @@ void Controller::set_default(void)
   evaluation_period = 50;
   mlp = NULL;
   oscAnlz = NULL;
+
+  EKF_dt = 0.01;
+  EKF_r = 0.1;
+  EKF_qf = 0.0001;
 }
 
 
@@ -164,6 +169,7 @@ bool Controller::read_servo_positions_with_time() // TODO: This should be implem
 void Controller::read_servo_positions_with_time_THREAD()
 {
   robot_primary->get_all_moduleServo_position(servo_feedback);
+  //std::cout << "Returning from read_servo_positions_with_time_THREAD()." << std::endl; //--TODO: Debugger to be removed.
 }
 
 
@@ -731,6 +737,52 @@ std::string Controller::get_controller_type(void)
       exit(1);
     }
   }
+}
+
+
+void Controller::set_EKF_dt(const double delta_time)
+{
+    if(delta_time <= 0)
+    {
+        std::cerr << "Morphomotion Error: Controller class." << std::endl
+              << "void set_EKF_dt(const double) method." << std::endl
+              << "Invalide delta_time: " << delta_time << std::endl;
+        exit(1);
+    }
+    else
+    {
+        EKF_dt = delta_time;
+    }
+}
+
+
+double Controller::get_EKF_dt(void)
+{
+  return(EKF_dt);
+}
+
+
+void Controller::set_EKF_r(const double new_r)
+{
+    EKF_r = new_r;
+}
+
+
+double Controller::get_EKF_r(void)
+{
+  return(EKF_r);
+}
+
+
+void Controller::set_EKF_qf(const double new_qf)
+{
+    EKF_qf = new_qf;
+}
+
+
+double Controller::get_EKF_qf(void)
+{
+  return(EKF_qf);
 }
 
 

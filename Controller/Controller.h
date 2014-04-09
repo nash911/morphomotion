@@ -131,6 +131,13 @@ public:
   double get_sine_phase(const unsigned int);
   double get_sine_frequency(void);
 
+  void set_EKF_dt(const double);
+  double get_EKF_dt(void);
+  void set_EKF_r(const double);
+  double get_EKF_r(void);
+  void set_EKF_qf(const double);
+  double get_EKF_qf(void);
+
   double calculate_random_uniform(double, double);
   double calculate_random_normal(double, double);
   double scale_to_range(double, double, double, double, double);
@@ -140,7 +147,7 @@ public:
 
   //-- VIRTUAL FUNCTIONS
   virtual void set_default(void);
-  virtual void init_controller(void);
+  virtual void init_controller(const double);
   virtual void start_Controller(const std::string&, std::stringstream&, int) = 0;
   virtual void run_Controller(const std::string&, std::stringstream&, int) = 0;
 
@@ -168,6 +175,11 @@ protected:
   vector<double> sine_offset;
   vector<double> sine_phase;
   double sine_frequency;
+
+  double EKF_dt;
+  double EKF_r;
+  double EKF_qf;
+
 };
 
 #endif

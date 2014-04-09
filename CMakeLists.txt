@@ -13,7 +13,6 @@ endif( CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX )
 find_package(Boost ${OpenRAVE_Boost_VERSION} EXACT COMPONENTS iostreams python thread)
 
 
-
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 # Make sure the openmr plugin is installed!
@@ -41,21 +40,16 @@ MESSAGE("OpenCV_LIBS : ${OpenCV_LIBS}")
 
 ADD_DEFINITIONS(-std=c++0x)
 ADD_DEFINITIONS(-pthread)
+#ADD_DEFINITIONS(-llapack)
+#ADD_DEFINITIONS(-lblas)
 
 ### include dirs
 INCLUDE_DIRECTORIES(
 Evolution Evaluation Robot SimulationOpenRave Y1ModularRobot Controller HybridController SineController SimpleController InverseSineController
 Flood/Utilities Flood/MultilayerPerceptron Flood/ObjectiveFunctional Flood/TrainingAlgorithm
-ServoFeedback GraphFile FileHandler OscillationAnalyzer_OutputSignal VisualTracker SerialCommunication
+ServoFeedback ExtKalmanFilter_SinusModel GraphFile FileHandler OscillationAnalyzer_OutputSignal VisualTracker SerialCommunication
 )
 
-# add_library(VisualTracker
-#   VisualTracker/VisualTracker.cpp
-#   VisualTracker/disjoint_sets2.cpp
-#   VisualTracker/comp_labeller_interface.cpp
-# )
-
-# add_library(camera_utils VisualTracker/camera_utils/camera_utils.cpp)
 
 add_executable(Evolve
   Evolution/EvolveController.cpp
@@ -74,6 +68,7 @@ add_executable(Evolve
   InverseSineController/InverseSineController.cpp
   SimpleController/SimpleController.cpp
   ServoFeedback/ServoFeedback.cpp
+  ExtKalmanFilter_SinusModel/ExtKalmanFilter_SinusModel.cpp
   FileHandler/FileHandler.cpp
   GraphFile/GraphFile.cpp
   OscillationAnalyzer_OutputSignal/OscillationAnalyzer_OutputSignal.cpp
@@ -86,8 +81,8 @@ add_executable(Evolve
 ### executable
 set_target_properties(Evolve PROPERTIES COMPILE_FLAGS "${OPENRAVE_CXXFLAGS}")
 set_target_properties(Evolve PROPERTIES LINK_FLAGS "${OPENRAVE_LINK_FLAGS}")
-# target_link_libraries(Evolve ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} ${OpenCV_LIBS} VisualTracker)
-target_link_libraries(Evolve ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} ${OpenCV_LIBS} -std=c++0x -pthread)
+target_link_libraries(Evolve ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} ${OpenCV_LIBS} -std=c++0x -pthread -larmadillo)
+#target_link_libraries(Evolve ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} ${OpenCV_LIBS} -llapack -lblas)
 
 
 add_executable(Evaluate
@@ -106,6 +101,7 @@ add_executable(Evaluate
   SimpleController/SimpleController.cpp
   InverseSineController/InverseSineController.cpp
   ServoFeedback/ServoFeedback.cpp
+  ExtKalmanFilter_SinusModel/ExtKalmanFilter_SinusModel.cpp
   FileHandler/FileHandler.cpp
   GraphFile/GraphFile.cpp
   OscillationAnalyzer_OutputSignal/OscillationAnalyzer_OutputSignal.cpp
@@ -118,8 +114,8 @@ add_executable(Evaluate
 ### opencv executable
 set_target_properties(Evaluate PROPERTIES COMPILE_FLAGS "${OPENRAVE_CXXFLAGS}")
 set_target_properties(Evaluate PROPERTIES LINK_FLAGS "${OPENRAVE_LINK_FLAGS}")
-# target_link_libraries(Evaluate ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} ${OpenCV_LIBS} VisualTracker)
-target_link_libraries(Evaluate ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} ${OpenCV_LIBS} -std=c++0x -pthread -g)
+target_link_libraries(Evaluate ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} ${OpenCV_LIBS} -std=c++0x -pthread -larmadillo -g)
+#target_link_libraries(Evaluate ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} ${OpenCV_LIBS} -llapack -lblas)
 
 
 ### Neural Model Evaluator
@@ -138,6 +134,7 @@ add_executable(NeuralModelEvaluator
   SimpleController/SimpleController.cpp
   InverseSineController/InverseSineController.cpp
   ServoFeedback/ServoFeedback.cpp
+  ExtKalmanFilter_SinusModel/ExtKalmanFilter_SinusModel.cpp
   FileHandler/FileHandler.cpp
   GraphFile/GraphFile.cpp
   OscillationAnalyzer_OutputSignal/OscillationAnalyzer_OutputSignal.cpp
@@ -145,14 +142,14 @@ add_executable(NeuralModelEvaluator
 
 set_target_properties(NeuralModelEvaluator PROPERTIES COMPILE_FLAGS "${OPENRAVE_CXXFLAGS}")
 set_target_properties(NeuralModelEvaluator PROPERTIES LINK_FLAGS "${OPENRAVE_LINK_FLAGS}")
-target_link_libraries(NeuralModelEvaluator ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} -std=c++0x -pthread)
+target_link_libraries(NeuralModelEvaluator ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} -std=c++0x -pthread -larmadillo)
+#target_link_libraries(NeuralModelEvaluator ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} -llapack -lblas)
 
 ### Serial Communication Evaluator
 add_executable(SerialCommunicationEvaluator
   SerialCommunication/SerialCommunicationEvaluator.cpp
   SerialCommunication/SerialCommunication.c
 )
-
 TARGET_LINK_LIBRARIES(SerialCommunicationEvaluator -std=c++0x -pthread)
 
 
@@ -166,4 +163,13 @@ add_executable(VisualTrackerEvaluator
 
 # target_link_libraries(VisualTrackerEvaluator ${OpenCV_LIBS} VisualTracker)
 target_link_libraries(VisualTrackerEvaluator ${OpenCV_LIBS})
+
+
+### Extended Kalman Filter Evaluator
+add_executable(ExtKalmanFilterEvaluator
+  ExtKalmanFilter_SinusModel/ExtKalmanFilterEvaluator.cpp
+  ExtKalmanFilter_SinusModel/ExtKalmanFilter_SinusModel.cpp
+)
+
+target_link_libraries(ExtKalmanFilterEvaluator -larmadillo)
 

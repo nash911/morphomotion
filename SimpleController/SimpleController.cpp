@@ -30,9 +30,9 @@ SimpleController::SimpleController(Flood::MultilayerPerceptron* mlp_pointer, Rob
 }
 
 
-void SimpleController::init_controller()
+void SimpleController::init_controller(const double delta_time)
 {
-  Controller::init_controller();
+  Controller::init_controller(delta_time);
 }
 
 

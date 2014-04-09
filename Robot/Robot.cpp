@@ -26,6 +26,8 @@ Robot::Robot()
 
   receive_broadcast = false;
   broadcast_thread = false;
+
+  processing_flag = false;
 }
 
 
@@ -155,6 +157,18 @@ void Robot::set_robot_type(const std::string& new_robot_type)
   {
     robot_type = Lizard_3D;
   }
+  else if(new_robot_type == "MultiDof_7_tripod")
+  {
+    robot_type = MultiDof_7_tripod;
+  }
+  else if(new_robot_type == "MultiDof_9_quad")
+  {
+    robot_type = MultiDof_9_quad;
+  }
+  else if(new_robot_type == "MultiDof_11_4")
+  {
+    robot_type = MultiDof_11_4;
+  }
   else
   {
     std::cerr << "Morphomotion Error: Robot class." << std::endl
@@ -208,6 +222,21 @@ std::string Robot::get_robot_type(void) const
     case Lizard_3D:
     {
       return("Lizard_3D");
+    }
+    break;
+    case MultiDof_7_tripod:
+    {
+      return("MultiDof_7_tripod");
+    }
+    break;
+    case MultiDof_9_quad:
+    {
+      return("MultiDof_9_quad");
+    }
+    break;
+    case MultiDof_11_4:
+    {
+      return("MultiDof_11_4");
     }
     break;
     default:
@@ -289,6 +318,12 @@ unsigned int Robot::get_number_of_modules(void) const
 }
 
 
+unsigned long Robot::get_initial_evaluation_time(void)
+{
+  return initial_evaluation_time;
+}
+
+
 double Robot::get_distance_travelled(void)
 {
   if(evaluation_method == Euclidean_Distance_Final)
@@ -329,5 +364,18 @@ void Robot::set_broadcast_thread(bool bool_value)
 
 bool Robot::get_broadcast_thread()
 {
+  usleep(100);
   return(broadcast_thread);
+}
+
+
+bool Robot::get_processing_flag()
+{
+  return(processing_flag);
+}
+
+
+void Robot::set_processing_flag(bool bool_value)
+{
+  processing_flag = bool_value;
 }

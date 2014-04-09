@@ -84,7 +84,7 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
 
   std::cout << std::endl << generation << " -- " << individual << ":";
 
-  std::cout << "   I_Parameters: ";
+  std::cout << "  I_Para: ";
   for(unsigned int n=0; n<controller->get_mlp()->get_independent_parameters_number(); n++)
   {
     std::cout << "[" << n+1 << "] " << controller->get_mlp()->get_independent_parameter(n) << "  ";
@@ -104,7 +104,6 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
         robot->reset_robot();
 
         //-- Run controller.
-        //controller->run_Controller("evolution", SS, generation);
         controller->start_Controller("evolution", SS, generation);
 
         SS >> result;

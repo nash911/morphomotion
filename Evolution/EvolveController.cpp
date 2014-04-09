@@ -31,13 +31,19 @@
 #include "InverseSineController.h"
 #include "FileHandler.h"
 
-//#define ROBOT_OPENRAVE
-#define ROBOT_Y1
+#define ROBOT_OPENRAVE
+//#define ROBOT_Y1
+
+#ifdef ROBOT_OPENRAVE
+    #define AVERAGE_BROADCAST_PERIOD 0.0025
+#else
+    #define AVERAGE_BROADCAST_PERIOD 0.01
+#endif
 
 #define EVALUATION_SAMPLE_SIZE 1
 
-#define POPULATION_SIZE 20
-#define GENERATIONS 10
+#define POPULATION_SIZE 50
+#define GENERATIONS 20
 
 #define CROSSOVER_RATIO 0.5
 #define ELITISM_RATIO 0.25
@@ -54,7 +60,7 @@
 #define ELITE_POPULATION_FILE
 
 
-//std::string note("HIDDEN NEURON <1> ");
+//std::string note("With THREADS");
 std::string note("No Notes");
 
 int main(int argc, char* argv[])
@@ -65,6 +71,7 @@ int main(int argc, char* argv[])
   bool gen0_aug_pop=false;
 
   Robot *robot = NULL;
+
 
   SimulationOpenRave simuOR_robot;
   Y1ModularRobot y1_robot;
@@ -140,9 +147,16 @@ int main(int argc, char* argv[])
 #endif
 
   //-- Initialise objects after parameters loaded from the parameter file.
-  //Robot *robot = &simuOR_robot;
-  //simuOR_robot.init_simu_env(controller->get_controller_type());
-  controller->init_controller();
+  //controller->init_controller();
+  if(robot->get_robot_environment() == "SimulationOpenRave")
+  {
+    controller->init_controller(simuOR_robot.get_simu_resolution_microseconds());
+    controller->set_EKF_dt(simuOR_robot.get_simu_resolution_microseconds());
+  }
+  else if(robot->get_robot_environment() == "Y1")
+  {
+    controller->init_controller(AVERAGE_BROADCAST_PERIOD);
+  }
 
 #ifdef CUMUALATIVE_DISTANCE
   robot->set_evaluation_method("Euclidean_Distance_Cumulative");

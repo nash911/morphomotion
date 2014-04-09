@@ -43,6 +43,7 @@ private:
   bool estimate_phase;
 
   bool record_servo;
+  bool record_servo_raw;
   bool record_ref;
   bool record_amplitude;
   bool record_offset;
@@ -51,6 +52,7 @@ private:
   bool record_trajectory;
 
   GraphFile *servo_graph_file;
+  GraphFile *servo_raw_graph_file;
   GraphFile *ref_graph_file;
   GraphFile *amplitude_graph_file;
   GraphFile *offset_graph_file;
@@ -69,10 +71,12 @@ public:
   void calculate_frequency(unsigned int);
 
   bool get_record_servo(void);
+  bool get_record_servo_raw(void);
   bool get_record_ref(void);
   bool get_record_trajectory(void);
 
   void set_record_servo(const bool);
+  void set_record_servo_raw(const bool);
   void set_record_ref(const bool);
   void set_estimate_amplitude_offset(const bool);
   void set_record_amplitude(const bool);
@@ -86,6 +90,7 @@ public:
   unsigned int get_phase_graph_size(void);
 
   void write_servo(std::vector<double>&);
+  void write_servo_raw(std::vector<double>&);
   void write_ref(Flood::Vector<double>&);
   void write_amplitude(void);
   void write_offset(void);

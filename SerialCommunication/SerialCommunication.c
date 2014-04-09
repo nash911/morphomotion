@@ -258,6 +258,16 @@ unsigned int flush_cport(int comport_number, int comm_id)
 }
 
 
+unsigned int clear_cport(int comport_number)
+{
+  unsigned char inBuf[150];
+  unsigned int n = 0;
+
+  n = PollComport(comport_number, inBuf, 200);
+
+  return n;
+}
+
 #else         /* windows */
 
 

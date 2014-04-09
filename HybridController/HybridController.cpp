@@ -33,9 +33,9 @@ HybridController::HybridController(Flood::MultilayerPerceptron* mlp_pointer, Rob
 }
 
 
-void HybridController::init_controller()
+void HybridController::init_controller(const double delta_time)
 {
-  Controller::init_controller();
+  Controller::init_controller(delta_time);
 
   //-- Set the size of the predef_start_angle vector and initialize its content to 0.
   predef_start_angle.set(number_of_modules);

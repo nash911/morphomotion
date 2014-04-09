@@ -67,6 +67,7 @@ void CloseComport(int);
 void cprintf(int, const char *);
 int IsCTSEnabled(int);
 unsigned int flush_cport(int, int);
+unsigned int clear_cport(int);
 
 
 #ifdef __cplusplus
