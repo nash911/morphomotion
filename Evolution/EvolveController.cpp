@@ -29,6 +29,8 @@
 #include "SineController.h"
 #include "SimpleController.h"
 #include "InverseSineController.h"
+#include "FourierController.h"
+#include "TriangleSquareController.h"
 #include "FileHandler.h"
 
 #define ROBOT_OPENRAVE
@@ -43,7 +45,7 @@
 #define EVALUATION_SAMPLE_SIZE 1
 
 #define POPULATION_SIZE 50
-#define GENERATIONS 20
+#define GENERATIONS 30
 
 #define CROSSOVER_RATIO 0.5
 #define ELITISM_RATIO 0.25
@@ -60,7 +62,7 @@
 #define ELITE_POPULATION_FILE
 
 
-//std::string note("With THREADS");
+//std::string note("FIXED Feet");
 std::string note("No Notes");
 
 int main(int argc, char* argv[])
@@ -118,6 +120,14 @@ int main(int argc, char* argv[])
   else if(controller_type == "InverseSine_Controller")
   {
     controller = new InverseSineController(&mlp, robot);
+  }
+  else if(controller_type == "Fourier_Controller")
+  {
+    controller = new FourierController(&mlp, robot);
+  }
+  else if(controller_type == "TriangleSquare_Controller")
+  {
+    controller = new TriangleSquareController(&mlp, robot);
   }
   else
   {

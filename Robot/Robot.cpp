@@ -137,6 +137,10 @@ void Robot::set_robot_type(const std::string& new_robot_type)
   {
     robot_type = Quadpod;
   }
+  else if(new_robot_type == "Quad_3D")
+  {
+    robot_type = Quad_3D;
+  }
   else if(new_robot_type == "Ybot4_ServoFeedBack")
   {
     robot_type = Ybot4_ServoFeedBack;
@@ -197,6 +201,11 @@ std::string Robot::get_robot_type(void) const
     case Quadpod:
     {
       return("Quadpod");
+    }
+    break;
+    case Quad_3D:
+    {
+      return("Quad_3D");
     }
     break;
     case Ybot4_ServoFeedBack:
@@ -378,4 +387,14 @@ bool Robot::get_processing_flag()
 void Robot::set_processing_flag(bool bool_value)
 {
   processing_flag = bool_value;
+}
+
+
+double Robot::calculate_random_uniform(double minimum, double maximum)
+{
+  double random = (double)rand()/(RAND_MAX+1.0);
+
+  double random_uniform = minimum + (maximum-minimum)*random;
+
+  return(random_uniform);
 }

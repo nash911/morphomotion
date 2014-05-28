@@ -28,6 +28,8 @@
 #include "SineController.h"
 #include "SimpleController.h"
 #include "InverseSineController.h"
+#include "FourierController.h"
+#include "TriangleSquareController.h"
 #include "FileHandler.h"
 #include "OscillationAnalyzer_OutputSignal.h"
 
@@ -108,6 +110,14 @@ int main(int argc, char* argv[])
   else if(controller_type == "InverseSine_Controller")
   {
     controller = new InverseSineController(&mlp, robot_primary);
+  }
+  else if(controller_type == "Fourier_Controller")
+  {
+    controller = new FourierController(&mlp, robot_primary);
+  }
+  else if(controller_type == "TriangleSquare_Controller")
+  {
+    controller = new TriangleSquareController(&mlp, robot_primary);
   }
   else
   {
@@ -252,8 +262,7 @@ int main(int argc, char* argv[])
     simuOR_robot.init_simu_env(controller->get_controller_type());
   }
 
-  //controller->init_controller();
-  if(robot_primary->get_robot_environment() == "SimulationOpenRave")
+  /*if(robot_primary->get_robot_environment() == "SimulationOpenRave")
   {
     controller->init_controller(simuOR_robot.get_simu_resolution_microseconds());
     controller->set_EKF_dt(simuOR_robot.get_simu_resolution_microseconds());
@@ -261,6 +270,7 @@ int main(int argc, char* argv[])
   else if(robot_primary->get_robot_environment() == "Y1")
   {
     controller->init_controller(AVERAGE_BROADCAST_PERIOD);
+    controller->set_EKF_dt(AVERAGE_BROADCAST_PERIOD);
   }
   else
   {
@@ -268,7 +278,9 @@ int main(int argc, char* argv[])
               << "int main(int, char*) method." << std::endl
               << "Unknown robot environment: " << robot_primary->get_robot_environment() << std::endl;
     exit(1);
-  }
+  }*/
+  controller->init_controller(AVERAGE_BROADCAST_PERIOD);
+  controller->set_EKF_dt(AVERAGE_BROADCAST_PERIOD);
 
   population.subtract_row(0);
 
@@ -374,8 +386,8 @@ int main(int argc, char* argv[])
   else
   {
     //for(unsigned int i=population_size-1; i>=0; i)
-    for(unsigned int i=0; i<=population_size-1; i++)
-    {
+    for(unsigned int i=2; i<=population_size-1; i++)
+    {  usleep(10000000);
       robot_primary->reset_robot();
 
       if(robot_secondary)
@@ -405,10 +417,10 @@ int main(int argc, char* argv[])
       individual[3] = 0;
 
       //--Offset
-      individual[4] = 0;
-      individual[5] = 0;
+      individual[4] = 60;
+      individual[5] = 30;
       individual[6] = 0;
-      individual[7] = 0;
+      individual[7] = -30;
 
       //--Phase
       individual[8] = 0;
@@ -417,7 +429,7 @@ int main(int argc, char* argv[])
       individual[11] = 0;
 
       //--Frequency
-      individual[12] = 0.99999999;*/
+      individual[12] = 0.5;*/
       //-------------------------To Be Removed-----------------------------//
 
       //-------------------------To Be Removed-----------------------------//
@@ -469,7 +481,7 @@ int main(int argc, char* argv[])
       std::cout << "  Population Size: " << population_size << std::endl << "  Select individual to be evaluated number:  " << std::endl;
 
       unsigned int x;
-      std::cin >> x;
+      std::cin >> i;
 
       //usleep(1000000);
     }

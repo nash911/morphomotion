@@ -69,7 +69,11 @@ void Controller::reset_controller()
   for(unsigned int module=0; module<number_of_modules; module++) // Note: this has been moved to void init_local_variables(....)
   {
     servo_feedback[module]->reset_value();
-    servo_feedback[module]->get_ExtKalmanFilter()->reset_parameters();
+
+    if(servo_feedback[module]->get_ExtKalmanFilter() != NULL)
+    {
+      servo_feedback[module]->get_ExtKalmanFilter()->reset_parameters();
+    }
   }
   //oscAnlz = NULL;
 }
@@ -109,6 +113,8 @@ void Controller::set_default(void)
   EKF_dt = 0.01;
   EKF_r = 0.1;
   EKF_qf = 0.0001;
+
+  frequency_domain_size = 1;
 }
 
 
@@ -210,9 +216,14 @@ double Controller::calculate_servo_derivative_time(const unsigned int module, ve
 }
 
 
-double Controller::sine_wave(double amplitude, double offset, double frequency, double phase, double time)
+double Controller::sin_wave(double amplitude, double offset, double frequency, double phase, double time)
 {
     return(amplitude * sin(2*M_PI*frequency*time + ((phase * M_PI)/180.0)) + offset);
+}
+
+double Controller::cos_wave(double amplitude, double offset, double frequency, double phase, double time)
+{
+    return(amplitude * cos(2*M_PI*frequency*time + ((phase * M_PI)/180.0)) + offset);
 }
 
 
@@ -229,6 +240,12 @@ void Controller::set_robot_secondary(Robot* pointer_robot_secondary)
               << "Cannot set Robot Secondary to NULL pointer: " << pointer_robot_secondary << "." <<std::endl;
     exit(1);
   }
+}
+
+
+Robot* Controller::get_robot_primary(void)
+{
+  return(robot_primary);
 }
 
 
@@ -532,12 +549,12 @@ void Controller::load_sine_control_parameters()
   //-- Load Frequency
   set_sine_frequency(mlp->get_independent_parameter(independent_parameter_index), independent_parameter_index);
   independent_parameter_index++;
-
 }
+
 
 void Controller::set_sine_amplitude(const double new_sine_amplitude, const unsigned int module, const unsigned int independent_parameter_index)
 {
-  if(new_sine_amplitude >= 0 && new_sine_amplitude <= 90)
+  if(new_sine_amplitude >= mlp->get_independent_parameter_minimum(independent_parameter_index) && new_sine_amplitude <= mlp->get_independent_parameter_maximum(independent_parameter_index))
   {
     sine_amplitude[module] = new_sine_amplitude;
   }
@@ -554,7 +571,7 @@ void Controller::set_sine_amplitude(const double new_sine_amplitude, const unsig
 
 void Controller::set_sine_offset(const double new_sine_offset, const unsigned int module, const unsigned int independent_parameter_index)
 {
-  if(new_sine_offset > -90 && new_sine_offset < 90)
+  if(new_sine_offset >= mlp->get_independent_parameter_minimum(independent_parameter_index) && new_sine_offset <= mlp->get_independent_parameter_maximum(independent_parameter_index))
   {
     sine_offset[module] = new_sine_offset;
   }
@@ -571,7 +588,7 @@ void Controller::set_sine_offset(const double new_sine_offset, const unsigned in
 
 void Controller::set_sine_phase(const double new_sine_phase, const unsigned int module, const unsigned int independent_parameter_index)
 {
-  if(new_sine_phase > mlp->get_independent_parameter_minimum(independent_parameter_index) && new_sine_phase < mlp->get_independent_parameter_maximum(independent_parameter_index))
+  if(new_sine_phase >= mlp->get_independent_parameter_minimum(independent_parameter_index) && new_sine_phase <= mlp->get_independent_parameter_maximum(independent_parameter_index))
   {
     sine_phase[module] = new_sine_phase;
   }
@@ -588,7 +605,7 @@ void Controller::set_sine_phase(const double new_sine_phase, const unsigned int 
 
 void Controller::set_sine_frequency(const double new_sine_frequency, const unsigned int independent_parameter_index)
 {
-  if(new_sine_frequency > mlp->get_independent_parameter_minimum(independent_parameter_index) && new_sine_frequency < mlp->get_independent_parameter_maximum(independent_parameter_index))
+  if(new_sine_frequency >= mlp->get_independent_parameter_minimum(independent_parameter_index) && new_sine_frequency <= mlp->get_independent_parameter_maximum(independent_parameter_index))
   {
     sine_frequency = new_sine_frequency;
   }
@@ -657,6 +674,340 @@ double Controller::get_sine_frequency()
 }
 
 
+void Controller::load_fourier_control_parameters()
+{
+  if(mlp->get_independent_parameters_number() != (frequency_domain_size*number_of_modules*2 + number_of_modules + 1))
+  {
+    std::cerr << "Morphomotion Error: Controller class." << std::endl
+              << "void load_fourier_control_parameters(void) method." << std::endl
+              << "No. of MLP Independent Parameters != Total No. of Controller Parameters." << std::endl
+              << "MLP Independent Parameters: " << mlp->get_independent_parameters_number()
+              << "  Controller Parameters: " << (frequency_domain_size*number_of_modules*2 + number_of_modules + 1) <<  std::endl;
+    exit(1);
+  }
+
+  unsigned int independent_parameter_index = 0;
+
+  //-- Load coefficients A_k
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    for(unsigned int coeff=0; coeff<frequency_domain_size; coeff++)
+    {
+      set_Ak(mlp->get_independent_parameter(independent_parameter_index), module, independent_parameter_index);
+      independent_parameter_index++;
+    }
+  }
+
+  //-- Load coefficients B_k
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    for(unsigned int coeff=0; coeff<frequency_domain_size; coeff++)
+    {
+      set_Bk(mlp->get_independent_parameter(independent_parameter_index), module, independent_parameter_index);
+      independent_parameter_index++;
+    }
+  }
+
+  //-- Load Amplitude
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    set_sine_amplitude(mlp->get_independent_parameter(independent_parameter_index), module, independent_parameter_index);
+    independent_parameter_index++;
+  }
+
+  //-- Load Frequency
+  set_sine_frequency(mlp->get_independent_parameter(independent_parameter_index), independent_parameter_index);
+  independent_parameter_index++;
+}
+
+
+void Controller::set_frequency_domain_size(const unsigned int new_frequency_domain_size)
+{
+  if(new_frequency_domain_size > 0)
+  {
+    frequency_domain_size = new_frequency_domain_size;
+  }
+  else
+  {
+    std::cerr << "Morphomotion Error: Controller class." << std::endl
+              << "void set_frequency_domain_size(const double, const unsigned int) method." << std::endl
+              << "frequency domain size must be > 0." << std::endl
+              << "frequency domain size: " << new_frequency_domain_size << std::endl;
+    exit(1);
+   }
+}
+
+
+void Controller::set_Ak(const double new_Ak, const unsigned int module, const unsigned int independent_parameter_index)
+{
+  if(new_Ak >= mlp->get_independent_parameter_minimum(independent_parameter_index) && new_Ak <= mlp->get_independent_parameter_maximum(independent_parameter_index))
+  {
+    Ak[module].push_back(new_Ak);
+  }
+  else
+  {
+    std::cerr << "Morphomotion Error: Controller class." << std::endl
+              << "void set_Ak(const double, const unsigned int, const unsigned int) method." << std::endl
+              << "Ak must be between: " << mlp->get_independent_parameter_minimum(independent_parameter_index) << " and " << mlp->get_independent_parameter_maximum(independent_parameter_index) << std::endl
+              << "Ak[" << module << "][" << independent_parameter_index%frequency_domain_size << "]: " << new_Ak << std::endl;
+    exit(1);
+  }
+}
+
+
+void Controller::set_Bk(const double new_Bk, const unsigned int module, const unsigned int independent_parameter_index)
+{
+  if(new_Bk >= mlp->get_independent_parameter_minimum(independent_parameter_index) && new_Bk <= mlp->get_independent_parameter_maximum(independent_parameter_index))
+  {
+    Bk[module].push_back(new_Bk);
+  }
+  else
+  {
+    std::cerr << "Morphomotion Error: Controller class." << std::endl
+              << "void set_Bk(const double, const unsigned int, const unsigned int) method." << std::endl
+              << "Bk must be between: " << mlp->get_independent_parameter_minimum(independent_parameter_index) << " and " << mlp->get_independent_parameter_maximum(independent_parameter_index) << std::endl
+              << "Bk[" << module << "][" << independent_parameter_index%frequency_domain_size << "]: " << new_Bk << std::endl;
+    exit(1);
+  }
+}
+
+
+unsigned int Controller::get_frequency_domain_size(void)
+{
+  return frequency_domain_size;
+}
+
+
+void Controller::load_trianglesquare_control_parameters(void)
+{
+  unsigned int independent_parameter_index = 0;
+
+  //-- Load A0
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    set_A0(mlp->get_independent_parameter(independent_parameter_index), module, independent_parameter_index);
+    independent_parameter_index++;
+  }
+
+  //-- Load A1
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    set_A1(mlp->get_independent_parameter(independent_parameter_index), module, independent_parameter_index);
+    independent_parameter_index++;
+  }
+
+  //-- Load s0
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    set_s0(mlp->get_independent_parameter(independent_parameter_index), module, independent_parameter_index);
+    independent_parameter_index++;
+  }
+
+  //-- Load s1
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    set_s1(mlp->get_independent_parameter(independent_parameter_index), module, independent_parameter_index);
+    independent_parameter_index++;
+  }
+
+  //-- Load a0
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    set_a0(mlp->get_independent_parameter(independent_parameter_index), module, independent_parameter_index);
+    independent_parameter_index++;
+  }
+
+  //-- Load a1
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    set_a1(mlp->get_independent_parameter(independent_parameter_index), module, independent_parameter_index);
+    independent_parameter_index++;
+  }
+
+  //-- Load Offset
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    set_offset(mlp->get_independent_parameter(independent_parameter_index), module, independent_parameter_index);
+    independent_parameter_index++;
+  }
+
+  //-- Load Phase
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    set_phase(mlp->get_independent_parameter(independent_parameter_index), module, independent_parameter_index);
+    independent_parameter_index++;
+  }
+
+  //-- Load Frequency
+  set_frequency(mlp->get_independent_parameter(independent_parameter_index), independent_parameter_index);
+  independent_parameter_index++;
+
+  //-- Calculate A'
+  //--
+  //--          A_i
+  //-- A'_i = -------                                                                                               ---(3)
+  //--         1-s_i
+  //--
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    A[module][0] = A[module][0] / (1.0 - s[module][0]);
+    A[module][1] = A[module][1] / (1.0 - s[module][1]);
+  }
+}
+
+
+void Controller::set_A0(const double new_A0, const unsigned int module, const unsigned int independent_parameter_index)
+{
+  if(new_A0 >= mlp->get_independent_parameter_minimum(independent_parameter_index) && new_A0 <= mlp->get_independent_parameter_maximum(independent_parameter_index))
+  {
+    A[module][0] = new_A0;
+  }
+  else
+  {
+    std::cerr << "Morphomotion Error: Controller class." << std::endl
+              << "void set_A0(const double, const unsigned int, const unsigned int) method." << std::endl
+              << "A0 should be between 0.0 and 1.0. Independent parameter Min: " << mlp->get_independent_parameter_minimum(independent_parameter_index) << " Independent parameter Max: " << mlp->get_independent_parameter_maximum(independent_parameter_index) << std::endl
+              << "A0[" << independent_parameter_index%number_of_modules << "]: " << new_A0 << std::endl;
+    exit(1);
+  }
+}
+
+
+void Controller::set_A1(const double new_A1, const unsigned int module, const unsigned int independent_parameter_index)
+{
+  if(new_A1 >= mlp->get_independent_parameter_minimum(independent_parameter_index) && new_A1 <= mlp->get_independent_parameter_maximum(independent_parameter_index))
+  {
+      A[module][1] = new_A1;
+  }
+  else
+  {
+    std::cerr << "Morphomotion Error: Controller class." << std::endl
+              << "void set_A1(const double, const unsigned int, const unsigned int) method." << std::endl
+              << "A1 should be between 0.0 and 1.0. Independent parameter Min: " << mlp->get_independent_parameter_minimum(independent_parameter_index) << " Independent parameter Max: " << mlp->get_independent_parameter_maximum(independent_parameter_index) << std::endl
+              << "A1[" << independent_parameter_index%number_of_modules << "]: " << new_A1 << std::endl;
+    exit(1);
+  }
+}
+
+
+void Controller::set_s0(const double new_s0, const unsigned int module, const unsigned int independent_parameter_index)
+{
+  if(new_s0 >= mlp->get_independent_parameter_minimum(independent_parameter_index) && new_s0 <= mlp->get_independent_parameter_maximum(independent_parameter_index))
+  {
+    s[module][0] = new_s0;
+  }
+  else
+  {
+    std::cerr << "Morphomotion Error: Controller class." << std::endl
+              << "void set_s0(const double, const unsigned int, const unsigned int) method." << std::endl
+              << "s0 should be between 0.0 and 1.0. Independent parameter Min: " << mlp->get_independent_parameter_minimum(independent_parameter_index) << " Independent parameter Max: " << mlp->get_independent_parameter_maximum(independent_parameter_index) << std::endl
+              << "s0[" << independent_parameter_index%number_of_modules << "]: " << new_s0 << std::endl;
+    exit(1);
+  }
+}
+
+
+void Controller::set_s1(const double new_s1, const unsigned int module, const unsigned int independent_parameter_index)
+{
+  if(new_s1 >= mlp->get_independent_parameter_minimum(independent_parameter_index) && new_s1 <= mlp->get_independent_parameter_maximum(independent_parameter_index))
+  {
+      s[module][1] = new_s1;
+  }
+  else
+  {
+    std::cerr << "Morphomotion Error: Controller class." << std::endl
+              << "void set_s1(const double, const unsigned int, const unsigned int) method." << std::endl
+              << "s1 should be between 0.0 and 1.0. Independent parameter Min: " << mlp->get_independent_parameter_minimum(independent_parameter_index) << " Independent parameter Max: " << mlp->get_independent_parameter_maximum(independent_parameter_index) << std::endl
+              << "s1[" << independent_parameter_index%number_of_modules << "]: " << new_s1 << std::endl;
+    exit(1);
+  }
+}
+
+
+void Controller::set_a0(const double new_a0, const unsigned int module, const unsigned int independent_parameter_index)
+{
+  if(new_a0 >= mlp->get_independent_parameter_minimum(independent_parameter_index) && new_a0 <= mlp->get_independent_parameter_maximum(independent_parameter_index))
+  {
+    a[module][0] = new_a0;
+  }
+  else
+  {
+    std::cerr << "Morphomotion Error: Controller class." << std::endl
+              << "void set_a0(const double, const unsigned int, const unsigned int) method." << std::endl
+              << "a0 should be between Min: " << mlp->get_independent_parameter_minimum(independent_parameter_index) << " and Max: " << mlp->get_independent_parameter_maximum(independent_parameter_index) << std::endl
+              << "a0[" << independent_parameter_index%number_of_modules << "]: " << new_a0 << std::endl;
+    exit(1);
+  }
+}
+
+
+void Controller::set_a1(const double new_a1, const unsigned int module, const unsigned int independent_parameter_index)
+{
+  if(new_a1 >= mlp->get_independent_parameter_minimum(independent_parameter_index) && new_a1 <= mlp->get_independent_parameter_maximum(independent_parameter_index))
+  {
+      a[module][1] = new_a1;
+  }
+  else
+  {
+    std::cerr << "Morphomotion Error: Controller class." << std::endl
+              << "void set_a1(const double, const unsigned int, const unsigned int) method." << std::endl
+              << "a1 should be between Min: " << mlp->get_independent_parameter_minimum(independent_parameter_index) << " and Max: " << mlp->get_independent_parameter_maximum(independent_parameter_index) << std::endl
+              << "a1[" << independent_parameter_index%number_of_modules << "]: " << new_a1 << std::endl;
+    exit(1);
+  }
+}
+
+void Controller::set_offset(const double new_offset, const unsigned int module, const unsigned int independent_parameter_index)
+{
+  if(new_offset >= mlp->get_independent_parameter_minimum(independent_parameter_index) && new_offset <= mlp->get_independent_parameter_maximum(independent_parameter_index))
+  {
+    offset[module] = new_offset;
+  }
+  else
+  {
+    std::cerr << "Morphomotion Error: Controller class." << std::endl
+              << "void set_offset(const double, const unsigned int, const unsigned int) method." << std::endl
+              << "offset must be between: " << mlp->get_independent_parameter_minimum(independent_parameter_index) << " and: " << mlp->get_independent_parameter_maximum(independent_parameter_index) << std::endl
+              << "offset[" << independent_parameter_index%number_of_modules << "]: " << new_offset << std::endl;
+    exit(1);
+  }
+}
+
+
+void Controller::set_phase(const double new_phase, const unsigned int module, const unsigned int independent_parameter_index)
+{
+  if(new_phase >= mlp->get_independent_parameter_minimum(independent_parameter_index) && new_phase <= mlp->get_independent_parameter_maximum(independent_parameter_index))
+  {
+    phase[module] = (new_phase * M_PI)/180.0;
+  }
+  else
+  {
+    std::cerr << "Morphomotion Error: Controller class." << std::endl
+              << "void set_phase(const double, const unsigned int, const unsigned int) method." << std::endl
+              << "phase must be between : " << mlp->get_independent_parameter_minimum(independent_parameter_index) << " and: " << mlp->get_independent_parameter_maximum(independent_parameter_index) << std::endl
+              << "phase[" << independent_parameter_index%number_of_modules << "]: " << new_phase << std::endl;
+    exit(1);
+  }
+}
+
+
+void Controller::set_frequency(const double new_frequency, const unsigned int independent_parameter_index)
+{
+  if(new_frequency >= mlp->get_independent_parameter_minimum(independent_parameter_index) && new_frequency <= mlp->get_independent_parameter_maximum(independent_parameter_index))
+  {
+    frequency = new_frequency;
+  }
+  else
+  {
+    std::cerr << "Morphomotion Error: Controller class." << std::endl
+              << "void set_frequency(const double, const unsigned int) method." << std::endl
+              << "frequency must be between: " << mlp->get_independent_parameter_minimum(independent_parameter_index) << " and: " << mlp->get_independent_parameter_maximum(independent_parameter_index) << std::endl
+              << "frequency: " << new_frequency << std::endl;
+    exit(1);
+   }
+}
+
+
 void Controller::set_controller_type(const std::string& new_controller_type)
 {
   if(new_controller_type == "Neural_Controller")
@@ -686,6 +1037,14 @@ void Controller::set_controller_type(const std::string& new_controller_type)
   else if(new_controller_type == "Semi_Hybrid_Controller")
   {
     controller_type = Semi_Hybrid_Controller;
+  }
+  else if(new_controller_type == "Fourier_Controller")
+  {
+    controller_type = Fourier_Controller;
+  }
+  else if(new_controller_type == "TriangleSquare_Controller")
+  {
+    controller_type = TriangleSquare_Controller;
   }
   else
   {
@@ -728,6 +1087,14 @@ std::string Controller::get_controller_type(void)
     case Semi_Hybrid_Controller:
     {
       return("Semi_Hybrid_Controller");
+    }
+    case Fourier_Controller:
+    {
+      return("Fourier_Controller");
+    }
+    case TriangleSquare_Controller:
+    {
+      return("TriangleSquare_Controller");
     }
     default:
     {
