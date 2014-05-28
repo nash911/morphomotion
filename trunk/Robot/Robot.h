@@ -39,7 +39,7 @@ class Robot
 
 public:
 
-  enum RobotType{CubeN_ServoFeedBack, Tripod, Quadpod, Ybot4_ServoFeedBack, Lizard, Bunny,
+  enum RobotType{CubeN_ServoFeedBack, Tripod, Quadpod, Ybot4_ServoFeedBack, Lizard, Quad_3D, Bunny,
                  Bunny_StiffSpine, Lizard_3D, MultiDof_7_tripod, MultiDof_9_quad, MultiDof_11_4};
   enum RobotPriority{Robot_Primary, Robot_Secondary};
   enum RobotEnvironment{SimulationOpenRave, Y1};
@@ -71,6 +71,7 @@ public:
   bool get_broadcast_thread();
   bool get_processing_flag(void);
   void set_processing_flag(bool);
+  double calculate_random_uniform(double, double);
   
   //-- VIRTUAL FUNCTIONS
   virtual void copy(const Robot*) = 0;

@@ -19,15 +19,6 @@ using namespace OpenRAVE;
 
 ViewerBasePtr viewer;
 
-double calculate_random_uniform(double minimum, double maximum)
-{
-  double random = (double)rand()/(RAND_MAX+1.0);
-
-  double random_uniform = minimum + (maximum-minimum)*random;
-
-  return(random_uniform);
-}
-
 void SetViewer(EnvironmentBasePtr penv, const string& viewername)
 {
   viewer = RaveCreateViewer(penv,viewername);
@@ -354,7 +345,7 @@ void SimulationOpenRave::set_all_moduleServo_position(const vector<double>& serv
   stringstream os,is;
   for(unsigned int module=0; module<number_of_modules; module++)
   {
-      is << "setpos1" << " " << module << " " << servo_angle[module] << " ";
+    is << "setpos1" << " " << module << " " << servo_angle[module] << " ";
     pcontroller->SendCommand(os,is);
   }
 }
@@ -489,7 +480,7 @@ void SimulationOpenRave::step(const std::string& type)
   {
     if(type == "evaluation")
     {
-      usleep(get_simu_resolution_microseconds() * 1000000);  //-- Real-Time
+      //usleep(get_simu_resolution_microseconds() * 1000000);  //-- Real-Time
       //usleep(get_simu_resolution_microseconds() * 2000000);  //-- Real-Time
     }
 

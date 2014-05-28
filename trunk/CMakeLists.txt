@@ -45,7 +45,8 @@ ADD_DEFINITIONS(-pthread)
 
 ### include dirs
 INCLUDE_DIRECTORIES(
-Evolution Evaluation Robot SimulationOpenRave Y1ModularRobot Controller HybridController SineController SimpleController InverseSineController
+Evolution Evaluation Robot SimulationOpenRave Y1ModularRobot Controller HybridController SineController SimpleController
+InverseSineController FourierController TriangleSquareController
 Flood/Utilities Flood/MultilayerPerceptron Flood/ObjectiveFunctional Flood/TrainingAlgorithm
 ServoFeedback ExtKalmanFilter_SinusModel GraphFile FileHandler OscillationAnalyzer_OutputSignal VisualTracker SerialCommunication
 )
@@ -65,8 +66,10 @@ add_executable(Evolve
   Controller/Controller.cpp
   HybridController/HybridController.cpp
   SineController/SineController.cpp
-  InverseSineController/InverseSineController.cpp
   SimpleController/SimpleController.cpp
+  InverseSineController/InverseSineController.cpp
+  FourierController/FourierController.cpp
+  TriangleSquareController/TriangleSquareController.cpp
   ServoFeedback/ServoFeedback.cpp
   ExtKalmanFilter_SinusModel/ExtKalmanFilter_SinusModel.cpp
   FileHandler/FileHandler.cpp
@@ -81,7 +84,7 @@ add_executable(Evolve
 ### executable
 set_target_properties(Evolve PROPERTIES COMPILE_FLAGS "${OPENRAVE_CXXFLAGS}")
 set_target_properties(Evolve PROPERTIES LINK_FLAGS "${OPENRAVE_LINK_FLAGS}")
-target_link_libraries(Evolve ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} ${OpenCV_LIBS} -std=c++0x -pthread -larmadillo)
+target_link_libraries(Evolve ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} ${OpenCV_LIBS} -std=c++0x -pthread -larmadillo -g)
 #target_link_libraries(Evolve ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} ${OpenCV_LIBS} -llapack -lblas)
 
 
@@ -100,6 +103,8 @@ add_executable(Evaluate
   SineController/SineController.cpp
   SimpleController/SimpleController.cpp
   InverseSineController/InverseSineController.cpp
+  FourierController/FourierController.cpp
+  TriangleSquareController/TriangleSquareController.cpp
   ServoFeedback/ServoFeedback.cpp
   ExtKalmanFilter_SinusModel/ExtKalmanFilter_SinusModel.cpp
   FileHandler/FileHandler.cpp
@@ -133,6 +138,8 @@ add_executable(NeuralModelEvaluator
   SineController/SineController.cpp
   SimpleController/SimpleController.cpp
   InverseSineController/InverseSineController.cpp
+  FourierController/FourierController.cpp
+  TriangleSquareController/TriangleSquareController.cpp
   ServoFeedback/ServoFeedback.cpp
   ExtKalmanFilter_SinusModel/ExtKalmanFilter_SinusModel.cpp
   FileHandler/FileHandler.cpp

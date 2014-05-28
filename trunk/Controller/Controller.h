@@ -61,7 +61,8 @@ class Controller
 public:
 
   enum StartAngleType{Zero, Random, RandomEqual, Predefined, RunTime};
-  enum ControllerType{Neural_Controller, Naive_Controller, Simple_Controller, Hybrid_Controller, Semi_Hybrid_Controller, Sine_Controller, InverseSine_Controller};
+  enum ControllerType{Neural_Controller, Naive_Controller, Simple_Controller, Hybrid_Controller, Semi_Hybrid_Controller,
+                      Sine_Controller, InverseSine_Controller, Fourier_Controller, TriangleSquare_Controller};
 
   // DEFAULT CONSTRUCTOR
   Controller(void);
@@ -87,13 +88,15 @@ public:
   void read_servo_positions_with_time_THREAD(void);
   double calculate_servo_delta(const unsigned int, double);
   double calculate_servo_derivative_time(const unsigned int, vector<vector<ServoFeedback*> >&);
-  double sine_wave(double, double, double, double, double);
+  double sin_wave(double, double, double, double, double);
+  double cos_wave(double, double, double, double, double);
 
   void set_mlp(Flood::MultilayerPerceptron* mlp_pointer) {mlp = mlp_pointer;}
   Flood::MultilayerPerceptron* get_mlp() {return mlp;}
 
   void set_controller_type(const std::string&);
   std::string get_controller_type(void);
+  Robot* get_robot_primary(void);
   void set_robot_secondary(Robot*);
   Robot* get_robot_secondary(void);
   void set_evaluation_period(unsigned int);
@@ -131,6 +134,24 @@ public:
   double get_sine_phase(const unsigned int);
   double get_sine_frequency(void);
 
+  void load_fourier_control_parameters();
+  void set_frequency_domain_size(const unsigned int);
+  void set_Ak(const double, const unsigned int, const unsigned int);
+  void set_Bk(const double, const unsigned int, const unsigned int);
+
+  unsigned int get_frequency_domain_size(void);
+
+  void load_trianglesquare_control_parameters(void);
+  void set_A0(const double, const unsigned int, const unsigned int);
+  void set_A1(const double, const unsigned int, const unsigned int);
+  void set_s0(const double, const unsigned int, const unsigned int);
+  void set_s1(const double, const unsigned int, const unsigned int);
+  void set_a0(const double, const unsigned int, const unsigned int);
+  void set_a1(const double, const unsigned int, const unsigned int);
+  void set_offset(const double, const unsigned int, const unsigned int);
+  void set_phase(const double, const unsigned int, const unsigned int);
+  void set_frequency(const double, const unsigned int);
+
   void set_EKF_dt(const double);
   double get_EKF_dt(void);
   void set_EKF_r(const double);
@@ -141,6 +162,10 @@ public:
   double calculate_random_uniform(double, double);
   double calculate_random_normal(double, double);
   double scale_to_range(double, double, double, double, double);
+
+  template <typename T> int sgn(T val) {
+      return (T(0) < val) - (val < T(0));
+  }
 
   void changemode(int);
   int kbhit (void);
@@ -167,15 +192,32 @@ protected:
   double servo_delta_threshold;
   double servo_derivative_threshold;
   unsigned long servo_derivative_epsilon;  // BUG FIX: Was previously --> unsigned servo_derivative_epsilon;
+
+  //-- Generic oscillator parameters
   double oscillator_amplitude;
   double oscillator_offset;
   double oscillator_frequency;
 
+  //-- Sine controller parameters
   vector<double> sine_amplitude;
   vector<double> sine_offset;
   vector<double> sine_phase;
   double sine_frequency;
 
+  //-- Fourier controller parameters
+  unsigned int frequency_domain_size;
+  vector<vector<double> > Ak;
+  vector<vector<double> > Bk;
+
+  //-- Triangle Square controller parameters
+  vector<vector<double> > A;
+  vector<vector<double> > s;
+  vector<vector<double> > a;
+  vector<double> offset;
+  vector<double> phase;
+  double frequency;
+
+  //-- Ext Kalman Filter parameters
   double EKF_dt;
   double EKF_r;
   double EKF_qf;
