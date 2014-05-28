@@ -1572,7 +1572,17 @@ std::vector<double> Y1ModularRobot::get_robot_XY(const std::string& phase)
     {
       //std::cout << std::endl << vtCounter++ << std::endl; // TODO: Debugger to be removed
       got_robot_position_success = vis_track->get_robot_3D_position_rectfied(phase, x, y, z);
-      vtCounter++;
+
+      if(vtCounter>=VTRACKER_LIMIT && !got_robot_position_success && phase == "Reset")
+      {
+        vtCounter = 0;
+        displace_robot();
+        reset_modules();
+      }
+      else
+      {
+        vtCounter++;
+      }
     }while(!got_robot_position_success); //&& vtCounter < 1);
   }
 
@@ -1702,7 +1712,7 @@ void Y1ModularRobot::set_moduleServo_position(unsigned int module, double servo_
 
 void Y1ModularRobot::set_all_moduleServo_position(const vector<double>& servo_angle)
 {
-  //if(!(previous_control_signal == servo_angle))
+  if(!(previous_control_signal == servo_angle))
   {
     previous_control_signal = servo_angle;
 
@@ -2269,6 +2279,24 @@ void Y1ModularRobot::turn_off_broadcast(unsigned long usleep_time)
     cprintf(serial_port, (char *)Broad_Off); //--Send message requesting Turn_Off_Broadcast.
     usleep(usleep_time);
   }while(clear_cport(serial_port));
+}
+
+
+void Y1ModularRobot::displace_robot(void)
+{
+  std::vector<double> random_servo_pos(number_of_modules);
+
+  for(unsigned int it=0; it<DISPLACEMENT_LENGTH; it++)
+  {
+    double random_pos = calculate_random_uniform(0.0, 40.0);
+    for(unsigned int module=0; module < number_of_modules; module++)
+    {
+      random_servo_pos[module] = random_pos + (10.0 * module);
+    }
+    this->set_all_moduleServo_position(random_servo_pos);
+    usleep(1000000);
+    reset_modules();
+  }
 }
 
 
