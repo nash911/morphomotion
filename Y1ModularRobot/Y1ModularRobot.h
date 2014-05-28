@@ -39,6 +39,9 @@
 #define MAX_COMM_FAIL 4
 #define MAX_COMM_FAIL_CONSECUTIVE 2
 
+#define VTRACKER_LIMIT 100
+#define DISPLACEMENT_LENGTH 3
+
 using namespace std;
 
 class Y1ModularRobot: public Robot
@@ -83,6 +86,7 @@ public:
   double euclidean_distance(const std::vector<double> pos_1, const std::vector<double> pos_2);
   void turn_on_broadcast(void);
   void turn_off_broadcast(unsigned long);
+  void displace_robot(void);
 
   //-- INHERITED METHODS
   void copy(const Robot*);
