@@ -83,18 +83,21 @@ void SineController::run_Controller(const std::string& type, std::stringstream& 
 
   for(unsigned int module=0; module<number_of_modules; module++)
   {
-    servo_feedback[module]->get_ExtKalmanFilter()->set_omega(sine_frequency);
-    if(robot_primary->get_robot_environment() == "Y1")
+    if(servo_feedback[module]->get_ExtKalmanFilter() != NULL)
     {
-      servo_feedback[module]->get_ExtKalmanFilter()->set_dt(get_EKF_dt());
+      servo_feedback[module]->get_ExtKalmanFilter()->set_omega(sine_frequency);
+      if(robot_primary->get_robot_environment() == "Y1")
+      {
+        servo_feedback[module]->get_ExtKalmanFilter()->set_dt(get_EKF_dt());
+      }
+      else
+      {
+        //--The 'dt` parameter for EKF is as set in the main function [In either EvolveController.cpp or EvaluateController.cpp]
+      }
+      servo_feedback[module]->get_ExtKalmanFilter()->set_r(get_EKF_r());
+      servo_feedback[module]->get_ExtKalmanFilter()->set_qf(0.000001); //--For estimating ICF.
+      //servo_feedback[module]->get_ExtKalmanFilter()->set_qf(get_EKF_qf());
     }
-    else
-    {
-      //--The 'dt` parameter for EKF is as set in the main function [In either EvolveController.cpp or EvaluateController.cpp]
-    }
-    servo_feedback[module]->get_ExtKalmanFilter()->set_r(get_EKF_r());
-    //servo_feedback[module]->get_ExtKalmanFilter()->set_qf(0.000001); //--For estimating ICF.
-    servo_feedback[module]->get_ExtKalmanFilter()->set_qf(get_EKF_qf());
   }
 
   Flood::Vector<double> output(number_of_modules);
@@ -254,16 +257,20 @@ void SineController::run_Controller(const std::string& type, std::stringstream& 
 
         robot_primary->set_processing_flag(false); //--Thread Change
         robot_primary->set_receive_broadcast(false); //--Thread Change
-        while(robot_primary->get_broadcast_thread())
+        while(robot_primary->get_broadcast_thread());
         return;
       }
       else if(key==SPACE)
       {
+          robot_primary->set_processing_flag(false); //--Thread Change
+          robot_primary->set_receive_broadcast(false); //--Thread Change
+          while(robot_primary->get_broadcast_thread());
+
           do
           {
               while(!kbhit());
               key = getchar();
-              std::cout << "Waiting for a key." << std::endl;
+              //std::cout << "Waiting for SPACE key." << std::endl;
           }while(key!=SPACE);
 
           key = 'q';
@@ -271,9 +278,6 @@ void SineController::run_Controller(const std::string& type, std::stringstream& 
           //SS.flush(); //--Thread Change
           SS << "REDO" << " ";
 
-          robot_primary->set_processing_flag(false); //--Thread Change
-          robot_primary->set_receive_broadcast(false); //--Thread Change
-          while(robot_primary->get_broadcast_thread())
           return;
       }
       //std::cout << "Exiting the MAIN While()." << std::endl; //--TODO: Debugger to be removed.
@@ -289,14 +293,14 @@ void SineController::run_Controller(const std::string& type, std::stringstream& 
 
   robot_primary->set_processing_flag(false); //--Thread Change
   robot_primary->set_receive_broadcast(false); //--Thread Change
-  while(robot_primary->get_broadcast_thread()) //--Thread Change
+  while(robot_primary->get_broadcast_thread()); //--Thread Change
   return;
 }
 
 
 void SineController::actuate_with_sine_controller(const unsigned int module, const double t, Flood::Vector<double>& output)
 {
-  output[module] = sine_wave(sine_amplitude[module], sine_offset[module], sine_frequency, sine_phase[module], t);
+  output[module] = sin_wave(sine_amplitude[module], sine_offset[module], sine_frequency, sine_phase[module], t);
 
   //--Make sure that the next control signal is a value between the servo range.
   if(output[module] > get_servo_max())
