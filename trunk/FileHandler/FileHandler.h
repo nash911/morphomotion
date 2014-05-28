@@ -59,10 +59,10 @@ public:
   // CONSTRUCTOR FOR EXTRACTING PARAMETERS FROM GENE FILE AND FITNESS FILE
   FileHandler(char*, char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, std::vector<std::string>*, std::vector<double>*);
 
-  // CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE
+  // CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE -- For Neural Evaluator
   FileHandler(char*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, std::vector<std::string>*);
 
-  // CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE AND FITNESS FILE
+  // CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE AND FITNESS FILE  -- For Neural Evaluator
   FileHandler(char*, char*, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, std::vector<std::string>*, std::vector<double>*);
 
   // DESTRUCTOR
@@ -76,7 +76,7 @@ public:
   void load_Controller_parameters(std::fstream&, Controller*);
   void load_ExtendedKalmanFilter_parameters(std::fstream&, Controller*);
   void load_NN_parameters(std::fstream&, Flood::MultilayerPerceptron*);
-  void load_independent_parameters(std::fstream&, Flood::MultilayerPerceptron*);
+  void load_independent_parameters(std::fstream&, Flood::MultilayerPerceptron*, Controller*);
   void load_genes(std::fstream&, Flood::MultilayerPerceptron*, Flood::Matrix<double>*, std::vector<std::string>*);
   void load_elite_fitness(std::fstream&, std::vector<double>*);
 

@@ -111,10 +111,17 @@ FileHandler::FileHandler(std::string note,
 
   myFile << std::endl << "<Controller>" << std::endl;
   myFile << "\t<ControllerType>" << std::endl << "\t   " << controller->get_controller_type() << std::endl << "\t</ControllerType>" << std::endl;
+  if(controller->get_controller_type() == "Fourier_Controller")
+  {
+    myFile << std::endl << "\t<FrequencyDomainSize>" << std::endl << "\t   " << controller->get_frequency_domain_size() << std::endl << "\t</FrequencyDomainSize>" << std::endl;
+  }
   myFile << std::endl << "\t<EvaluationPeriod>" << std::endl << "\t   " << controller->get_evaluation_period() << std::endl << "\t</EvaluationPeriod>" << std::endl;
   myFile << std::endl << "\t<ServoMax>" << std::endl << "\t   " << controller->get_servo_max() << std::endl << "\t</ServoMax>" << std::endl;
   myFile << std::endl << "\t<ServoMin>" << std::endl << "\t   " << controller->get_servo_min() << std::endl << "\t</ServoMin>" << std::endl;
-  if(controller->get_controller_type() != "Sine_Controller" && controller->get_controller_type() != "InverseSine_Controller")
+  if(controller->get_controller_type() != "Sine_Controller" &&
+     controller->get_controller_type() != "InverseSine_Controller" &&
+     controller->get_controller_type() != "Fourier_Controller" &&
+     controller->get_controller_type() != "TriangleSquare_Controller")
   {
     myFile << std::endl << "\t<StartAngleType>" << std::endl << "\t   " << controller->get_start_angle_type() << std::endl << "\t</StartAngleType>" << std::endl;
     myFile << std::endl << "\t<ServoDeltaThreshold>" << std::endl << "\t   " << controller->get_servo_delta_threshold() << std::endl << "\t</ServoDeltaThreshold>" << std::endl;
@@ -307,7 +314,7 @@ FileHandler::FileHandler(char* filename, Robot *robot, SimulationOpenRave *simuE
 
     else if(word == "<IndependentParameters>")
     {
-      load_independent_parameters(file, mlp);
+      load_independent_parameters(file, mlp, controller);
     }
   }while(word != "</Morphomotion>");
   file.close();
@@ -408,7 +415,7 @@ FileHandler::FileHandler(char* gene_filename, Robot *robot, SimulationOpenRave *
 
     else if(word == "<IndependentParameters>")
     {
-      load_independent_parameters(gene_file, mlp);
+      load_independent_parameters(gene_file, mlp, controller);
     }
 
     else if(word == "<Gene>")
@@ -526,7 +533,7 @@ FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Robot *rob
 
     else if(word == "<IndependentParameters>")
     {
-      load_independent_parameters(gene_file, mlp);
+      load_independent_parameters(gene_file, mlp, controller);
     }
 
     else if(word == "<Gene>")
@@ -540,7 +547,7 @@ FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Robot *rob
 }
 
 
-//--CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE
+//--CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE -- For Neural Evaluator
 FileHandler::FileHandler(char* gene_filename, Flood::MultilayerPerceptron *mlp, Flood::Matrix<double>* population, std::vector<std::string>* generation_index)
 {
   std::fstream gene_file;
@@ -612,7 +619,7 @@ FileHandler::FileHandler(char* gene_filename, Flood::MultilayerPerceptron *mlp, 
 
     else if(word == "<IndependentParameters>")
     {
-      load_independent_parameters(gene_file, mlp);
+      //load_independent_parameters(gene_file, mlp);
     } // TODO: This should be removed after confirming that this is not needed.
 
     else if(word == "<Gene>")
@@ -624,7 +631,7 @@ FileHandler::FileHandler(char* gene_filename, Flood::MultilayerPerceptron *mlp, 
 }
 
 
-//--CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE AND FITNESS FILE
+//--CONSTRUCTOR FOR EXTRACTING MLP PARAMETERS FROM GENE FILE AND FITNESS FILE -- For Neural Evaluator
 FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Flood::MultilayerPerceptron *mlp, Flood::Matrix<double>* population, std::vector<std::string>* generation_index, std::vector<double>* elite_fitness)
 {
   std::fstream gene_file;
@@ -707,7 +714,7 @@ FileHandler::FileHandler(char* gene_filename, char* fitness_filename, Flood::Mul
 
     else if(word == "<IndependentParameters>")
     {
-      load_independent_parameters(gene_file, mlp);
+      //load_independent_parameters(gene_file, mlp);
     }
 
     else if(word == "<Gene>")
@@ -865,6 +872,24 @@ void FileHandler::load_Controller_parameters(std::fstream& file, Controller *con
         std::cerr << "Morphomotion Error: FileHandler Class." << std::endl
                   << "void load_Controller_parameters(std::fstream&, Controller*) method." << std::endl
                   << "Unknown Controller Type end tag: " << word << std::endl;
+
+        exit(1);
+      }
+    }
+
+    else if(word == "<FrequencyDomainSize>")
+    {
+      unsigned int new_frequency_domain_size;
+      file >> new_frequency_domain_size;
+      controller->set_frequency_domain_size(new_frequency_domain_size);
+
+      file >> word;
+
+      if(word != "</FrequencyDomainSize>")
+      {
+        std::cerr << "Morphomotion Error: FileHandler Class." << std::endl
+                  << "void load_Controller_parameters(std::fstream&, Controller*) method." << std::endl
+                  << "Unknown Frequency Domain Size end tag: " << word << std::endl;
 
         exit(1);
       }
@@ -1173,7 +1198,7 @@ void FileHandler::load_NN_parameters(std::fstream& file, Flood::MultilayerPercep
 }
 
 
-void FileHandler::load_independent_parameters(std::fstream& file, Flood::MultilayerPerceptron *mlp)
+void FileHandler::load_independent_parameters(std::fstream& file, Flood::MultilayerPerceptron *mlp, Controller *controller)
 {
   std::string word;
   unsigned int independentParametersNumber = 0;
@@ -1203,7 +1228,35 @@ void FileHandler::load_independent_parameters(std::fstream& file, Flood::Multila
           {
             //--Undoing incrementing independentParametersNumber a few lines above.
             independentParametersNumber--;
-            independentParametersNumber = independentParametersNumber + totalParameters;
+
+            if(controller->get_controller_type() == "Fourier_Controller")
+            {
+              unsigned int length = file.tellg();
+              do
+              {
+                file >> word;
+                if(word == "<Name>")
+                {
+                  file >> word;
+                  if(word == "Ak" || word == "Bk")
+                  {
+                    independentParametersNumber = independentParametersNumber + (totalParameters*controller->get_frequency_domain_size());
+                    totalParameters = totalParameters*controller->get_frequency_domain_size();
+                  }
+                  else
+                  {
+                    independentParametersNumber = independentParametersNumber + totalParameters;
+                  }
+
+                  file >> word;
+                }
+              }while(word != "</Name>");
+              file.seekg(length, file.beg);
+            }
+            else
+            {
+              independentParametersNumber = independentParametersNumber + totalParameters;
+            }
           }
 
           file >> word;
@@ -1225,15 +1278,35 @@ void FileHandler::load_independent_parameters(std::fstream& file, Flood::Multila
 
           if(totalParameters > 1)
           {
-            for(unsigned int parameter=0; parameter<totalParameters; parameter++)
+            if(new_independent_parameter_name == "Ak" || new_independent_parameter_name == "Bk")
             {
-              std::string par_no;
-              ostringstream intToString;
-              intToString << parameter+1;
-              par_no = intToString.str();
+              for(unsigned int module=0; module<controller->get_robot_primary()->get_number_of_modules(); module++)
+              {
+                for(unsigned int parameter=0; parameter<controller->get_frequency_domain_size(); parameter++)
+                {
+                  //std::string module_no;
+                  std::string str;
+                  ostringstream intToString;
+                  intToString << "-module_" << module+1 << "-param_" << parameter+1;
+                  str = intToString.str();
 
-              std::string parameter_name = new_independent_parameter_name + "-module_" + par_no;
-              independentParametersName.push_back(parameter_name);
+                  std::string parameter_name = new_independent_parameter_name + str;
+                  independentParametersName.push_back(parameter_name);
+                }
+              }
+            }
+            else
+            {
+              for(unsigned int parameter=0; parameter<totalParameters; parameter++)
+              {
+                std::string par_no;
+                ostringstream intToString;
+                intToString << parameter+1;
+                par_no = intToString.str();
+
+                std::string parameter_name = new_independent_parameter_name + "-module_" + par_no;
+                independentParametersName.push_back(parameter_name);
+              }
             }
           }
           else
