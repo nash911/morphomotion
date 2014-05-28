@@ -31,7 +31,14 @@ ServoFeedback::ServoFeedback(const double delta_time)
   servo_position = 0;
   servo_raw_position = 0;
 
-  EKF = new ExtKalmanFilter_SinusModel(delta_time);
+  if(delta_time)
+  {
+    EKF = new ExtKalmanFilter_SinusModel(delta_time);
+  }
+  else
+  {
+    EKF = NULL;
+  }
 }
 
 

@@ -94,17 +94,20 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
 
   for(unsigned int module=0; module<number_of_modules; module++)
   {
-    servo_feedback[module]->get_ExtKalmanFilter()->set_omega(oscillator_frequency);
-    if(robot_primary->get_robot_environment() == "Y1")
+    if(servo_feedback[module]->get_ExtKalmanFilter() != NULL)
     {
-      servo_feedback[module]->get_ExtKalmanFilter()->set_dt(get_EKF_dt());
+      servo_feedback[module]->get_ExtKalmanFilter()->set_omega(oscillator_frequency);
+      if(robot_primary->get_robot_environment() == "Y1")
+      {
+        servo_feedback[module]->get_ExtKalmanFilter()->set_dt(get_EKF_dt());
+      }
+      else
+      {
+        //--The 'dt` parameter for EKF is as set in the main function [In either EvolveController.cpp or EvaluateController.cpp]
+      }
+      servo_feedback[module]->get_ExtKalmanFilter()->set_r(get_EKF_r());
+      servo_feedback[module]->get_ExtKalmanFilter()->set_qf(get_EKF_qf());
     }
-    else
-    {
-      //--The 'dt` parameter for EKF is as set in the main function [In either EvolveController.cpp or EvaluateController.cpp]
-    }
-    servo_feedback[module]->get_ExtKalmanFilter()->set_r(get_EKF_r());
-    servo_feedback[module]->get_ExtKalmanFilter()->set_qf(get_EKF_qf());
   }
 
   Flood::Vector<double> output(number_of_modules);
@@ -185,11 +188,20 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
             passedZero[module] = true;
           }*/
 
-          if(Yi[module] == (oscillator_amplitude + oscillator_offset) && current_servo_angle > (oscillator_offset))
+          /*if(Yi[module] == (oscillator_amplitude + oscillator_offset) && current_servo_angle > (oscillator_offset))
           {
             passedZero[module] = true;
           }
           else if(Yi[module] == ((-1.0*oscillator_amplitude) + oscillator_offset) && current_servo_angle < (oscillator_offset))
+          {
+            passedZero[module] = true;
+          }*/
+
+          if(Yi[module] == (oscillator_amplitude + oscillator_offset) && current_servo_angle > 0.0)
+          {
+            passedZero[module] = true;
+          }
+          else if(Yi[module] == ((-1.0*oscillator_amplitude) + oscillator_offset) && current_servo_angle < 0.0)
           {
             passedZero[module] = true;
           }
@@ -337,6 +349,10 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
       }
       else if(key==SPACE)
       {
+          robot_primary->set_processing_flag(false);
+          robot_primary->set_receive_broadcast(false);
+          while(robot_primary->get_broadcast_thread());
+
           do
           {
               while(!kbhit());
@@ -349,9 +365,6 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
           //SS.flush();
           SS << "REDO" << " ";
 
-          robot_primary->set_processing_flag(false);
-          robot_primary->set_receive_broadcast(false);
-          while(robot_primary->get_broadcast_thread());
           return;
       }
   }while(evaluation_elapsed_time < evaluation_window && (key != q || key != Q)  && robot_primary->get_receive_broadcast());
@@ -373,7 +386,7 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
 
 void InverseSineController::actuate_with_inverse_sine_controller(const unsigned int module, const double tPrime, Flood::Vector<double>& output)
 {
-  output[module] = sine_wave(oscillator_amplitude, oscillator_offset, oscillator_frequency, 0, tPrime);
+  output[module] = sin_wave(oscillator_amplitude, oscillator_offset, oscillator_frequency, 0, tPrime);
 
   //--Make sure that the next control signal is a value between the servo range.
   if(output[module] > get_servo_max())
@@ -457,7 +470,7 @@ void InverseSineController::update_tPrime_and_Yi(unsigned int module)
   }
 
   //-- Updating new destination of the actuator based on tHat, which is calculated based on tPrime.
-  Yi[module] = sine_wave(oscillator_amplitude, oscillator_offset, oscillator_frequency, 0, tHat);
+  Yi[module] = sin_wave(oscillator_amplitude, oscillator_offset, oscillator_frequency, 0, tHat);
 
   return;
 }
