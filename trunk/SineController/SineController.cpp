@@ -53,7 +53,6 @@ void SineController::init_local_variables(Flood::Vector<double> &previous_cycle_
   for(unsigned int module=0; module<number_of_modules; module++)
   {
     previous_cycle_output[module] = 0;
-    //isFirstStep[module] = true;
   }
 }
 
@@ -252,8 +251,16 @@ void SineController::run_Controller(const std::string& type, std::stringstream& 
 
       if(key==q || key==Q)
       {
-        //SS.flush(); //--Thread Change
         SS << "CANCEL" << " ";
+
+        robot_primary->set_processing_flag(false); //--Thread Change
+        robot_primary->set_receive_broadcast(false); //--Thread Change
+        while(robot_primary->get_broadcast_thread());
+        return;
+      }
+      else if(key==p || key==P)
+      {
+        SS << "PREVIOUS" << " ";
 
         robot_primary->set_processing_flag(false); //--Thread Change
         robot_primary->set_receive_broadcast(false); //--Thread Change
@@ -266,21 +273,19 @@ void SineController::run_Controller(const std::string& type, std::stringstream& 
           robot_primary->set_receive_broadcast(false); //--Thread Change
           while(robot_primary->get_broadcast_thread());
 
+          std::cout << std::endl << "             Paused: Waiting for SPACE key...." << std::endl;
           do
           {
               while(!kbhit());
               key = getchar();
-              //std::cout << "Waiting for SPACE key." << std::endl;
           }while(key!=SPACE);
 
           key = 'q';
-
-          //SS.flush(); //--Thread Change
           SS << "REDO" << " ";
 
+          std::cout << std::endl << "                       Continuing...." << std::endl;
           return;
       }
-      //std::cout << "Exiting the MAIN While()." << std::endl; //--TODO: Debugger to be removed.
   }while(evaluation_elapsed_time < evaluation_window && (key != q || key != Q)  && robot_primary->get_receive_broadcast());  //--Thread Change
   changemode(0);
 
@@ -288,7 +293,6 @@ void SineController::run_Controller(const std::string& type, std::stringstream& 
   std::cout << std::endl << std::endl << std::endl << std::endl << std::endl << std::endl << std::endl;
 #endif
 
-  //SS.flush(); //--Thread Change
   SS << "SUCCESS" << " ";
 
   robot_primary->set_processing_flag(false); //--Thread Change

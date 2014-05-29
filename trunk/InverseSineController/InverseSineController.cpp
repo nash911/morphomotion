@@ -259,7 +259,7 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
 
             if(oscAnlz)
             {
-              // Checking if the previous and the current neural outputs are on opposite directions from value 0.
+              //-- Checking if the previous and the current neural outputs are on opposite directions from value 0.
               if((previous_cycle_output[module] * Yi[module]) < 0.0) // Here we are assuming that the control signal to each module is always oscillatory. As well as that two subsequent neural outputs are always on opposite directions from the value 0.
               {
                 oscAnlz->update_oscillation_short_history(module,servo_feedback[module]->get_servo_position()); // Analysing oscillation based on propreoseptive feedback from the module's actuator.
@@ -339,7 +339,6 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
 
       if(key==q || key==Q)
       {
-          //SS.flush();
           SS << "CANCEL" << " ";
 
           robot_primary->set_processing_flag(false);
@@ -347,12 +346,22 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
           while(robot_primary->get_broadcast_thread());
           return;
       }
+      else if(key==p || key==P)
+      {
+        SS << "PREVIOUS" << " ";
+
+        robot_primary->set_processing_flag(false);
+        robot_primary->set_receive_broadcast(false);
+        while(robot_primary->get_broadcast_thread());
+        return;
+      }
       else if(key==SPACE)
       {
           robot_primary->set_processing_flag(false);
           robot_primary->set_receive_broadcast(false);
           while(robot_primary->get_broadcast_thread());
 
+          std::cout << std::endl << "             Paused: Waiting for SPACE key...." << std::endl;
           do
           {
               while(!kbhit());
@@ -361,10 +370,9 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
           }while(key!=SPACE);
 
           key = 'q';
-
-          //SS.flush();
           SS << "REDO" << " ";
 
+          std::cout << std::endl << "                       Continuing...." << std::endl;
           return;
       }
   }while(evaluation_elapsed_time < evaluation_window && (key != q || key != Q)  && robot_primary->get_receive_broadcast());
@@ -374,7 +382,6 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
   std::cout << std::endl << std::endl << std::endl << std::endl << std::endl << std::endl << std::endl;
 #endif
 
-  //SS.flush();
   SS << "SUCCESS" << " ";
 
   robot_primary->set_processing_flag(false);

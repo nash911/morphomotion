@@ -2742,7 +2742,7 @@ void EvolutionaryAlgorithm::evaluate_population(int generation)
    {
       individual = get_individual(i);
 
-      evaluation[i] = objective_functional_pointer->calculate_potential_evaluation(individual, generation, i,evaluation_sample_size);
+      evaluation[i] = objective_functional_pointer->calculate_potential_evaluation(individual, generation, i, evaluation_sample_size);
       //std::cout << generation << " -- " << i << ": " << 5.0-evaluation[i] << std::endl; // Debugger
 
       if(!(evaluation[i] > -1.0e99 && evaluation[i] < 1.0e99))
@@ -2753,7 +2753,20 @@ void EvolutionaryAlgorithm::evaluate_population(int generation)
 
          exit(1);
       }
-      //std::cout << std::endl << individual << std::endl; //Debugger
+      //-- If the returned fitness value is exactly equal to -12.34, then it means that the previous candidate of the population needs to be reevaluated.
+      else if(evaluation[i] == -12.34)
+      {
+        if(i>=1)
+        {
+          //-- Moving the population index back by two steps.
+          i = i-2;
+        }
+        else
+        {
+          //-- Moving the population index back to the first candidate.
+          i = -1;
+        }
+      }
    }
 }
 
