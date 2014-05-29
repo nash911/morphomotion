@@ -96,7 +96,7 @@ void TriangleSquareController::run_Controller(const std::string& type, std::stri
   Flood::Vector<double> output(number_of_modules);
   Flood::Vector<double> previous_cycle_output(number_of_modules);
 
-  // Related to Servo Derivative Resolution -- Based on time dependent Servo Feedback data.
+  //-- Related to Servo Derivative Resolution -- Based on time dependent Servo Feedback data.
   vector<vector<ServoFeedback*> > servo_feedback_history;
   servo_feedback_history.resize(number_of_modules);
 
@@ -228,12 +228,22 @@ void TriangleSquareController::run_Controller(const std::string& type, std::stri
         while(robot_primary->get_broadcast_thread());
         return;
       }
+      else if(key==p || key==P)
+      {
+        SS << "PREVIOUS" << " ";
+
+        robot_primary->set_processing_flag(false);
+        robot_primary->set_receive_broadcast(false);
+        while(robot_primary->get_broadcast_thread());
+        return;
+      }
       else if(key==SPACE)
       {
           robot_primary->set_processing_flag(false);
           robot_primary->set_receive_broadcast(false);
           while(robot_primary->get_broadcast_thread());
 
+          std::cout << std::endl << "             Paused: Waiting for SPACE key...." << std::endl;
           do
           {
               while(!kbhit());
@@ -243,6 +253,7 @@ void TriangleSquareController::run_Controller(const std::string& type, std::stri
           key = 'q';
           SS << "REDO" << " ";
 
+          std::cout << std::endl << "                       Continuing...." << std::endl;
           return;
       }
   }while(evaluation_elapsed_time < evaluation_window && (key != q || key != Q)  && robot_primary->get_receive_broadcast());  //--Thread Change
@@ -264,7 +275,7 @@ void TriangleSquareController::run_Controller(const std::string& type, std::stri
 double TriangleSquareController::sawtooth(const double t, const unsigned int module)
 {
   double saw;
-  double P = 1.0/frequency;
+  double Period = 1.0/frequency;
 
   //--            |‾                                       ‾|
   //--            |  t    sgn(t)Φ   | 1     t    sgn(t)Φ |  |                                   --- (1)
@@ -273,7 +284,7 @@ double TriangleSquareController::sawtooth(const double t, const unsigned int mod
   //--            |_                |_                  _| _|
 
   //saw = 2.0 * ((t+((sgn(t)*phase[module])/(2*M_PI)))/P - floor((t+((sgn(t)*phase[module])/(2*M_PI)))/P + 0.5)); //-- BUG: Had a bug in Phase part of the equation.
-  saw = 2.0 * ((t/P) + ((sgn(t)*phase[module])/(2*M_PI)) - floor((t/P) + ((sgn(t)*phase[module])/(2*M_PI)) + 0.5));
+  saw = 2.0 * ((t/Period) + ((sgn(t)*phase[module])/(2*M_PI)) - floor((t/Period) + ((sgn(t)*phase[module])/(2*M_PI)) + 0.5));
   return saw;
 }
 
@@ -316,11 +327,11 @@ void TriangleSquareController::actuate_with_trianglesquare_controller(const unsi
   Tri[0] = triangle_asymmetric(t, a[module][0], module);
   Tri[1] = triangle_asymmetric(t, a[module][1], module);
 
-  //--                            |                         | |‾                                                                                                   ‾|
-  //--                    1       | sgn(Tri(t,a_i))+(-1)^i  | |         |  |             |       |                    |‾ |‾                   ‾|     ‾|             |
-  //-- Tri_Sqr(t,a) = O + Σ  A'i  | ----------------------- | | sgn(s_i)|  | Tri(t, a_i) | + s_i | (1 - s_i) (-1)^i - |  | |Tri(t, a_i)| + s_i | - 2  | Tri(t, a_i)|  ------ (4)
-  //--                   i=0      |             2           | |         |_ |             |      _|                    |_ |                     |     _|            |
-  //--                            |                         | |_                                                                                                  _|
+  //--                           |                         | |‾                                                                                                   ‾|
+  //--                    1      | sgn(Tri(t,a_i))+(-1)^i  | |         |  |             |       |                    |‾ |‾                   ‾|     ‾|             |
+  //-- Tri_Sqr(t,a) = O + Σ  A'i | ----------------------- | | sgn(s_i)|  | Tri(t, a_i) | + s_i | (1 - s_i) (-1)^i - |  | |Tri(t, a_i)| + s_i | - 2  | Tri(t, a_i)|  ------ (4)
+  //--                   i=0     |             2           | |         |_ |             |      _|                    |_ |                     |     _|            |
+  //--                           |                         | |_                                                                                                  _|
 
   tri_sqr = offset[module];
   for(unsigned int i=0; i<=1; i++)

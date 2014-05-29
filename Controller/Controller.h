@@ -41,6 +41,8 @@
 #define Q 81
 #define q 113
 #define SPACE 32
+#define P 112
+#define p 80
 
 //#define ACTIVITY_LOG
 //#define DEBUGGER

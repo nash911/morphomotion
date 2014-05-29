@@ -81,6 +81,7 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
   double total_distance = 0;
   double mean_distance = 0;
   double mean_speed = 0;
+  bool previous = false;
 
   std::cout << std::endl << generation << " -- " << individual << ":";
 
@@ -114,6 +115,12 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
         std::cout << "  Aborted  " << std::endl;
         evaluation[i] = 0;
     }
+    else if(result == "PREVIOUS")
+    {
+        std::cout << std::endl << "                     PREVIOUS...  " << std::endl;
+        previous = true;
+        break;
+    }
     else
     {
         robot->reset_modules();
@@ -125,16 +132,23 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
     std::cout << "  (" << i+1 << ") " << evaluation[i];
   }
 
-  for(int i=0; i<evaluation_sample_size; i++)
+  if(!previous)
   {
-    total_distance = total_distance + evaluation[i];
+    for(int i=0; i<evaluation_sample_size; i++)
+    {
+      total_distance = total_distance + evaluation[i];
+    }
+
+    mean_distance = total_distance/evaluation_sample_size;
+    mean_speed = (mean_distance/controller->get_evaluation_period())*100;  //-- Mean speed calculated as cms/second.
+
+    //--Adding a small random noise to avoid fitness value of zero.
+    mean_speed = mean_speed + controller->calculate_random_uniform(0.001,0.01);
   }
-
-  mean_distance = total_distance/evaluation_sample_size;
-  mean_speed = (mean_distance/controller->get_evaluation_period())*100;  //-- Mean speed calculated as cms/second.
-
-  //--Adding a small random noise to avoid fitness value of zero.
-  mean_speed = mean_speed + controller->calculate_random_uniform(0.001,0.01);
+  else
+  {
+    mean_speed = -12.34;
+  }
 
   return(mean_speed);
 }
