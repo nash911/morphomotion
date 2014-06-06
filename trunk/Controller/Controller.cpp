@@ -1008,6 +1008,54 @@ void Controller::set_frequency(const double new_frequency, const unsigned int in
 }
 
 
+double Controller::get_A0(const unsigned int module)
+{
+    if(module < number_of_modules)
+    {
+        return A[module][0];
+    }
+    else
+    {
+        std::cerr << "Morphomotion Error: Controller class." << std::endl
+                  << "double get_A0(const unsigned int) method." << std::endl
+                  << "Module: " << module << " should be less than or equal to number of modules: " << number_of_modules << std::endl;
+        exit(1);
+    }
+}
+
+
+double Controller::get_A1(const unsigned int module)
+{
+    if(module < number_of_modules)
+    {
+        return A[module][1];
+    }
+    else
+    {
+        std::cerr << "Morphomotion Error: Controller class." << std::endl
+                  << "double get_A1(const unsigned int) method." << std::endl
+                  << "Module: " << module << " should be less than or equal to number of modules: " << number_of_modules << std::endl;
+        exit(1);
+    }
+}
+
+
+double Controller::get_offset(const unsigned int module)
+{
+    if(module < number_of_modules)
+    {
+      return offset[module];
+    }
+    else
+    {
+      std::cerr << "Morphomotion Error: Controller class." << std::endl
+                << "double get_offset(const unsigned int) method." << std::endl
+                << "Module: " << module << " should be less than or equal to number of modules: " << number_of_modules << std::endl;
+      exit(1);
+    }
+}
+
+
 void Controller::set_controller_type(const std::string& new_controller_type)
 {
   if(new_controller_type == "Neural_Controller")
@@ -1199,6 +1247,21 @@ double Controller::scale_to_range(double from_min, double from_max, double to_mi
   std::cout << "   Scaled Output: " << output; // Debugger;
 
   return output;
+}
+
+
+bool Controller::validate_amplitude_plus_offset(const double amplitude, const double offset)
+{
+  if(amplitude + offset > servo_max)
+  {
+    return true;
+  }
+  else if((-1.0*amplitude) + offset < servo_min)
+  {
+      return true;
+  }
+
+  return false;
 }
 
 

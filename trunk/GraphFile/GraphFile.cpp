@@ -16,7 +16,7 @@
 
 #include "GraphFile.h"
 
-GraphFile::GraphFile()
+/*GraphFile::GraphFile()
 {
   time_t rawtime;
   struct tm * timeinfo;
@@ -26,9 +26,12 @@ GraphFile::GraphFile()
   timeinfo = localtime ( &rawtime );
   strftime (filename, 100, "graph/%m_%d_%H_%M_plot.dat", timeinfo);
   graphFile_name = filename;
-  cout <<" Opening GraphFile: " << graphFile_name << endl;
+  //cout <<" Opening GraphFile: " << graphFile_name << endl;
   fp.open(graphFile_name.c_str(), fstream::in | fstream::out | fstream::app);
-}
+}*/
+
+GraphFile::GraphFile()
+{}
 
 GraphFile::GraphFile(const std::string& filename)
 {
@@ -44,7 +47,7 @@ GraphFile::GraphFile(const std::string& filename)
   }
   else
   {
-    cout <<" Opening GraphFile: " << graphFile_name << endl;
+    //cout <<" Opening GraphFile: " << graphFile_name << endl;
   }
 }
 
@@ -65,11 +68,65 @@ GraphFile::GraphFile(const std::string& environmentType, const std::string& robo
   graphFile_name = ss.str();
   cout <<" Opening GraphFile: " << graphFile_name << endl;
   fp.open(graphFile_name.c_str(), fstream::in | fstream::out | fstream::app);
+
+  if(!fp.is_open())
+  {
+    std::cerr << "Morphomotion Error: GraphFile class." << std::endl
+              << "GraphFile(const std::string&, const std::string&, const std::string&) Constructor." << std::endl
+              << "Cannot open file:"  << filename << std::endl;
+    exit(1);
+  }
+
+  fp.close();
 }
 
 
 GraphFile::~GraphFile()
 {
+  fp.close();
+}
+
+void GraphFile::open(const std::string& filename)
+{
+  graphFile_name = filename;
+  fp.open(graphFile_name.c_str(), fstream::in | fstream::out | fstream::app);
+
+  if(!fp.is_open())
+  {
+    std::cerr << "Morphomotion Error: GraphFile class." << std::endl
+              << "open(const std::string&)." << std::endl
+              << "Cannot open file:"  << filename << std::endl;
+    exit(1);
+  }
+
+  fp.close();
+}
+
+void GraphFile::init(const std::string& environmentType, const std::string& robotType, const std::string& controllerType)
+{
+  time_t rawtime;
+  struct tm * timeinfo;
+  char filename[100];
+  stringstream ss;
+  string file_name;
+
+  time ( &rawtime );
+  timeinfo = localtime ( &rawtime );
+  strftime (filename, 100, "/FitnessGraph_Files/%m_%d_%H_%M_FitnessGraph.dat", timeinfo);
+  ss << "../Evolution_Files/" << environmentType << "/" << robotType << "/" << controllerType << filename;
+
+  graphFile_name = ss.str();
+  cout <<" Opening GraphFile: " << graphFile_name << endl;
+  fp.open(graphFile_name.c_str(), fstream::in | fstream::out | fstream::app);
+
+  if(!fp.is_open())
+  {
+    std::cerr << "Morphomotion Error: GraphFile class." << std::endl
+              << "GraphFile(const std::string&, const std::string&, const std::string&) Constructor." << std::endl
+              << "Cannot open file:"  << filename << std::endl;
+    exit(1);
+  }
+
   fp.close();
 }
 
@@ -86,14 +143,38 @@ void GraphFile::write(double x, double y)
 
 void GraphFile::write(int x, double y, double z)
 {
+  fp.open(graphFile_name.c_str(), fstream::in | fstream::out | fstream::app);
+
+  if(!fp.is_open())
+  {
+    std::cerr << "Morphomotion Error: GraphFile class." << std::endl
+              << "void write(int, double, double)." << std::endl
+              << "Cannot open file:"  << graphFile_name << std::endl;
+    exit(1);
+  }
+
   cout << "Writing " << x << ":" << y << ":" << z << endl;
-  fp <<x << " " << y << " " << z << endl;
+  fp << x << " " << y << " " << z << endl;
+
+  fp.close();
 }
 
 void GraphFile::write(int w, double x, double y, double z)
 {
+  fp.open(graphFile_name.c_str(), fstream::in | fstream::out | fstream::app);
+
+  if(!fp.is_open())
+  {
+    std::cerr << "Morphomotion Error: GraphFile class." << std::endl
+              << "void write(int, double, double, double)." << std::endl
+              << "Cannot open file:"  << graphFile_name << std::endl;
+    exit(1);
+  }
+
   cout << "Writing " << w << " : " << x << " : " << y << " : " << z << endl;
   fp << w << " " << x << " " << y << " " << z << endl;
+
+  fp.close();
 }
 
 void GraphFile::write(std::stringstream &data)
@@ -109,4 +190,3 @@ void GraphFile::write(std::stringstream &data)
   }
   fp << endl;
 }
-

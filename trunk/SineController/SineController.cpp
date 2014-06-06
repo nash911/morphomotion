@@ -82,6 +82,19 @@ void SineController::run_Controller(const std::string& type, std::stringstream& 
 
   for(unsigned int module=0; module<number_of_modules; module++)
   {
+    if(validate_amplitude_plus_offset(get_sine_amplitude(module), get_sine_offset(module)))
+    {
+      SS << "INVALID_AMP+OFF" << " ";
+
+      robot_primary->set_processing_flag(false);
+      robot_primary->set_receive_broadcast(false);
+      while(robot_primary->get_broadcast_thread());
+      return;
+    }
+  }
+
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
     if(servo_feedback[module]->get_ExtKalmanFilter() != NULL)
     {
       servo_feedback[module]->get_ExtKalmanFilter()->set_omega(sine_frequency);
@@ -171,7 +184,7 @@ void SineController::run_Controller(const std::string& type, std::stringstream& 
 #ifdef DEBUGGER
             if(module==0)
             {
-              std::cout << "Count: " << evaluation_elapsed_time/1000 << "  Output[" << module << "]: " << output[module] << "  Feedback Self: " << current_servo_angle[module] << "  Feed Back Diff: " << servo_delta << "  Servo Delta: " << servo_derivative;
+              std::cout << "Count: " << evaluation_elapsed_time/1000 << "  Output[" << module << "]: " << output[module] << "  Feedback Self: " << servo_feedback[module]->get_servo_position();
             }
 #endif
 //---------------------------------------------------------------- Debugger ----------------------------------------------------------/

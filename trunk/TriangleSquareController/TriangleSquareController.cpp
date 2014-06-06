@@ -93,6 +93,19 @@ void TriangleSquareController::run_Controller(const std::string& type, std::stri
 {
   load_trianglesquare_control_parameters();
 
+  for(unsigned int module=0; module<number_of_modules; module++)
+  {
+    if(validate_amplitude_plus_offset(get_A0(module), get_offset(module)) || validate_amplitude_plus_offset(get_A1(module), get_offset(module)))
+    {
+      SS << "INVALID_AMP+OFF" << " ";
+
+      robot_primary->set_processing_flag(false);
+      robot_primary->set_receive_broadcast(false);
+      while(robot_primary->get_broadcast_thread());
+      return;
+    }
+  }
+
   Flood::Vector<double> output(number_of_modules);
   Flood::Vector<double> previous_cycle_output(number_of_modules);
 
@@ -144,7 +157,7 @@ void TriangleSquareController::run_Controller(const std::string& type, std::stri
 #ifdef DEBUGGER
             if(module==0)
             {
-              std::cout << "Count: " << evaluation_elapsed_time/1000 << "  Output[" << module << "]: " << output[module] << "  Feedback Self: " << current_servo_angle[module] << "  Feed Back Diff: " << servo_delta << "  Servo Delta: " << servo_derivative;
+              std::cout << "Count: " << evaluation_elapsed_time/1000 << "  Output[" << module << "]: " << output[module] << "  Feedback Self: " << servo_feedback[module]->get_servo_position();
             }
 #endif
 //---------------------------------------------------------------- Debugger ----------------------------------------------------------/

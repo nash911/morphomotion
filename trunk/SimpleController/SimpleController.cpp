@@ -151,7 +151,7 @@ void SimpleController::run_Controller(const std::string& type, std::stringstream
 #ifdef DEBUGGER
             if(module==0)
             {
-              std::cout << "Count: " << evaluation_elapsed_time/1000 << "  Output[" << module << "]: " << output[module] << "  Feedback Self: " << current_servo_angle[module] << "  Feed Back Diff: " << servo_delta << "  Servo Delta: " << servo_derivative;
+              std::cout << "Count: " << evaluation_elapsed_time/1000 << "  Output[" << module << "]: " << output[module] << "  Feedback Self: " << servo_feedback[module]->get_servo_position() << "  Feed Back Diff: " << servo_delta << "  Servo Delta: " << servo_derivative;
             }
 #endif
 //---------------------------------------------------------------- Debugger ----------------------------------------------------------/
@@ -193,7 +193,7 @@ void SimpleController::run_Controller(const std::string& type, std::stringstream
             {
               std::cout << "  Next Output " << output[module] << "  Time Diff: " << oscillation_time[module]  << "  Counter: " << time_diff_counter[module] << std::endl;
               time_diff_counter[module] = 0;
-              oscillation_time[module] = 0
+              oscillation_time[module] = 0;
             }
 #endif
 #ifdef ACTIVITY_LOG

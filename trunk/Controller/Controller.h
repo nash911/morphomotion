@@ -154,6 +154,10 @@ public:
   void set_phase(const double, const unsigned int, const unsigned int);
   void set_frequency(const double, const unsigned int);
 
+  double get_A0(const unsigned int);
+  double get_A1(const unsigned int);
+  double get_offset(const unsigned int);
+
   void set_EKF_dt(const double);
   double get_EKF_dt(void);
   void set_EKF_r(const double);
@@ -164,6 +168,9 @@ public:
   double calculate_random_uniform(double, double);
   double calculate_random_normal(double, double);
   double scale_to_range(double, double, double, double, double);
+
+  bool validate_amplitude_plus_offset(const double, const double);
+
 
   template <typename T> int sgn(T val) {
       return (T(0) < val) - (val < T(0));

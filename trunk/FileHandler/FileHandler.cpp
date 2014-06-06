@@ -15,9 +15,14 @@
 
 #include "FileHandler.h"
 
+FileHandler::FileHandler()
+{
+}
+
+
 // With Flood::EvolutionaryAlgorithm*
 // CONSTRUCTOR FOR SAVING ELITE GENE POPULATION
-FileHandler::FileHandler(std::string note,
+/*FileHandler::FileHandler(std::string note,
                bool gen0_preeval,
                bool gen0_aug_pop,
                Flood::EvolutionaryAlgorithm *ea,
@@ -47,6 +52,24 @@ FileHandler::FileHandler(std::string note,
   {
     myFile << std::endl << "<Note>" << std::endl << note << std::endl << "</Note>" << std::endl;
   }
+
+  myFile << std::endl << "<Gene_File>" << std::endl << myFile_name << std::endl << "</Gene_File>" << std::endl;
+
+  char fitness_filename[100];
+  std::string fitnessFile;
+  strftime (fitness_filename, 100, "_%m_%d_%H_%M_FitnessGraph.dat", timeinfo);
+  stringstream fitness_file;
+  fitness_file << "../Evolution_Files/" << robot->get_robot_environment() << "/" << robot->get_robot_type() << "/" << controller->get_controller_type() << "/FitnessGraph_Files/" << fitness_filename;
+  fitnessFile = fitness_file.str();
+  myFile << std::endl << "<Fitness_File>" << std::endl << fitness_file.str() << std::endl << "</Fitness_File>" << std::endl;
+
+  char evol_filename[100];
+  std::string evoFile;
+  strftime (evol_filename, 100, "_%m_%d_%H_%M_evolution.evo", timeinfo);
+  stringstream evol_file;
+  evol_file << "../Evolution_Files/" << robot->get_robot_environment() << "/" << robot->get_robot_type() << "/" << controller->get_controller_type() << "/Evolution/" << robot->get_robot_environment() << evol_filename;
+  evoFile = evol_file.str();
+  myFile << std::endl << "<Evolution_File>" << std::endl << evol_file.str() << std::endl << "</Evolution_File>" << std::endl;
 
   myFile << std::endl << "<Evolution>" << std::endl;
   myFile << "\t<FitnessAssignmentMethod>" << std::endl << "\t   " << ea->get_fitness_assignment_method_name() << std::endl << "\t</FitnessAssignmentMethod>" << std::endl;
@@ -179,46 +202,7 @@ FileHandler::FileHandler(std::string note,
   myFile << std::endl << "</Morphomotion>";
 
   myFile.close();
-}
-
-
-void FileHandler::save_gene(int generation, Flood::Vector<double> elite_gene)
-{
-  myFile.open(myFile_name.c_str(), fstream::in | fstream::out);
-
-  if(!myFile.is_open())
-  {
-    std::cerr << std::endl
-              << "Morphomotion Error: FileHandler class." << std::endl
-              << "void save_gene(int, vector<double>) method." << std::endl
-              << "Cannot open Gene file."  << std::endl;
-    exit(1);
-  }
-  else
-  {
-    std::cout << std::endl
-              << "Saving elite members to gene file..." << std::endl;
-  }
-
-  std::string word;
-  do
-  {
-    myFile >> word;
-  }while(word != "</Gene>");
-  myFile.seekp (-25, ios::end);
-
-  if(generation != 1)
-  {
-    myFile << std::endl;
-  }
-  myFile << "Generation_" << generation << ":" << std::endl;
-  myFile << elite_gene << std::endl;
-
-  myFile << "</Gene>" << std::endl;
-  myFile << std::endl << "</Morphomotion>" << std::endl;
-
-  myFile.close();
-}
+}*/
 
 
 // CONSTRUCTOR FOR EXTRACTING PARAMETERS FROM PARAMETERS FILE
@@ -234,6 +218,8 @@ FileHandler::FileHandler(char* filename, Robot *robot, SimulationOpenRave *simuE
 
     exit(1);
   }
+
+  myFile_name = filename;
 
   std::string line;
   std::string word;
@@ -263,7 +249,7 @@ FileHandler::FileHandler(char* filename, Robot *robot, SimulationOpenRave *simuE
 
   file >> word;
 
-  if(word != "Evolution_Parameters")
+  if(word != "Evolution_Parameters" && word != "GeneFile")
   {
     std::cerr << "Morphomotion Error: FileHandler class." << std::endl
               << "FileHandler(char*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*)" << std::endl
@@ -733,8 +719,650 @@ FileHandler::~FileHandler(void)
 {
 }
 
-
 //--METHODS
+
+void FileHandler::open(const char* filename)
+{
+  myFile.open(filename, fstream::in | fstream::out | fstream::app);
+
+  if(!myFile.is_open())
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "open(const char*)" << std::endl
+              << "Cannot open file: "<< filename << std::endl;
+    exit(1);
+  }
+
+  myFile_name = filename;
+  myFile.close();
+}
+
+
+//-- FOR SAVING ELITE GENE POPULATION
+void FileHandler::init_gene_file(std::string note,
+               bool gen0_preeval,
+               bool gen0_aug_pop,
+               Flood::EvolutionaryAlgorithm *ea,
+               Robot *robot,
+               SimulationOpenRave *simuOR,
+               Controller *controller,
+               Flood::MultilayerPerceptron *mlp)
+{
+  time_t rawtime;
+  struct tm * timeinfo;
+  char filename[100];
+  stringstream ss;
+
+  time ( &rawtime );
+  timeinfo = localtime ( &rawtime );
+  strftime (filename, 100, "_%m_%d_%H_%M_elite_population.gne", timeinfo);
+  ss << "../Evolution_Files/" << robot->get_robot_environment() << "/" << robot->get_robot_type() << "/" << controller->get_controller_type() << "/Gene_Files/" << robot->get_robot_environment() << filename;
+
+  myFile_name = ss.str();
+  cout <<" Opening elite_population data file: " << myFile_name << endl;
+  myFile.open(myFile_name.c_str(), fstream::in | fstream::out | fstream::app);
+
+  myFile << "<Morphomotion: Flood + OpenRave + Y1>" << std::endl;
+  myFile << std::endl << "<FileType>" << std::endl << "   GeneFile" << std::endl << "</FileType>" << std::endl;
+
+  if(note != "No Notes")
+  {
+    myFile << std::endl << "<Note>" << std::endl << note << std::endl << "</Note>" << std::endl;
+  }
+
+  myFile << std::endl << "<Gene_File>" << std::endl << myFile_name << std::endl << "</Gene_File>" << std::endl;
+
+  char fitness_filename[100];
+  std::string fitnessFile;
+  strftime (fitness_filename, 100, "%m_%d_%H_%M_FitnessGraph.dat", timeinfo);
+  stringstream fitness_file;
+  fitness_file << "../Evolution_Files/" << robot->get_robot_environment() << "/" << robot->get_robot_type() << "/" << controller->get_controller_type() << "/FitnessGraph_Files/" << fitness_filename;
+  fitnessFile = fitness_file.str();
+  myFile << std::endl << "<Fitness_File>" << std::endl << fitness_file.str() << std::endl << "</Fitness_File>" << std::endl;
+
+  char evol_filename[100];
+  std::string evoFile;
+  strftime (evol_filename, 100, "_%m_%d_%H_%M_evolution.evo", timeinfo);
+  stringstream evol_file;
+  evol_file << "../Evolution_Files/" << robot->get_robot_environment() << "/" << robot->get_robot_type() << "/" << controller->get_controller_type() << "/Evolution/" << robot->get_robot_environment() << evol_filename;
+  evoFile = evol_file.str();
+  myFile << std::endl << "<Evolution_File>" << std::endl << evol_file.str() << std::endl << "</Evolution_File>" << std::endl;
+
+  myFile << std::endl << "<Evolution>" << std::endl;
+  myFile << "\t<FitnessAssignmentMethod>" << std::endl << "\t   " << ea->get_fitness_assignment_method_name() << std::endl << "\t</FitnessAssignmentMethod>" << std::endl;
+  myFile << std::endl << "\t<SelectionMethod>" << std::endl << "\t   " << ea->get_selection_method_name() << std::endl << "\t</SelectionMethod>" << std::endl;
+  myFile << std::endl << "\t<RecombinationMethod>" << std::endl << "\t   " << ea->get_recombination_method_name() << std::endl << "\t</RecombinationMethod>" << std::endl;
+  myFile << std::endl << "\t<MutationMethod>" << std::endl << "\t   " << ea->get_mutation_method_name() << std::endl << "\t</MutationMethod>" << std::endl;
+  myFile << std::endl << "\t<EvaluationMethod>" << std::endl << "\t   " << robot->get_evaluation_method() << std::endl << "\t</EvaluationMethod>" << std::endl;
+  myFile << std::endl << "\t<PopulationSize>" << std::endl << "\t   " << ea->get_population_size() << std::endl << "\t</PopulationSize>" << std::endl;
+  myFile << std::endl << "\t<CrossoverPercentage>" << std::endl << "\t   " << ea->get_crossover_percentage() << std::endl << "\t</CrossoverPercentage>" << std::endl;
+  myFile << std::endl << "\t<Elitism>" << std::endl << "\t   " << ea->get_elitism() << std::endl << "\t</Elitism>" << std::endl;
+  myFile << std::endl << "\t<ElitismPercentage>" << std::endl << "\t   " << ea->get_elitism_percentage() << std::endl << "\t</ElitismPercentage>" << std::endl;
+  myFile << std::endl << "\t<SelectivePressure>" << std::endl << "\t   " << ea->get_selective_pressure() << std::endl << "\t</SelectivePressure>" << std::endl;
+  myFile << std::endl << "\t<RecombinationSize>" << std::endl << "\t   " << ea->get_recombination_size() << std::endl << "\t</RecombinationSize>" << std::endl;
+  myFile << std::endl << "\t<MutationRate>" << std::endl << "\t   " << ea->get_mutation_rate() << std::endl << "\t</MutationRate>" << std::endl;
+  myFile << std::endl << "\t<MutationRateForES>" << std::endl << "\t   " << ea->get_mutation_rate_for_ES() << std::endl << "\t</MutationRateForES>" << std::endl;
+  myFile << std::endl << "\t<MutationRange>" << std::endl << "\t   " << ea->get_mutation_range() << std::endl << "\t</MutationRange>" << std::endl;
+  myFile << std::endl << "\t<MutationRangeForES>" << std::endl << "\t   " << ea->get_mutation_range_for_ES() << std::endl << "\t</MutationRangeForES>" << std::endl;
+  myFile << std::endl << "\t<EvaluationSampleSize>" << std::endl << "\t   " << ea->get_evaluation_sample_size() << std::endl << "\t</EvaluationSampleSize>" << std::endl;
+  if(gen0_preeval)
+  {
+    myFile << std::endl << "\t<Gen0_Pre-Evaluation>" << std::endl << "\t   " << "True" << std::endl << "\t</Gen0_Pre-Evaluation>" << std::endl;
+  }
+  else
+  {
+    myFile << std::endl << "\t<Gen0_Pre-Evaluation>" << std::endl << "\t   " << "False" << std::endl << "\t</Gen0_Pre-Evaluation>" << std::endl;
+  }
+  if(gen0_aug_pop)
+  {
+    myFile << std::endl << "\t<Gen0_AugmentedPopulation>" << std::endl << "\t   " << "True" << std::endl << "\t</Gen0_AugmentedPopulation>" << std::endl;
+  }
+  else
+  {
+    myFile << std::endl << "\t<Gen0_AugmentedPopulation>" << std::endl << "\t   " << "False" << std::endl << "\t</Gen0_AugmentedPopulation>" << std::endl;
+  }
+  myFile << std::endl << "\t<Gen0_MinimumEvaluationValue>" << std::endl << "\t   " << ea->get_gen_0_min_evaluation_value() << std::endl << "\t</Gen0_MinimumEvaluationValue>" << std::endl;
+  myFile << std::endl << "\t<Gen0_PopulationSize>" << std::endl << "\t   " << ea->get_gen_0_population_size() << std::endl << "\t</Gen0_PopulationSize>" << std::endl;
+  myFile << "</Evolution>" << std::endl;
+
+  myFile << std::endl << "<Robot>" << std::endl;
+  myFile << "\t<RobotEnvironment>" << std::endl << "\t   " << robot->get_robot_environment() << std::endl << "\t</RobotEnvironment>" << std::endl;
+  myFile << std::endl << "\t<RobotType>" << std::endl << "\t   " << robot->get_robot_type() << std::endl << "\t</RobotType>" << std::endl;
+  myFile << std::endl << "\t<NumberOfModules>" << std::endl << "\t   " << robot->get_number_of_modules() << std::endl << "\t</NumberOfModules>" << std::endl;
+  myFile << "</Robot>" << std::endl;
+
+  if(robot->get_robot_environment() == "SimulationOpenRave")
+  {
+    if(simuOR)
+    {
+      myFile << std::endl << "<SimulationEnvironment>" << std::endl;
+      myFile << "\t<SceneFileName>" << std::endl << "\t   " << simuOR->get_scene_file_name() << std::endl << "\t</SceneFileName>" << std::endl;
+      myFile << std::endl << "\t<SimResolution>" << std::endl << "\t   " << simuOR->get_simu_resolution_microseconds() << std::endl << "\t</SimResolution>" << std::endl;
+      myFile << "</SimulationEnvironment>" << std::endl;
+    }
+    else
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "FileHandler(std::string, bool, bool, Flood::EvolutionaryAlgorithm*, Robot*, SimulationOpenRave*, Controller*, Flood::MultilayerPerceptron*)" << std::endl
+                << "robot_pointer = NULL " << std::endl;
+      exit(1);
+    }
+  }
+
+  myFile << std::endl << "<Controller>" << std::endl;
+  myFile << "\t<ControllerType>" << std::endl << "\t   " << controller->get_controller_type() << std::endl << "\t</ControllerType>" << std::endl;
+  if(controller->get_controller_type() == "Fourier_Controller")
+  {
+    myFile << std::endl << "\t<FrequencyDomainSize>" << std::endl << "\t   " << controller->get_frequency_domain_size() << std::endl << "\t</FrequencyDomainSize>" << std::endl;
+  }
+  myFile << std::endl << "\t<EvaluationPeriod>" << std::endl << "\t   " << controller->get_evaluation_period() << std::endl << "\t</EvaluationPeriod>" << std::endl;
+  myFile << std::endl << "\t<ServoMax>" << std::endl << "\t   " << controller->get_servo_max() << std::endl << "\t</ServoMax>" << std::endl;
+  myFile << std::endl << "\t<ServoMin>" << std::endl << "\t   " << controller->get_servo_min() << std::endl << "\t</ServoMin>" << std::endl;
+  if(controller->get_controller_type() != "Sine_Controller" &&
+     controller->get_controller_type() != "InverseSine_Controller" &&
+     controller->get_controller_type() != "Fourier_Controller" &&
+     controller->get_controller_type() != "TriangleSquare_Controller")
+  {
+    myFile << std::endl << "\t<StartAngleType>" << std::endl << "\t   " << controller->get_start_angle_type() << std::endl << "\t</StartAngleType>" << std::endl;
+    myFile << std::endl << "\t<ServoDeltaThreshold>" << std::endl << "\t   " << controller->get_servo_delta_threshold() << std::endl << "\t</ServoDeltaThreshold>" << std::endl;
+  }
+  if(controller->get_controller_type() == "Neural_Controller" || controller->get_controller_type() == "Naive_Controller")
+  {
+    myFile << std::endl << "\t<ServoDerivativeThreshold>" << std::endl << "\t   " << controller->get_servo_derivative_threshold() << std::endl << "\t</ServoDerivativeThreshold>" << std::endl;
+  }
+  if(controller->get_controller_type() == "Neural_Controller" || controller->get_controller_type() == "Naive_Controller" || controller->get_controller_type() == "Semi_Hybrid_Controller")
+  {
+    myFile << std::endl << "\t<ServoDerivativeEpsilon>" << std::endl << "\t   " << controller->get_servo_derivative_epsilon() << std::endl << "\t</ServoDerivativeEpsilon>" << std::endl;
+  }
+  myFile << "</Controller>" << std::endl;
+
+  myFile << std::endl << "<ExtendedKalmanFilter>" << std::endl;
+  myFile << "\t<dt>" << std::endl << "\t   " << controller->get_EKF_dt() << std::endl << "\t</dt>" << std::endl;
+  myFile << std::endl << "\t<r>" << std::endl << "\t   " << controller->get_EKF_r() << std::endl << "\t</r>" << std::endl;
+  myFile << std::endl << "\t<qf>" << std::endl << "\t   " << controller->get_EKF_qf() << std::endl << "\t</qf>" << std::endl;
+  myFile << "</ExtendedKalmanFilter>" << std::endl;
+
+  if(mlp->get_inputs_number() > 0)
+  {
+    myFile << std::endl << "<NeuralNetwork>" << std::endl;
+    myFile << "\t<NumberOfNNInputs>" << std::endl << "\t   " << mlp->get_inputs_number() << std::endl << "\t</NumberOfNNInputs>" << std::endl;
+    if(mlp->get_hidden_layers_number() > 0)
+    {
+      myFile << std::endl << "\t<HiddenLayers>"; //<< "\t   " << number_of_inputs_to_NN << std::endl << "\t</NumberOfNNInputs>" << std::endl;
+      for(int i=0; i<mlp->get_hidden_layers_number(); i++)
+      {
+        myFile << std::endl << "\t   <Layer>" << std::endl << "\t      " << mlp->get_hidden_layer_size(i) << std::endl << "\t   </Layer>" << std::endl;
+      }
+      myFile << "\t</HiddenLayers>" << std::endl;
+    }
+    myFile << std::endl << "\t<NumberOfNNOutputs>" << std::endl << "\t   " << mlp->get_outputs_number() << std::endl << "\t</NumberOfNNOutputs>" << std::endl;
+    myFile << "</NeuralNetwork>" << std::endl;
+  }
+
+  if(mlp->get_independent_parameters_number() > 0)
+  {
+    myFile << std::endl << "<IndependentParameters>";
+    for(int i=0; i<mlp->get_independent_parameters_number(); i++)
+    {
+      myFile << std::endl << "\t<Parameter>";
+      myFile << std::endl << "\t   <Name>" << std::endl << "\t      " << mlp->get_independent_parameter_name(i) << std::endl << "\t   </Name>" << std::endl;
+      myFile << std::endl << "\t   <Minimum>" << std::endl << "\t      " << mlp->get_independent_parameter_minimum(i) << std::endl << "\t   </Minimum>" << std::endl;
+      myFile << std::endl << "\t   <Maximum>" << std::endl << "\t      " << mlp->get_independent_parameter_maximum(i) << std::endl << "\t   </Maximum>" << std::endl;
+      myFile << "\t</Parameter>" << std::endl;
+    }
+
+    myFile << "</IndependentParameters>" << std::endl;
+  }
+
+  myFile << std::endl << "<Gene>" << std::endl;
+  myFile << std::endl << "</Gene>" << std::endl;
+  myFile << std::endl << "</Morphomotion>";
+
+  myFile.close();
+}
+
+
+//-- FOR SAVING EVOLUTION HISTORY
+void FileHandler::init_evol_file(Robot *robot, Controller *controller)
+{
+  time_t rawtime;
+  struct tm * timeinfo;
+  char filename[100];
+  stringstream ss;
+
+  time ( &rawtime );
+  timeinfo = localtime ( &rawtime );
+  strftime (filename, 100, "_%m_%d_%H_%M_evolution.evo", timeinfo);
+  //strftime (filename, 100, file_format, timeinfo);
+  ss << "../Evolution_Files/" << robot->get_robot_environment() << "/" << robot->get_robot_type() << "/" << controller->get_controller_type() << "/Evolution/" << robot->get_robot_environment() << filename;
+
+  myFile_name = ss.str();
+  cout <<" Opening file: " << myFile_name << endl;
+  myFile.open(myFile_name.c_str(), fstream::in | fstream::out | fstream::app);
+
+  myFile << "<Morphomotion: Flood + OpenRave + Y1>" << std::endl;
+  myFile << std::endl << "<FileType>" << std::endl << "   EvolutionFile" << std::endl << "</FileType>" << std::endl;
+  myFile << std::endl << "</Morphomotion>";
+
+  myFile.close();
+}
+
+
+void FileHandler::save_gene(int generation, Flood::Vector<double> elite_gene)
+{
+  myFile.open(myFile_name.c_str(), fstream::in | fstream::out);
+
+  if(!myFile.is_open())
+  {
+    std::cerr << std::endl
+              << "Morphomotion Error: FileHandler class." << std::endl
+              << "void save_gene(int, vector<double>) method." << std::endl
+              << "Cannot open Gene file."  << std::endl;
+    exit(1);
+  }
+  else
+  {
+    std::cout << std::endl
+              << "Saving elite members to gene file..." << std::endl;
+  }
+
+  /*std::string word;
+  do
+  {
+    myFile >> word;
+  }while(word != "</Gene>");*/
+  myFile.seekp (-25, ios::end);
+
+  if(generation != 1)
+  {
+    myFile << std::endl;
+  }
+  myFile << "Generation_" << generation << ":" << std::endl;
+  myFile << elite_gene << std::endl;
+
+  myFile << "</Gene>" << std::endl;
+  myFile << std::endl << "</Morphomotion>" << std::endl;
+
+  myFile.close();
+}
+
+
+void FileHandler::save_generation_history(const int generation, const int individual, Flood::Vector<double> gene)
+{
+  myFile.open(myFile_name.c_str(), fstream::in | fstream::out);
+
+  if(!myFile.is_open())
+  {
+    std::cerr << std::endl
+              << "Morphomotion Error: FileHandler class." << std::endl
+              << "void save_generation_history(const int, const int, const vector<double>) method." << std::endl
+              << "Cannot open Gene file."  << std::endl;
+    exit(1);
+  }
+
+  if(individual == 1)
+  {
+    myFile.seekp (-16, ios::end);
+
+    if(generation == 1)
+    {
+       myFile << std::endl;
+    }
+
+    myFile << "<Generation_" << generation << ">" << std::endl << "<Gene>" << std::endl;
+  }
+  else
+  {
+    if(generation >= 10)
+    {
+      myFile.seekp (-42, ios::end);
+    }
+    else
+    {
+      myFile.seekp (-41, ios::end);
+    }
+    myFile << std::endl;
+  }
+
+  myFile << "Candidate_" << individual << ":" << std::endl << gene << std::endl;
+  myFile << "</Gene>" << std::endl << "</Generation_" << generation << ">" << std::endl;
+  myFile << std::endl << "</Morphomotion>" << std::endl;
+
+  myFile.close();
+}
+
+
+void FileHandler::save_fitness_history(const int generation, const Flood::Vector<double> fitness)
+{
+  myFile.open(myFile_name.c_str(), fstream::in | fstream::out);
+
+  if(!myFile.is_open())
+  {
+    std::cerr << std::endl
+              << "Morphomotion Error: FileHandler class." << std::endl
+              << "void save_fitness_history(const int, const vector<double>) method." << std::endl
+              << "Cannot open Gene file."  << std::endl;
+    exit(1);
+  }
+
+  if(generation >= 10)
+  {
+    myFile.seekp (-34, ios::end);
+  }
+  else
+  {
+    myFile.seekp (-33, ios::end);
+  }
+  myFile << std::endl << "<Fitness>" << std::endl;
+
+  for(unsigned int i=0; i<fitness.get_size(); i++)
+  {
+    myFile << i+1 << ":" << std::endl << fitness[i] << std::endl;
+  }
+  myFile << "</Fitness>" << std::endl << "</Generation_" << generation << ">" << std::endl;
+  myFile << std::endl << "</Morphomotion>" << std::endl;
+
+  myFile.close();
+}
+
+
+void FileHandler::save_fitness_individual(const int generation, const unsigned int individual, const double fitness)
+{
+  myFile.open(myFile_name.c_str(), fstream::in | fstream::out);
+
+  if(!myFile.is_open())
+  {
+    std::cerr << std::endl
+              << "Morphomotion Error: FileHandler class." << std::endl
+              << "void save_fitness_history(const int, const vector<double>) method." << std::endl
+              << "Cannot open Gene file."  << std::endl;
+    exit(1);
+  }
+
+  std::string word;
+  std::stringstream gen;
+
+  gen << "<Generation_" << generation << ">";
+
+  do
+  {
+    myFile >> word;
+
+    if(word == gen.str())
+    {
+      break;
+    }
+  }while(!myFile.eof());
+
+  if(myFile.eof())
+  {
+
+  }
+  else
+  {
+    do
+    {
+      myFile >> word;
+
+      if(word == "</Gene>")
+      {
+        break;
+      }
+    }while(word.compare(0,13,"</Generation_"));
+
+    if(individual == 1)
+    {
+      myFile << std::endl << std::endl << "<Fitness>";
+    }
+    else
+    {
+      std::stringstream ss;
+      ss << individual-1 << ":";
+
+      do
+      {
+        myFile >> word;
+
+        if(word == ss.str())
+        {
+          myFile >> word;
+          break;
+        }
+      }while(!myFile.eof());
+    }
+    myFile  << std::endl << individual << ":" << std::endl << fitness << std::endl;
+    myFile << "</Fitness>" << std::endl << "</Generation_" << generation << ">" << std::endl;
+    myFile << std::endl << "</Morphomotion>" << std::endl;
+  }
+
+  myFile.close();
+}
+
+bool FileHandler::find_tag(const std::string tag)
+{
+  myFile.open(myFile_name.c_str(), fstream::in);
+
+  if(!myFile.is_open())
+  {
+    std::cerr << std::endl
+              << "Morphomotion Error: FileHandler class." << std::endl
+              << "bool find_tag(const std::string) method." << std::endl
+              << "Cannot open Evolution file."  << std::endl;
+    exit(1);
+  }
+
+  std::string word;
+
+  do
+  {
+    myFile >> word;
+
+    if(word == tag)
+    {
+      myFile.close();
+      return true;
+    }
+  }while(!myFile.eof());
+
+  myFile.close();
+
+  return false;
+}
+
+void FileHandler::populate_from_evolution_file(Flood::EvolutionaryAlgorithm *ea)
+{
+  myFile.open(myFile_name.c_str(), fstream::in | fstream::out);
+
+  if(!myFile.is_open())
+  {
+    std::cerr << std::endl
+              << "Morphomotion Error: FileHandler class." << std::endl
+              << "void populate_from_evolution_file(Flood::EvolutionaryAlgorithm*) method." << std::endl
+              << "Cannot open Evolution file."  << std::endl;
+    exit(1);
+  }
+
+  std::string line;
+  std::string word;
+  //std::string controller_type;
+
+  unsigned int generations = 0;
+
+  getline(myFile, line);
+
+  if(line != "<Morphomotion: Flood + OpenRave + Y1>")
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "void populate_from_evolution_file(Flood::EvolutionaryAlgorithm*) method." << std::endl
+              << "Unknown file declaration: " << line << std::endl;
+
+    exit(1);
+  }
+
+  //--File type
+  myFile >> word;
+
+  if(word != "<FileType>")
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "void populate_from_evolution_file(Flood::EvolutionaryAlgorithm*) method." << std::endl
+              << "Unknown file type begin tag: " << word << std::endl;
+
+    exit(1);
+  }
+
+  myFile >> word;
+
+  if(word != "EvolutionFile")
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "void populate_from_evolution_file(Flood::EvolutionaryAlgorithm*) method." << std::endl
+              << "Unknown file type: " << word << std::endl;
+
+    exit(1);
+  }
+
+  myFile >> word;
+
+  if(word != "</FileType>")
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "void populate_from_evolution_file(Flood::EvolutionaryAlgorithm*) method." << std::endl
+              << "Unknown file type end tag: " << word << std::endl;
+
+    exit(1);
+  }
+
+  do
+  {
+    myFile >> word;
+
+    if(word.compare(0,12, "<Generation_") == 0)
+    {
+      generations++;
+    }
+
+  }while(word != "</Morphomotion>");
+  std::cout << std::endl << "Generations: " << generations << std::endl; // TODO: Debugger to be removed
+  myFile.close();
+
+  if(generations > 0)
+  {
+    myFile.open(myFile_name.c_str(), fstream::in | fstream::out);
+
+    unsigned int neural_parameters_number = ea->get_objective_functional_pointer()->get_multilayer_perceptron_pointer()->get_neural_parameters_number();
+    unsigned int independent_parameters_number = ea->get_objective_functional_pointer()->get_multilayer_perceptron_pointer()->get_independent_parameters_number();
+    unsigned int parameters_number = neural_parameters_number + independent_parameters_number;
+
+    Flood::Matrix<double> new_population(ea->get_population_size(), parameters_number);
+    Flood::Vector<double> individual(parameters_number);
+
+    //std::cout << std::endl << "parameters_number: " << parameters_number << std::endl; // TODO: Debugger to be removed
+
+    std::stringstream ss;
+    ss << "<Generation_" << generations << ">";
+
+    do
+    {
+      myFile >> word;
+
+      if(word == ss.str())
+      {
+        break;
+      }
+    }while(word != ss.str() && !myFile.eof());
+
+    if(myFile.eof())
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "void populate_from_evolution_file(Flood::EvolutionaryAlgorithm*) method." << std::endl
+                << "Reached EOF. Cannot find tag: " << ss.str() << std::endl;
+
+      exit(1);
+    }
+
+    myFile >> word;
+    if(word != "<Gene>")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "void populate_from_evolution_file(Flood::EvolutionaryAlgorithm*) method." << std::endl
+                << "Unknown Gene begin tag: " << word << std::endl;
+
+      exit(1);
+    }
+
+    for(unsigned int i=0; i<ea->get_population_size(); i++)
+    {
+      myFile >> word;
+      std::stringstream candidate;
+      candidate << "Candidate_" << i+1 << ":";
+      if(word != candidate.str())
+      {
+        std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                  << "void populate_from_evolution_file(Flood::EvolutionaryAlgorithm*) method." << std::endl
+                  << "Unknown Candidate: " << word << std::endl;
+
+        exit(1);
+      }
+      else
+      {
+        for(unsigned int j=0; j<parameters_number; j++)
+        {
+          myFile >> individual[j];
+        }
+        new_population.set_row(i, individual);
+      }
+    }
+
+    myFile >> word;
+    if(word != "</Gene>")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "void populate_from_evolution_file(Flood::EvolutionaryAlgorithm*) method." << std::endl
+                << "Unknown Gene end tag: " << word << std::endl;
+
+      exit(1);
+    }
+
+    ea->set_population(new_population);
+    ea->set_generation_size(generations);
+
+    myFile >> word;
+    if(word == "<Fitness>")
+    {
+      unsigned int eval_indx = 0;
+      Flood::Vector<double> evaluation(ea->get_population_size());
+      evaluation.initialize(0);
+
+      do
+      {
+        std::stringstream ss;
+        ss << eval_indx+1 << ":";
+
+        myFile >> word;
+        if(word == ss.str())
+        {
+          myFile >> evaluation[eval_indx];
+          eval_indx++;
+        }
+      }while(word != "</Fitness>");
+
+      ea->set_evaluation(evaluation);
+      ea->set_evaluation_index(eval_indx);
+    }
+
+    myFile.close();
+  }
+  else
+  {
+    std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+              << "void populate_from_evolution_file(Flood::EvolutionaryAlgorithm*) method." << std::endl
+              << "No genes to populate in the Evolution file" << std::endl;
+
+    exit(1);
+  }
+}
+
 
 void FileHandler::load_Robot_parameters(std::fstream& file, Robot *robot)
 {
@@ -1452,6 +2080,334 @@ void FileHandler::load_elite_fitness(std::fstream& fitness_file, std::vector<dou
 }
 
 
+std::string FileHandler::get_file_type()
+{
+    std::fstream file;
+
+    file.open(myFile_name, std::ios::in);
+    if(!file.is_open())
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_file_type(char*)" << std::endl
+                << "Cannot open file: "<< myFile_name  << std::endl;
+      exit(1);
+    }
+
+    std::string line;
+    std::string word;
+    std::string _file_type;
+
+    getline(file, line);
+
+    if(line != "<Morphomotion: Flood + OpenRave + Y1>")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_file_type(char*)" << std::endl
+                << "Unknown file declaration: " << line << std::endl;
+
+      exit(1);
+    }
+
+    //--File type
+    file >> word;
+
+    if(word != "<FileType>")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_file_type(char*)" << std::endl
+                << "Unknown file type begin tag: " << word << std::endl;
+
+      exit(1);
+    }
+
+    file >> _file_type;
+
+    if(_file_type != "GeneFile" && _file_type != "Evolution_Parameters" && _file_type != "EvolutionFile")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_file_type(char*)" << std::endl
+                << "Unknown file type: " << word << std::endl;
+
+      exit(1);
+    }
+
+    file >> word;
+
+    if(word != "</FileType>")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_file_type(char*)" << std::endl
+                << "Unknown file type end tag: " << word << std::endl;
+
+      exit(1);
+    }
+
+    file.close();
+    return _file_type;
+}
+
+
+std::string FileHandler::get_gene_file_name()
+{
+    std::fstream gene_file;
+
+    gene_file.open(myFile_name, std::ios::in);
+    if(!gene_file.is_open())
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_gene_file_name(char*)" << std::endl
+                << "Cannot open Parameter file: "<< myFile_name  << std::endl;
+      exit(1);
+    }
+
+    std::string line;
+    std::string word;
+    std::string gene_file_name;
+
+    getline(gene_file, line);
+
+    if(line != "<Morphomotion: Flood + OpenRave + Y1>")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_gene_file_name(char*)" << std::endl
+                << "Unknown file declaration: " << line << std::endl;
+
+      exit(1);
+    }
+
+    //--File type
+    gene_file >> word;
+
+    if(word != "<FileType>")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_gene_file_name(char*)" << std::endl
+                << "Unknown file type begin tag: " << word << std::endl;
+
+      exit(1);
+    }
+
+    gene_file >> word;
+
+    if(word != "GeneFile")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_gene_file_name(char*)" << std::endl
+                << "Unknown file type: " << word << std::endl;
+
+      exit(1);
+    }
+
+    gene_file >> word;
+
+    if(word != "</FileType>")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_gene_file_name(char*)" << std::endl
+                << "Unknown file type end tag: " << word << std::endl;
+
+      exit(1);
+    }
+
+    do
+    {
+      gene_file >> word;
+
+      if(word == "<Gene_File>")
+      {
+        gene_file >> gene_file_name;
+        gene_file >> word;
+
+        if(word != "</Gene_File>")
+        {
+          std::cerr << "Morphomotion Error: FileHandler Class." << std::endl
+                    << "get_gene_file_name(char*)" << std::endl
+                    << "Unknown Controller Type end tag: " << word << std::endl;
+
+          exit(1);
+        }
+      }
+
+    }while(word != "</Gene_File>");
+    gene_file.close();
+    return gene_file_name;
+}
+
+
+std::string FileHandler::get_fitness_file_name()
+{
+    std::fstream gene_file;
+
+    gene_file.open(myFile_name, std::ios::in);
+    if(!gene_file.is_open())
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_fitness_file_name(char*)" << std::endl
+                << "Cannot open Parameter file: "<< myFile_name  << std::endl;
+      exit(1);
+    }
+
+    std::string line;
+    std::string word;
+    std::string fitness_file_name;
+
+    getline(gene_file, line);
+
+    if(line != "<Morphomotion: Flood + OpenRave + Y1>")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_fitness_file_name(char*)" << std::endl
+                << "Unknown file declaration: " << line << std::endl;
+
+      exit(1);
+    }
+
+    //--File type
+    gene_file >> word;
+
+    if(word != "<FileType>")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_fitness_file_name(char*)" << std::endl
+                << "Unknown file type begin tag: " << word << std::endl;
+
+      exit(1);
+    }
+
+    gene_file >> word;
+
+    if(word != "GeneFile")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_fitness_file_name(char*)" << std::endl
+                << "Unknown file type: " << word << std::endl;
+
+      exit(1);
+    }
+
+    gene_file >> word;
+
+    if(word != "</FileType>")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_fitness_file_name(char*)" << std::endl
+                << "Unknown file type end tag: " << word << std::endl;
+
+      exit(1);
+    }
+
+    do
+    {
+      gene_file >> word;
+
+      if(word == "<Fitness_File>")
+      {
+        gene_file >> fitness_file_name;
+        gene_file >> word;
+
+        if(word != "</Fitness_File>")
+        {
+          std::cerr << "Morphomotion Error: FileHandler Class." << std::endl
+                    << "get_fitness_file_name(char*)" << std::endl
+                    << "Unknown Controller Type end tag: " << word << std::endl;
+
+          exit(1);
+        }
+      }
+
+    }while(word != "</Fitness_File>");
+    gene_file.close();
+    return fitness_file_name;
+}
+
+
+std::string FileHandler::get_evolution_file_name()
+{
+    std::fstream gene_file;
+
+    gene_file.open(myFile_name, std::ios::in);
+    if(!gene_file.is_open())
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_evolution_file_name(char*)" << std::endl
+                << "Cannot open Parameter file: "<< myFile_name << std::endl;
+      exit(1);
+    }
+
+    std::string line;
+    std::string word;
+    std::string evolution_file_name;
+
+    getline(gene_file, line);
+
+    if(line != "<Morphomotion: Flood + OpenRave + Y1>")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_controller_type(char*)" << std::endl
+                << "Unknown file declaration: " << line << std::endl;
+
+      exit(1);
+    }
+
+    //--File type
+    gene_file >> word;
+
+    if(word != "<FileType>")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_evolution_file_name(char*)" << std::endl
+                << "Unknown file type begin tag: " << word << std::endl;
+
+      exit(1);
+    }
+
+    gene_file >> word;
+
+    if(word != "GeneFile")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_evolution_file_name(char*)" << std::endl
+                << "Unknown file type: " << word << std::endl;
+
+      exit(1);
+    }
+
+    gene_file >> word;
+
+    if(word != "</FileType>")
+    {
+      std::cerr << "Morphomotion Error: FileHandler class." << std::endl
+                << "get_evolution_file_name(char*)" << std::endl
+                << "Unknown file type end tag: " << word << std::endl;
+
+      exit(1);
+    }
+
+    do
+    {
+      gene_file >> word;
+
+      if(word == "<Evolution_File>")
+      {
+        gene_file >> evolution_file_name;
+        gene_file >> word;
+
+        if(word != "</Evolution_File>")
+        {
+          std::cerr << "Morphomotion Error: FileHandler Class." << std::endl
+                    << "get_evolution_file_name(char*)" << std::endl
+                    << "Unknown Controller Type end tag: " << word << std::endl;
+
+          exit(1);
+        }
+      }
+
+    }while(word != "</Evolution_File>");
+    gene_file.close();
+    return evolution_file_name;
+}
+
+
 std::string FileHandler::get_controller_type(char* gene_filename)
 {
     std::fstream gene_file;
@@ -1521,7 +2477,6 @@ std::string FileHandler::get_controller_type(char* gene_filename)
       if(word == "<ControllerType>")
       {
         gene_file >> controller_type;
-
         gene_file >> word;
 
         if(word != "</ControllerType>")

@@ -417,6 +417,11 @@ bool EvolutionaryAlgorithm::get_elite_population_history(void)
 }
 
 
+bool EvolutionaryAlgorithm::get_evolution_history(void)
+{
+   return(evolution_history);
+}
+
 // bool get_reserve_population_history(void) method
 
 /// This method returns true if the population history vector of matrices is to be reserved, and false otherwise.
@@ -703,6 +708,8 @@ void EvolutionaryAlgorithm::set_default(void)
    maximum_time = 1.0e6;
 
    maximum_generations_number = 1000;
+   evaluation_index = 0;
+   generation = 1;
 
    // Population matrix
 
@@ -742,6 +749,9 @@ void EvolutionaryAlgorithm::set_default(void)
 
    elite_population_history = false;
    elite_population_file = NULL;
+
+   evolution_history = false;
+   evolution_file = NULL;
 
    reserve_population_history = false;
 
@@ -848,6 +858,43 @@ void EvolutionaryAlgorithm::set_population_size(int new_population_size)
    }
 }
 
+
+void EvolutionaryAlgorithm::set_generation_size(int new_generation_size)
+{
+  if(new_generation_size <= 0)
+  {
+    std::cerr << "Flood Error: EvolutionaryAlgorithm class." << std::endl
+              << "void set_generation_size(int) method." << std::endl
+              << "Generation size: " << new_generation_size << " must be > 0." <<std::endl;
+
+    exit(1);
+  }
+
+  generation = new_generation_size;
+}
+
+
+void EvolutionaryAlgorithm::set_evaluation_index(int new_evaluation_index)
+{
+  if(new_evaluation_index < 0)
+  {
+    std::cerr << "Flood Error: EvolutionaryAlgorithm class." << std::endl
+              << "void set_evaluation_index(int) method." << std::endl
+              << "Evaluation index: " << new_evaluation_index << " must be >= 0." <<std::endl;
+
+    exit(1);
+  }
+  else if(new_evaluation_index >= get_population_size())
+  {
+    std::cerr << "Flood Error: EvolutionaryAlgorithm class." << std::endl
+              << "void set_evaluation_index(int) method." << std::endl
+              << "Evaluation index: " << new_evaluation_index << " cannot be > Population size." <<std::endl;
+
+    exit(1);
+  }
+
+  evaluation_index = new_evaluation_index;
+}
 
 // void set_fitness_assignment_method(const std::string&) method
 
@@ -1176,6 +1223,18 @@ void EvolutionaryAlgorithm::set_elite_population_history(bool new_elite_populati
 void EvolutionaryAlgorithm::set_elite_population_file(FileHandler* new_elite_population_file)
 {
   elite_population_file = new_elite_population_file;
+}
+
+
+void EvolutionaryAlgorithm::set_evolution_history(bool new_evolution_history)
+{
+   evolution_history = new_evolution_history;
+}
+
+
+void EvolutionaryAlgorithm::set_evolution_file(FileHandler* new_evolution_file)
+{
+  evolution_file = new_evolution_file;
 }
 
 
@@ -2140,6 +2199,62 @@ initialize_population_uniform_independent_parameters(const Vector<double>& minim
 }
 
 
+// Avinash Ranganath
+// void replace_individual_uniform_independent_parameters(Vector<double>, Vector<double>) method
+
+/// This method replaces only the independent parameters of the individual in the population at random, with values
+/// comprised between different minimum and maximum values for each variable.
+///
+/// @param minimum Vector of minimum initialization values.
+/// @param maximum Vector of maximum initialization values.
+void EvolutionaryAlgorithm::
+replace_individual_uniform_independent_parameters(const unsigned int indx)
+{
+   MultilayerPerceptron* multilayer_perceptron_pointer
+   = objective_functional_pointer->get_multilayer_perceptron_pointer();
+
+   int neural_parameters_number = multilayer_perceptron_pointer->get_neural_parameters_number();
+   int independent_parameters_number = multilayer_perceptron_pointer->get_independent_parameters_number();
+   int parameters_number = neural_parameters_number + independent_parameters_number;
+
+   // Control sentence (if debug)
+
+   #ifdef _DEBUG
+
+   int minimum_size = minimum.get_size();
+   int maximum_size = maximum.get_size();
+
+   if(minimum_size != independent_parameters_number || maximum_size != independent_parameters_number)
+   {
+      std::cerr << "Flood Error: EvolutionaryAlgorithm class." << std::endl
+                << "void initialize_population_uniform_independent_parameters(Vector<double>, Vector<double>)." << std::endl
+                << "Minimum value and maximum value sizes must be equal to number of independent parameters." << std::endl;
+
+      exit(1);
+   }
+
+   #endif
+
+   Vector<double> individual(parameters_number);
+   Vector<double> neural_parameters(neural_parameters_number);
+   Vector<double> independent_parameters(independent_parameters_number);
+
+   Vector<double> minimum;
+   Vector<double> maximum;
+
+   minimum = multilayer_perceptron_pointer->get_independent_parameters_minimum();
+   maximum = multilayer_perceptron_pointer->get_independent_parameters_maximum();
+
+   individual = get_individual(indx);
+
+   neural_parameters = individual.extract(0, neural_parameters_number);
+   independent_parameters.initialize_uniform(minimum, maximum);
+
+   individual = neural_parameters.assemble(independent_parameters);
+   set_individual(indx, individual);
+}
+
+
 // void initialize_population_normal(void) method
 
 /// This method initializes the parameters of all the individuals in the population with random values chosen
@@ -2734,11 +2849,26 @@ void EvolutionaryAlgorithm::evaluate_population(int generation)
 
    Vector<double> individual(parameters_number);
 
-   // Evaluate objective functional for all individuals
-
    int population_size = get_population_size();
 
-   for(int i = 0; i < population_size; i++)
+   //-- Save generation history
+   if(get_evolution_history())
+   {
+      std::stringstream ss;
+      ss << "<Generation_" << generation << ">";
+
+      if(!evolution_file->find_tag(ss.str()))
+      {
+         for(int i = 0; i < population_size; i++)
+         {
+            individual = get_individual(i);
+            evolution_file->save_generation_history(generation, i+1, individual);
+         }
+      }
+   }
+
+   //-- Evaluate objective functional for all individuals
+   for(int i = evaluation_index; i < population_size; i++)
    {
       individual = get_individual(i);
 
@@ -2767,6 +2897,23 @@ void EvolutionaryAlgorithm::evaluate_population(int generation)
           i = -1;
         }
       }
+      else if(evaluation[i] == -22.44)
+      {
+        replace_individual_uniform_independent_parameters(i);
+
+        //-- Moving the population index back by one steps, so that the replaced individual is reevaluated.
+        i = i-1;
+      }
+      else
+      {
+        evolution_file->save_fitness_individual(generation, i+1, evaluation[i]);
+      }
+   }
+
+   //-- Save fitness history
+   if(get_evolution_history())
+   {
+     //evolution_file->save_fitness_history(generation, evaluation);
    }
 }
 
@@ -4265,7 +4412,8 @@ void EvolutionaryAlgorithm::train(void)
 
    resize_training_history(maximum_generations_number+1);    // Main loop
 
-   for(int generation = 1; generation <= maximum_generations_number; generation++)
+   //for(int generation = 1; generation <= maximum_generations_number; generation++)
+   for(generation; generation <= maximum_generations_number; generation++)
    {
       // Population stuff
 
@@ -4294,8 +4442,7 @@ void EvolutionaryAlgorithm::train(void)
          standard_deviation_norm_history[generation] = standard_deviation_norm;
       }
 
-      evaluate_population(generation);  // Should be reverted
-      //evaluate_population();
+      evaluate_population(generation);
 
       int population_size = get_population_size();
 
@@ -4363,8 +4510,6 @@ void EvolutionaryAlgorithm::train(void)
       if(reserve_elapsed_time_history)
       {
          elapsed_time_history[generation] = elapsed_time;
-
-
       }
 
       // Training history multilayer perceptron
@@ -4528,6 +4673,8 @@ void EvolutionaryAlgorithm::train(void)
       selection.initialize(false);
 
       evolve_population(generation);
+
+      evaluation_index = 0;
    }
 }
 
@@ -4860,6 +5007,39 @@ void EvolutionaryAlgorithm::save_member(int generation)
    }
 }
 
+
+/*void EvolutionaryAlgorithm::save_generation(unsigned int generation)
+{
+   Vector<double> elite_individual; //Elite individual of the current generation to be saved
+   Vector<double> elite_member; //Elite member previously saved in the file.
+   int elite_population_size = elite_population_gene.get_rows_number();
+   bool elite_member_exist = false;
+   int population_size = get_population_size();
+
+   for(int j=0; j<population_size; j++)
+   {
+      if(rank[j] == population_size)
+      {
+         elite_individual = get_individual(j);
+         for(int k=elite_population_size-1; k>=0; k--)
+         {
+            elite_member = elite_population_gene.get_row(k);
+            if(elite_individual == elite_member)
+            {
+               elite_member_exist = true;
+               break;
+            }
+         }
+         if(!elite_member_exist)
+         {
+            elite_population_gene.add_row(elite_individual);
+            elite_population_file->save_gene(generation, elite_individual);
+         }
+         elite_member_exist = false;
+         break;
+      }
+   }
+}*/
 
 // void load(const char*) method
 

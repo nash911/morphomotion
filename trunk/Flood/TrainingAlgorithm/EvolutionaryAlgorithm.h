@@ -121,6 +121,7 @@ public:
 
    bool get_fitness_graph_history(void);
    bool get_elite_population_history(void);
+   bool get_evolution_history(void);
    bool get_reserve_population_history(void);
    bool get_reserve_best_individual_history(void);
    bool get_reserve_mean_norm_history(void);
@@ -163,6 +164,8 @@ public:
    void set_mutation_method(const std::string&);
 
    void set_population_size(int);
+   void set_generation_size(int);
+   void set_evaluation_index(int);
 
    void set_population(const Matrix<double>&);
 
@@ -193,6 +196,8 @@ public:
    void set_fitness_graph_file(GraphFile*);
    void set_elite_population_history(bool);
    void set_elite_population_file(FileHandler*);
+   void set_evolution_history(bool);
+   void set_evolution_file(FileHandler*);
 
    void set_reserve_population_history(bool);
 
@@ -238,6 +243,7 @@ public:
    void initialize_population_uniform(double, double);
    void initialize_population_uniform(const Vector<double>&, const Vector<double>&);
    void initialize_population_uniform_independent_parameters(const Vector<double>&, const Vector<double>&); //Avinash Ranganath
+   void replace_individual_uniform_independent_parameters(const unsigned int); //Avinash Ranganath
    void initialize_population_uniform(const Matrix<double>&);
 
    void initialize_population_normal(void);
@@ -399,10 +405,12 @@ private:
    /// Maximum number of generations to train.
 
    int maximum_generations_number;
+   int generation;
+   int evaluation_index;
 
    bool fitness_graph_history;
-
    bool elite_population_history;
+   bool evolution_history;
 
    /// True if the population history, which is a vector of matrices, is to be reserved, false otherwise.
    /// Reserving the population history can be compuationally expensive if the number of parameters,
@@ -476,11 +484,12 @@ private:
 
    Vector<double> best_evaluation_history;
 
-   /// File for saving the genome of the best performing individuals
-
-   FileHandler *elite_population_file;
-
+   /// File for saving the best, average and the worst fitness of each generation
    GraphFile *fitness_graph_file; // TODO: Maybe needs to be removed
+   /// File for saving the genome of the best performing individuals
+   FileHandler *elite_population_file;
+   /// File for saving the history of the evolution
+   FileHandler *evolution_file;
 
    // METHODS
 

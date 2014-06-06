@@ -41,7 +41,7 @@ public:
   void update_tPrime_and_Yi(unsigned int);
   double calculate_actual_diff(double, double);
   double calculate_tPrime(double, double);
-  double inverse_sinewave_function(double, double);
+  double inverse_sinewave_function(const double, const double);
   double getCurrentVelocityDirection(double);
 
 
