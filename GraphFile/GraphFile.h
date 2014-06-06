@@ -37,6 +37,9 @@ class GraphFile
     GraphFile(const std::string&, const std::string&, const std::string&);
    ~GraphFile();
 
+    void open(const std::string&);
+    void init(const std::string&, const std::string&, const std::string&);
+
     void write(int x, double y);
     void write(double x, double y);
     void write(int x, double y, double z);

@@ -82,6 +82,9 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
   double mean_distance = 0;
   double mean_speed = 0;
   bool previous = false;
+  bool invalid_gene = false;
+
+  evaluation.initialize(0.0);
 
   std::cout << std::endl << generation << " -- " << individual << ":";
 
@@ -121,6 +124,12 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
         previous = true;
         break;
     }
+    else if(result == "INVALID_AMP+OFF")
+    {
+        std::cout << std::endl << "  INVALID_AMP+OFF" << std::endl;
+        invalid_gene = true;
+        break;
+    }
     else
     {
         robot->reset_modules();
@@ -132,7 +141,15 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
     std::cout << "  (" << i+1 << ") " << evaluation[i];
   }
 
-  if(!previous)
+  if(previous)
+  {
+    mean_speed = -12.34;
+  }
+  else if(invalid_gene)
+  {
+    mean_speed = -22.44;
+  }
+  else
   {
     for(int i=0; i<evaluation_sample_size; i++)
     {
@@ -144,10 +161,6 @@ double Evolution::calculate_objective(int generation, int individual, int evalua
 
     //--Adding a small random noise to avoid fitness value of zero.
     mean_speed = mean_speed + controller->calculate_random_uniform(0.001,0.01);
-  }
-  else
-  {
-    mean_speed = -12.34;
   }
 
   return(mean_speed);

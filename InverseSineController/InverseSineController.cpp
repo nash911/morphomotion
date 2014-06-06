@@ -92,6 +92,16 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
   set_oscillator_offset(mlp->get_independent_parameter(3));
   set_oscillator_frequency(mlp->get_independent_parameter(4));
 
+  if(validate_amplitude_plus_offset(get_oscillator_amplitude(), get_oscillator_offset()))
+  {
+    SS << "INVALID_AMP+OFF" << " ";
+
+    robot_primary->set_processing_flag(false);
+    robot_primary->set_receive_broadcast(false);
+    while(robot_primary->get_broadcast_thread());
+    return;
+  }
+
   for(unsigned int module=0; module<number_of_modules; module++)
   {
     if(servo_feedback[module]->get_ExtKalmanFilter() != NULL)
@@ -216,7 +226,7 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
     #ifdef DEBUGGER
             if(module==0)
             {
-              std::cout << "Count: " << (double)evaluation_elapsed_time/1000000 << "  Output[" << module << "]: " << output[module] << "  Feedback Self: " << current_servo_angle << "  Feed Back Diff: " << servo_delta << "  Servo Delta: " << servo_derivative;
+              std::cout << "Count: " << (double)evaluation_elapsed_time/1000000 << "  Output[" << module << "]: " << output[module] << "  Feedback Self: " << servo_feedback[module]->get_servo_position() << "  Servo Delta: " << actual_diff << "  Servo Derivative: " << servo_derivative;
             }
     #endif
     //---------------------------------------------------------------- Debugger ----------------------------------------------------------/
@@ -277,7 +287,7 @@ void InverseSineController::run_Controller(const std::string& type, std::strings
             {
               std::cout << "  Next Output " << output[module] << "  Time Diff: " << oscillation_time[module]  << "  Counter: " << time_diff_counter[module] << std::endl;
               time_diff_counter[module] = 0;
-              oscillation_time[module] = 0
+              oscillation_time[module] = 0;
             }
     #endif
     #ifdef ACTIVITY_LOG
@@ -511,7 +521,7 @@ double InverseSineController::calculate_tPrime(double Theta, double V)
 }
 
 
-double InverseSineController::inverse_sinewave_function(double Theta, double V)
+double InverseSineController::inverse_sinewave_function(const double Theta, const double V)
 {
   //--               |‾                                                              ‾|
   //--               |1-(V/|V|)   1-(θ/|θ|) * 1+(V/|V|)   |‾         Sin^-1(θ-o/A) ‾| |     1
@@ -528,7 +538,7 @@ double InverseSineController::inverse_sinewave_function(double Theta, double V)
 
   X = (1-(V/fabs(V)))/4;
   Y = ((1-(Theta/fabs(Theta))) * (1+(V/fabs(V))))/4;
-  Z = ((V/fabs(V)) * (asin((Theta-oscillator_offset)/oscillator_amplitude)/(2*M_PI)));
+  Z = ((V/fabs(V)) * (asin(float((Theta-oscillator_offset)/oscillator_amplitude))/(2*M_PI))); //-- BUGFIX: asin(long double) method converts double to long double. Fixed it by type casting the passed parameter to (float).
 
   invSineWave = (X + Y + Z) * (1/oscillator_frequency);
 

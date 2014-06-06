@@ -219,7 +219,7 @@ void FourierController::run_Controller(const std::string& type, std::stringstrea
 #ifdef DEBUGGER
             if(module==0)
             {
-              std::cout << "Count: " << evaluation_elapsed_time/1000 << "  Output[" << module << "]: " << output[module] << "  Feedback Self: " << current_servo_angle[module] << "  Feed Back Diff: " << servo_delta << "  Servo Delta: " << servo_derivative;
+              std::cout << "Count: " << evaluation_elapsed_time/1000 << "  Output[" << module << "]: " << output[module] << "  Feedback Self: " << servo_feedback[module]->get_servo_position();
             }
 #endif
 //---------------------------------------------------------------- Debugger ----------------------------------------------------------/

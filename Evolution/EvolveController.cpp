@@ -42,9 +42,9 @@
     #define AVERAGE_BROADCAST_PERIOD 0.01
 #endif
 
-#define EVALUATION_SAMPLE_SIZE 1
+#define EVALUATION_SAMPLE_SIZE 3
 
-#define POPULATION_SIZE 50
+#define POPULATION_SIZE 100
 #define GENERATIONS 30
 
 #define CROSSOVER_RATIO 0.5
@@ -60,6 +60,7 @@
 
 #define FITNESS_GRAPH_FILE
 #define ELITE_POPULATION_FILE
+#define EVOLUTION_FILE
 
 
 //std::string note("FIXED Feet");
@@ -90,16 +91,12 @@ int main(int argc, char* argv[])
   exit(1);
 #endif
 
-  //robot = &simuOR_robot;
-
   // Multilayer perceptron object
   Flood::MultilayerPerceptron mlp(0,0,0);
   mlp.set_independent_parameters_number(0);
 
   //Controller controller(&mlp, robot);
   Controller *controller = NULL;
-
-  //HybridController hyC(&mlp, robot_primary);
 
   std::string controller_type;
   FileHandler geneFile;
@@ -182,7 +179,6 @@ int main(int argc, char* argv[])
   mlp.set_output_layer_activation_function("HyperbolicTangent");
 
   //-- Evolution object
-  //Flood::Evolution evolve(&mlp, &simuOR_robot, controller);
   Flood::Evolution evolve(&mlp, robot, controller);
 
   //-- Evolutionary algorithm object
@@ -214,38 +210,73 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef FITNESS_GRAPH_FILE
-  GraphFile fitness_graph_file(robot->get_robot_environment(), robot->get_robot_type(), controller->get_controller_type());
   ea.set_fitness_graph_history(true);
+  GraphFile fitness_graph_file;
+
+  if(parametersFileHandler.get_file_type() == "Evolution_Parameters")
+  {
+     fitness_graph_file.init(robot->get_robot_environment(), robot->get_robot_type(), controller->get_controller_type());
+  }
+  else if(parametersFileHandler.get_file_type() == "GeneFile")
+  {
+     fitness_graph_file.open(parametersFileHandler.get_fitness_file_name());
+  }
   ea.set_fitness_graph_file(&fitness_graph_file);
 #endif
 
+
 #ifdef ELITE_POPULATION_FILE
   ea.set_elite_population_history(true);
+  FileHandler elite_population_file;
 
+  if(parametersFileHandler.get_file_type() == "Evolution_Parameters")
+  {
 #ifdef ROBOT_OPENRAVE
-  //-- With Flood::EvolutionaryAlgorithm*
-  FileHandler elite_population_file(note,
-                               gen0_preeval,
-                               gen0_aug_pop,
-                               &ea,
-                               robot,
-                               &simuOR_robot,
-                               controller,
-                               &mlp);
+     //-- With Flood::EvolutionaryAlgorithm*
+     elite_population_file.init_gene_file(note,
+                                          gen0_preeval,
+                                          gen0_aug_pop,
+                                          &ea,
+                                          robot,
+                                          &simuOR_robot,
+                                          controller,
+                                          &mlp);
 #else
-  //-- With Flood::EvolutionaryAlgorithm*
-  FileHandler elite_population_file(note,
-                               gen0_preeval,
-                               gen0_aug_pop,
-                               &ea,
-                               robot,
-                               NULL,
-                               controller,
-                               &mlp);
+     //-- With Flood::EvolutionaryAlgorithm*
+     elite_population_file.init_gene_file(note,
+                                          gen0_preeval,
+                                          gen0_aug_pop,
+                                          &ea,
+                                          robot,
+                                          NULL,
+                                          controller,
+                                          &mlp);
 #endif
-
+     ea.set_elite_population_file(&elite_population_file);
+  }
+  else if(parametersFileHandler.get_file_type() == "GeneFile")
+  {
+     elite_population_file.open(parametersFileHandler.get_gene_file_name().c_str());
+  }
   ea.set_elite_population_file(&elite_population_file);
 #endif
+
+  FileHandler evolution_file;
+  if(parametersFileHandler.get_file_type() == "Evolution_Parameters")
+  {
+    evolution_file.init_evol_file(robot, controller);
+  }
+  else if(parametersFileHandler.get_file_type() == "GeneFile")
+  {
+    evolution_file.open(parametersFileHandler.get_evolution_file_name().c_str());
+  }
+  ea.set_evolution_history(true);
+  ea.set_evolution_file(&evolution_file);
+
+  if(parametersFileHandler.get_file_type() == "GeneFile")
+  {
+    evolution_file.populate_from_evolution_file(&ea);
+  }
 
   ea.train();
 
