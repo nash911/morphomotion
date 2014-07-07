@@ -860,6 +860,8 @@ void FileHandler::init_gene_file(std::string note,
   myFile << std::endl << "\t<ServoMin>" << std::endl << "\t   " << controller->get_servo_min() << std::endl << "\t</ServoMin>" << std::endl;
   if(controller->get_controller_type() != "Sine_Controller" &&
      controller->get_controller_type() != "InverseSine_Controller" &&
+     controller->get_controller_type() != "InverseSine_Controller_V2" &&
+     controller->get_controller_type() != "InverseSine_Controller_V3" &&
      controller->get_controller_type() != "Fourier_Controller" &&
      controller->get_controller_type() != "TriangleSquare_Controller")
   {

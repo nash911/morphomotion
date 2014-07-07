@@ -75,7 +75,6 @@ void Controller::reset_controller()
       servo_feedback[module]->get_ExtKalmanFilter()->reset_parameters();
     }
   }
-  //oscAnlz = NULL;
 }
 
 
@@ -399,7 +398,7 @@ void Controller::set_servo_delta_threshold(double new_servo_delta_threshold)
   {
     std::cerr << "Morphomotion Error: Controller class." << std::endl
               << "void set_servo_delta_threshold(double) method."
-              << "Servo Delta Threshold must be greater than zero." << std::endl;
+              << "Servo Delta Threshold must be greater than zero: " << new_servo_delta_threshold << std::endl;
     exit(1);
   }
 }
@@ -408,6 +407,22 @@ void Controller::set_servo_delta_threshold(double new_servo_delta_threshold)
 double Controller::get_servo_delta_threshold(void)
 {
   return(servo_delta_threshold);
+}
+
+
+void Controller::set_servo_delta(double new_servo_delta, unsigned int index)
+{
+  if(new_servo_delta > 0)
+  {
+      servo_delta[index] = new_servo_delta;
+  }
+  else
+  {
+    std::cerr << "Morphomotion Error: Controller class." << std::endl
+              << "void set_servo_delta(double, unsigned int) method."
+              << "Servo Delta must be greater than zero." << std::endl;
+    exit(1);
+  }
 }
 
 
@@ -1078,6 +1093,14 @@ void Controller::set_controller_type(const std::string& new_controller_type)
   {
     controller_type = InverseSine_Controller;
   }
+  else if(new_controller_type == "InverseSine_Controller_V2")
+  {
+    controller_type = InverseSine_Controller_V2;
+  }
+  else if(new_controller_type == "InverseSine_Controller_V3")
+  {
+    controller_type = InverseSine_Controller_V3;
+  }
   else if(new_controller_type == "Hybrid_Controller")
   {
     controller_type = Hybrid_Controller;
@@ -1127,6 +1150,14 @@ std::string Controller::get_controller_type(void)
     case InverseSine_Controller:
     {
       return("InverseSine_Controller");
+    }
+    case InverseSine_Controller_V2:
+    {
+      return("InverseSine_Controller_V2");
+    }
+    case InverseSine_Controller_V3:
+    {
+      return("InverseSine_Controller_V3");
     }
     case Hybrid_Controller:
     {
