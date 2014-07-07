@@ -4216,27 +4216,34 @@ void EvolutionaryAlgorithm::perform_my_normal_mutation_with_ES(void)
                do
                {
                   //-- Mutate gene [ES]
-                  //individual[j] += calculate_random_normal(0.0, mutation_range_for_ES);
-                  gene = individual[j];
-                  gene += calculate_random_normal(0.0, mutation_range_for_ES);
+                  //gene = individual[j];
+                  //gene += calculate_random_normal(0.0, mutation_range_for_ES);
 
                   if(independent_parameters_number > 0 && j >= neural_parameters_number) //Check if the parameter is neural or independent
                   {
                      double minimum = multilayer_perceptron_pointer->get_independent_parameter_minimum(j-neural_parameters_number);
                      double maximum = multilayer_perceptron_pointer->get_independent_parameter_maximum(j-neural_parameters_number);
 
-                     if(individual[j] >= minimum && individual[j] <= maximum) //Check if the independent parameter is within range
+                     gene = individual[j];
+                     gene += calculate_random_normal(gene, (maximum-minimum)*mutation_range_for_ES);
+
+                     //-- Check if the independent parameter is within range
+                     //if(individual[j] >= minimum && individual[j] <= maximum) //-- BUG
+                     if(gene >= minimum && gene <= maximum)
                      {
                         independent_parameter_in_range = true;
                      }
                      else
                      {
                         independent_parameter_in_range = false;
-                        std::cout << std::endl << "Mutation_ES: Independent Parameter: " << j << " Out of range: " << individual[j] << ".  Child No: " << i << std::endl;
+                        //std::cout << std::endl << "Mutation_ES: Independent Parameter: " << j << " Out of range: " << gene << ".  Child No: " << i << std::endl;
                      }
                   }
                   else
                   {
+                     gene = individual[j];
+                     gene += calculate_random_normal(0.0, mutation_range_for_ES);
+
                      independent_parameter_in_range = true;
                   }
                }while(!independent_parameter_in_range);
@@ -4278,7 +4285,7 @@ void EvolutionaryAlgorithm::perform_my_normal_mutation_with_ES(void)
             {
                do
                {
-                  //-- Mutate gene [ES]
+                  //-- Mutate gene [Crossover]
                   //individual[j] += calculate_random_normal(0.0, mutation_range);
                   gene = individual[j];
                   gene += calculate_random_normal(0.0, mutation_range);
@@ -4288,14 +4295,16 @@ void EvolutionaryAlgorithm::perform_my_normal_mutation_with_ES(void)
                      double minimum = multilayer_perceptron_pointer->get_independent_parameter_minimum(j-neural_parameters_number);
                      double maximum = multilayer_perceptron_pointer->get_independent_parameter_maximum(j-neural_parameters_number);
 
-                     if(individual[j] >= minimum && individual[j] <= maximum) //Check if the independent parameter is within range
+                     //-- Check if the independent parameter is within range
+                     //if(individual[j] >= minimum && individual[j] <= maximum) //-- BUG
+                     if(gene >= minimum && gene <= maximum)
                      {
                         independent_parameter_in_range = true;
                      }
                      else
                      {
                         independent_parameter_in_range = false;
-                        std::cout << std::endl << "Mutation_Offspring: Independent Parameter: " << j << " Out of range: " << individual[j] << ".  Child No: " << i << std::endl;
+                        //std::cout << std::endl << "Mutation_Offspring: Independent Parameter: " << j << " Out of range: " << individual[j] << ".  Child No: " << i << std::endl;
                      }
                   }
                   else
