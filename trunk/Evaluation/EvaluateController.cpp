@@ -28,6 +28,8 @@
 #include "SineController.h"
 #include "SimpleController.h"
 #include "InverseSineController.h"
+#include "InverseSineController_V2.h"
+#include "InverseSineController_V3.h"
 #include "FourierController.h"
 #include "TriangleSquareController.h"
 #include "FileHandler.h"
@@ -40,7 +42,7 @@
 
 //#define ROBOT_SECONDARY
 
-#define EVALUATION_PERIOD 50
+#define EVALUATION_PERIOD 300
 
 #ifdef ROBOT_PRIMARY_OPENRAVE
     #define AVERAGE_BROADCAST_PERIOD 0.0025
@@ -110,6 +112,14 @@ int main(int argc, char* argv[])
   else if(controller_type == "InverseSine_Controller")
   {
     controller = new InverseSineController(&mlp, robot_primary);
+  }
+  else if(controller_type == "InverseSine_Controller_V2")
+  {
+    controller = new InverseSineController_V2(&mlp, robot_primary);
+  }
+  else if(controller_type == "InverseSine_Controller_V3")
+  {
+    controller = new InverseSineController_V3(&mlp, robot_primary);
   }
   else if(controller_type == "Fourier_Controller")
   {
@@ -385,9 +395,9 @@ int main(int argc, char* argv[])
   }
   else
   {
-    //for(unsigned int i=population_size-1; i>=0; i)
-    for(unsigned int i=2; i<=population_size-1; i++)
-    {  usleep(10000000);
+    for(unsigned int i=population_size-1; i>=0; i--)
+    //for(unsigned int i=2; i<=population_size-1; i++)
+    {  //usleep(10000000);
       robot_primary->reset_robot();
 
       if(robot_secondary)

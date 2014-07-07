@@ -46,7 +46,7 @@ ADD_DEFINITIONS(-pthread)
 ### include dirs
 INCLUDE_DIRECTORIES(
 Evolution Evaluation Robot SimulationOpenRave Y1ModularRobot Controller HybridController SineController SimpleController
-InverseSineController FourierController TriangleSquareController
+InverseSineController InverseSineController_V2 InverseSineController_V3 FourierController TriangleSquareController
 Flood/Utilities Flood/MultilayerPerceptron Flood/ObjectiveFunctional Flood/TrainingAlgorithm
 ServoFeedback ExtKalmanFilter_SinusModel GraphFile FileHandler OscillationAnalyzer_OutputSignal VisualTracker SerialCommunication
 )
@@ -68,6 +68,8 @@ add_executable(Evolve
   SineController/SineController.cpp
   SimpleController/SimpleController.cpp
   InverseSineController/InverseSineController.cpp
+  InverseSineController_V2/InverseSineController_V2.cpp
+  InverseSineController_V3/InverseSineController_V3.cpp
   FourierController/FourierController.cpp
   TriangleSquareController/TriangleSquareController.cpp
   ServoFeedback/ServoFeedback.cpp
@@ -103,6 +105,8 @@ add_executable(Evaluate
   SineController/SineController.cpp
   SimpleController/SimpleController.cpp
   InverseSineController/InverseSineController.cpp
+  InverseSineController_V2/InverseSineController_V2.cpp
+  InverseSineController_V3/InverseSineController_V3.cpp
   FourierController/FourierController.cpp
   TriangleSquareController/TriangleSquareController.cpp
   ServoFeedback/ServoFeedback.cpp
@@ -138,6 +142,8 @@ add_executable(NeuralModelEvaluator
   SineController/SineController.cpp
   SimpleController/SimpleController.cpp
   InverseSineController/InverseSineController.cpp
+  InverseSineController_V2/InverseSineController_V2.cpp
+  InverseSineController_V3/InverseSineController_V3.cpp
   FourierController/FourierController.cpp
   TriangleSquareController/TriangleSquareController.cpp
   ServoFeedback/ServoFeedback.cpp
@@ -179,4 +185,19 @@ add_executable(ExtKalmanFilterEvaluator
 )
 
 target_link_libraries(ExtKalmanFilterEvaluator -larmadillo)
+
+
+### HOAP Evaluator
+add_executable(Hoap
+  Evaluation/HOAP.cpp
+  Robot/Robot.cpp
+  SimulationOpenRave/SimulationOpenRave.cpp
+  ServoFeedback/ServoFeedback.cpp
+  ExtKalmanFilter_SinusModel/ExtKalmanFilter_SinusModel.cpp
+)
+
+### executable
+set_target_properties(Hoap PROPERTIES COMPILE_FLAGS "${OPENRAVE_CXXFLAGS}")
+set_target_properties(Hoap PROPERTIES LINK_FLAGS "${OPENRAVE_LINK_FLAGS}")
+target_link_libraries(Hoap ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES} ${Boost_THREAD_LIBRARY} -std=c++0x -pthread -larmadillo -g)
 

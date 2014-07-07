@@ -29,6 +29,8 @@
 #include "SineController.h"
 #include "SimpleController.h"
 #include "InverseSineController.h"
+#include "InverseSineController_V2.h"
+#include "InverseSineController_V3.h"
 #include "FourierController.h"
 #include "TriangleSquareController.h"
 #include "FileHandler.h"
@@ -42,13 +44,13 @@
     #define AVERAGE_BROADCAST_PERIOD 0.01
 #endif
 
-#define EVALUATION_SAMPLE_SIZE 3
+#define EVALUATION_SAMPLE_SIZE 1
 
-#define POPULATION_SIZE 100
+#define POPULATION_SIZE 50
 #define GENERATIONS 30
 
 #define CROSSOVER_RATIO 0.5
-#define ELITISM_RATIO 0.25
+#define ELITISM_RATIO 0.5
 
 //#define CUMUALATIVE_DISTANCE
 
@@ -117,6 +119,14 @@ int main(int argc, char* argv[])
   else if(controller_type == "InverseSine_Controller")
   {
     controller = new InverseSineController(&mlp, robot);
+  }
+  else if(controller_type == "InverseSine_Controller_V2")
+  {
+    controller = new InverseSineController_V2(&mlp, robot);
+  }
+  else if(controller_type == "InverseSine_Controller_V3")
+  {
+    controller = new InverseSineController_V3(&mlp, robot);
   }
   else if(controller_type == "Fourier_Controller")
   {
@@ -191,6 +201,9 @@ int main(int argc, char* argv[])
 
   ea.set_crossover_percentage(CROSSOVER_RATIO);
   ea.set_elitism_percentage(ELITISM_RATIO);
+
+  ea.set_mutation_rate_for_ES(0.5);
+  ea.set_mutation_range_for_ES(0.2);
 
   ea.set_fitness_assignment_method("MyLinearRanking");
   ea.set_selection_method("MyRouletteWheel");

@@ -64,7 +64,8 @@ public:
 
   enum StartAngleType{Zero, Random, RandomEqual, Predefined, RunTime};
   enum ControllerType{Neural_Controller, Naive_Controller, Simple_Controller, Hybrid_Controller, Semi_Hybrid_Controller,
-                      Sine_Controller, InverseSine_Controller, Fourier_Controller, TriangleSquare_Controller};
+                      Sine_Controller, InverseSine_Controller, InverseSine_Controller_V2, InverseSine_Controller_V3,
+                      Fourier_Controller, TriangleSquare_Controller};
 
   // DEFAULT CONSTRUCTOR
   Controller(void);
@@ -113,6 +114,7 @@ public:
 
   void set_servo_delta_threshold(double);
   double get_servo_delta_threshold(void);
+  void set_servo_delta(double, unsigned int);
   void set_servo_derivative_threshold(double);
   double get_servo_derivative_threshold(void);
   void set_servo_derivative_epsilon(unsigned long);
@@ -199,6 +201,7 @@ protected:
   StartAngleType start_angle_type;
   Flood::Vector <double> predef_start_angle;
   double servo_delta_threshold;
+  vector<double> servo_delta;
   double servo_derivative_threshold;
   unsigned long servo_derivative_epsilon;  // BUG FIX: Was previously --> unsigned servo_derivative_epsilon;
 
